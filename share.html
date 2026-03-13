@@ -121,6 +121,15 @@ const useAnalytics = () => {
   return { trackEvent: sendToAnalytics };
 };
 
+// --- Global Analytics Helper ---
+// 为了避免在复杂组件中出现作用域引用问题，我们定义一个全局辅助函数
+window.logEvent = function(eventName, data = {}) {
+  console.log(`[Analytics] ${eventName}`, data);
+  if (window._hmt) {
+    window._hmt.push(['_trackEvent', 'interaction', eventName, JSON.stringify(data)]);
+  }
+};
+
 // --- src/types.ts ---
 type Role = 'user' | 'ai';
 
@@ -990,7 +999,7 @@ const contactList = [
 ];
 
 function Workspace() {
-  const { trackEvent } = useAnalytics();
+  useAnalytics(); // 只用于记录 PV
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [tabs, setTabs] = useState<WorkspaceTab[]>([
     { id: 'feature-1', title: '[AI] 合肥100w学区房', type: 'feature' },
@@ -2124,7 +2133,8 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
   const handleSendMessage = (text: string, images?: string[]) => {
     if ((!text.trim() && (!images || images.length === 0)) || inputLocked) return;
     
-    trackEvent('send_message', { length: text.length, hasImages: !!images });
+    // 使用全局 logEvent 避免闭包引用问题
+    window.logEvent('send_message', { length: text.length, hasImages: !!images });
 
     setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: text, images }]);
     setInputValue('');
@@ -2375,7 +2385,8 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
             <div className="h-12 border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 shrink-0">
               <button onClick={() => {
                 setSlideOverUser(null);
-                trackEvent('close_profile', { user: slideOverUser });
+                // 使用全局 logEvent 避免闭包引用问题
+                window.logEvent('close_profile', { user: slideOverUser });
               }} className="flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
                 <ChevronRight size={16} className="rotate-180" />
                 返回
