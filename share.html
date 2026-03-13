@@ -276,7 +276,7 @@ function ConfigCard({ data, onConfirm }: { data: Extract<CardData, { type: 'conf
           }`}
         >
           {data.confirmed ? (
-            <><Check size={16} /> 已确认推送</>
+            <><Check size={16} /> 已确认配置</>
           ) : (
             '确认推送'
           )}
@@ -287,6 +287,9 @@ function ConfigCard({ data, onConfirm }: { data: Extract<CardData, { type: 'conf
 }
 
 function ContentPreviewCard({ data }: { data: Extract<CardData, { type: 'content_preview' }> }) {
+  // Filter out the specific text
+  const cleanContent = data.content.trim();
+
   return (
     <div className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm mt-2">
       <div className="p-4 flex flex-col gap-3">
@@ -296,8 +299,33 @@ function ContentPreviewCard({ data }: { data: Extract<CardData, { type: 'content
           </div>
           {data.title}
         </div>
-        <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 border border-zinc-100 dark:border-zinc-800">
-          {data.content}
+        
+        <div className="flex flex-col gap-2">
+            {/* Text Content */}
+            {cleanContent && (
+                <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 border border-zinc-100 dark:border-zinc-800 whitespace-pre-wrap">
+                  {cleanContent}
+                </div>
+            )}
+
+            {/* Images Grid - 3 images example */}
+            <div className="grid grid-cols-3 gap-2">
+                {[1, 2, 3].map((_, i) => (
+                    <div key={i} className="aspect-square bg-zinc-100 dark:bg-zinc-800 rounded-lg flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
+                        <ImageIcon size={20} className="text-zinc-400" />
+                    </div>
+                ))}
+            </div>
+
+            {/* Mini Program Card */}
+            <div className="flex gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-100 dark:border-zinc-800">
+                <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Zap size={20} className="text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div className="flex flex-col justify-center min-w-0">
+                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">小程序标题</div>
+                </div>
+            </div>
         </div>
       </div>
     </div>
@@ -927,7 +955,7 @@ function Workspace() {
     { id: 'chat-3', title: '灰太狼', type: 'chat' },
     { id: 'chat-4', title: '升学规划王老师189...', type: 'chat' },
     { id: 'chat-5', title: '圈子不同别硬入', type: 'chat' },
-    { id: 'feature-2', title: '每日私聊推送_活动话术1', type: 'feature' },
+    { id: 'feature-2', title: '每日私聊推送_学区房名单', type: 'feature' },
     { id: 'chat-6', title: '10-16佰', type: 'chat' },
     { id: 'chat-7', title: '春天', type: 'chat' },
     { id: 'chat-8', title: '鹏', type: 'chat' },
@@ -1189,7 +1217,7 @@ function Workspace() {
       );
     }
     
-    if (activeTab.title.includes('每日私聊推送_活动话术1')) {
+    if (activeTab.title.includes('每日私聊推送_学区房名单')) {
       return (
         <div className="w-full h-full bg-white dark:bg-zinc-950 flex flex-col overflow-y-auto">
           {/* Header */}
@@ -1829,10 +1857,10 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
 
     const script2 = [
       { type: 'SET_MODE', payload: '执行模式', delay: 500 },
-      { type: 'TYPE_TEXT', payload: '每天中午 11:30，私聊发送 @活动话术1，发送人选择 C 端客服。', delay: 800 },
+      { type: 'TYPE_TEXT', payload: '每天中午 11:30，私聊发送【限时特惠】合肥政务区学区房最新名单已出，点击查看...，发送人选择 C 端客服。', delay: 800 },
       { type: 'SEND_MESSAGE', delay: 500 },
-      { type: 'ADD_AI_MESSAGE_STREAM', payload: '已为您提取 @活动话术1 的具体内容，请确认内容是否正确？', delay: 1000 },
-      { type: 'ADD_CARD', payload: { type: 'content_preview', title: '素材预览 (@活动话术1)', content: '【限时特惠】合肥政务区学区房最新名单已出，点击查看...' }, delay: 500 },
+      { type: 'ADD_AI_MESSAGE_STREAM', payload: '已为您生成推送内容预览，请确认内容是否正确？', delay: 1000 },
+      { type: 'ADD_CARD', payload: { type: 'content_preview', title: '素材预览', content: '【限时特惠】合肥政务区学区房最新名单已出，点击查看...' }, delay: 500 },
       { type: 'TYPE_TEXT', payload: '没问题', delay: 2000 },
       { type: 'SEND_MESSAGE', delay: 500 },
       { type: 'ADD_CARD', payload: { type: 'config', senders: ['C端客服'], blacklists: [] }, delay: 1000 },
@@ -1841,7 +1869,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
       { type: 'ADD_AI_MESSAGE_STREAM', payload: '请确认最终任务信息：', delay: 500 },
       { type: 'ADD_CARD', payload: { 
         type: 'task_summary', 
-        taskName: '每日私聊推送_活动话术1',
+        taskName: '每日私聊推送_学区房名单',
         channel: '企微私聊',
         pushTime: '每日 11:30',
         pushInterval: '每天',
@@ -1857,10 +1885,10 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
       { type: 'SEND_MESSAGE', delay: 500 },
       { type: 'ADD_AI_MESSAGE_STREAM', payload: '任务已锁定，无法中止。', delay: 500 },
       { type: 'UPDATE_PROGRESS', payload: 100, delay: 1000 },
-      { type: 'ADD_AI_MESSAGE_STREAM', payload: '推送任务已排期成功！\n\n任务名称：每日私聊推送_活动话术1\n预估覆盖：1,285 人\n发送内容：【限时特惠】合肥政务区学区房最新名单已出...\n发送人：C端客服\n黑名单过滤：未设置\n执行时间：每日 11:30', actionButton: { label: '查看详情', tabName: '[AI] 每日私聊推送_活动话术1' }, delay: 500 },
-      { type: 'ADD_BUBBLE', payload: { id: 'b2', type: 'task', text: '关联推送任务(1)', items: [{ id: 'i2', name: '每日私聊推送_活动话术1', tabName: '[AI] 每日私聊推送_活动话术1' }] }, delay: 1000 },
+      { type: 'ADD_AI_MESSAGE_STREAM', payload: '推送任务已排期成功！\n\n任务名称：每日私聊推送_学区房名单\n预估覆盖：1,285 人\n发送内容：【限时特惠】合肥政务区学区房最新名单已出...\n发送人：C端客服\n黑名单过滤：未设置\n执行时间：每日 11:30', actionButton: { label: '查看详情', tabName: '[AI] 每日私聊推送_学区房名单' }, delay: 500 },
+      { type: 'ADD_BUBBLE', payload: { id: 'b2', type: 'task', text: '关联推送任务(1)', items: [{ id: 'i2', name: '每日私聊推送_学区房名单', tabName: '[AI] 每日私聊推送_学区房名单' }] }, delay: 1000 },
       { type: 'TOGGLE_BUBBLE', payload: 'b2', delay: 1500 },
-      { type: 'CLICK_BUBBLE_ITEM', payload: '[AI] 每日私聊推送_活动话术1', delay: 1500 },
+      { type: 'CLICK_BUBBLE_ITEM', payload: '[AI] 每日私聊推送_学区房名单', delay: 1500 },
       { type: 'END', delay: 0 }
     ];
 
@@ -2083,15 +2111,15 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
       { id: 'u3', role: 'user', content: '确认创建' },
       { id: 'a4', role: 'ai', progress: 100 },
       { id: 'a5', role: 'ai', content: '人群包‘合肥100w学区房’已创建完成。', actionButton: { label: '查看详情', tabName: '[AI] 合肥100w学区房' } },
-      { id: 'u4', role: 'user', content: '每天中午 11:30，私聊发送 @活动话术1，发送人选择 C 端客服。' },
-      { id: 'a6', role: 'ai', content: '已为您提取 @活动话术1 的具体内容，请确认内容是否正确？', card: { type: 'content_preview', title: '素材预览 (@活动话术1)', content: '【限时特惠】合肥政务区学区房最新名单已出，点击查看...' } },
+      { id: 'u4', role: 'user', content: '每天中午 11:30，私聊发送【限时特惠】合肥政务区学区房最新名单已出，点击查看...，发送人选择 C 端客服。' },
+      { id: 'a6', role: 'ai', content: '已为您生成推送内容预览，请确认内容是否正确？', card: { type: 'content_preview', title: '素材预览', content: '【限时特惠】合肥政务区学区房最新名单已出，点击查看...' } },
       { id: 'u5', role: 'user', content: '没问题' },
       { id: 'a7', role: 'ai', card: { type: 'config', senders: ['C端客服'], blacklists: [], confirmed: true } },
       { id: 'u6', role: 'user', content: '确认配置' },
       { id: 'a7_summary_msg', role: 'ai', content: '请确认最终任务信息：' },
       { id: 'a7_summary', role: 'ai', card: { 
         type: 'task_summary', 
-        taskName: '每日私聊推送_活动话术1',
+        taskName: '每日私聊推送_学区房名单',
         channel: '企微私聊',
         pushTime: '每日 11:30',
         pushInterval: '每天',
@@ -2105,11 +2133,11 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
       { id: 'u7', role: 'user', content: '停一下' },
       { id: 'a9', role: 'ai', content: '任务已锁定，无法中止。' },
       { id: 'a10', role: 'ai', progress: 100 },
-      { id: 'a11', role: 'ai', content: '推送任务已排期成功！\n\n任务名称：每日私聊推送_活动话术1\n预估覆盖：1,285 人\n发送内容：【限时特惠】合肥政务区学区房最新名单已出...\n发送人：C端客服\n黑名单过滤：未设置\n执行时间：每日 11:30', actionButton: { label: '查看详情', tabName: '[AI] 每日私聊推送_活动话术1' } }
+      { id: 'a11', role: 'ai', content: '推送任务已排期成功！\n\n任务名称：每日私聊推送_学区房名单\n预估覆盖：1,285 人\n发送内容：【限时特惠】合肥政务区学区房最新名单已出...\n发送人：C端客服\n黑名单过滤：未设置\n执行时间：每日 11:30', actionButton: { label: '查看详情', tabName: '[AI] 每日私聊推送_学区房名单' } }
     ]);
     setBubbles([
       { id: 'b1', type: 'audience', text: '关联人群包(1)', items: [{ id: 'i1', name: '合肥100w学区房', tabName: '[AI] 合肥100w学区房' }] },
-      { id: 'b2', type: 'task', text: '关联推送任务(1)', items: [{ id: 'i2', name: '每日私聊推送_活动话术1', tabName: '[AI] 每日私聊推送_活动话术1' }] }
+      { id: 'b2', type: 'task', text: '关联推送任务(1)', items: [{ id: 'i2', name: '每日私聊推送_学区房名单', tabName: '[AI] 每日私聊推送_学区房名单' }] }
     ]);
     setMode('执行模式');
     setShowHistory(false);
