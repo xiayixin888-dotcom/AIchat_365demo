@@ -340,8 +340,10 @@ function GroupPackageCard({ data, onGroupClick, onUserClick, onConfirm }: { data
 function ConfigCard({ data, onConfirm }: { data: Extract<CardData, { type: 'config' }>, onConfirm: () => void }) {
   const [sender, setSender] = useState(data.senders[0] || 'C端客服');
   const [blacklist, setBlacklist] = useState<string[]>(data.blacklists || []);
+  const [city, setCity] = useState('南京');
   
   const blacklistOptions = ['中介同行', '无购房需求', '频繁转派用户', '同事'];
+  const cityOptions = ['南京', '无锡', '合肥', '苏州', '西安', '芜湖'];
 
   const toggleBlacklist = (option: string) => {
     if (data.confirmed) return;
@@ -394,6 +396,23 @@ function ConfigCard({ data, onConfirm }: { data: Extract<CardData, { type: 'conf
                         {opt}
                     </button>
                 ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs text-zinc-500">城市</label>
+            <div className="relative">
+                <select 
+                    value={city} 
+                    onChange={(e) => setCity(e.target.value)}
+                    disabled={data.confirmed}
+                    className="w-full appearance-none px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-zinc-700 dark:text-zinc-300"
+                >
+                    {cityOptions.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                    ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-3 text-zinc-400 pointer-events-none" />
             </div>
           </div>
         </div>
