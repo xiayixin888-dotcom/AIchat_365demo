@@ -1,92 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preview - AI 0305</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {},
-            },
-        }
-    </script>
-    <script>
-        window.onerror = function(message, source, lineno, colno, error) {
-            const errorDiv = document.createElement('div');
-            errorDiv.style.position = 'fixed';
-            errorDiv.style.top = '0';
-            errorDiv.style.left = '0';
-            errorDiv.style.width = '100%';
-            errorDiv.style.backgroundColor = '#fee2e2';
-            errorDiv.style.color = '#991b1b';
-            errorDiv.style.padding = '1rem';
-            errorDiv.style.zIndex = '9999';
-            errorDiv.style.borderBottom = '1px solid #f87171';
-            errorDiv.style.fontFamily = 'monospace';
-            errorDiv.style.whiteSpace = 'pre-wrap';
-            errorDiv.textContent = `Error: ${message}\nSource: ${source}:${lineno}:${colno}\nStack: ${error ? error.stack : 'N/A'}`;
-            document.body.appendChild(errorDiv);
-            console.error(error);
-        };
-        window.addEventListener('unhandledrejection', function(event) {
-            const errorDiv = document.createElement('div');
-            errorDiv.style.position = 'fixed';
-            errorDiv.style.top = '50%';
-            errorDiv.style.left = '0';
-            errorDiv.style.width = '100%';
-            errorDiv.style.backgroundColor = '#fef3c7';
-            errorDiv.style.color = '#92400e';
-            errorDiv.style.padding = '1rem';
-            errorDiv.style.zIndex = '9999';
-            errorDiv.style.borderBottom = '1px solid #fcd34d';
-            errorDiv.style.fontFamily = 'monospace';
-            errorDiv.style.whiteSpace = 'pre-wrap';
-            errorDiv.textContent = `Unhandled Rejection: ${event.reason}`;
-            document.body.appendChild(errorDiv);
-            console.error(event.reason);
-        });
-    </script>
-    <!-- Import Map -->
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.3.1?dev",
-            "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime?dev",
-            "react-dom/client": "https://esm.sh/react-dom@18.3.1/client?dev",
-            "lucide-react": "https://esm.sh/lucide-react@0.469.0?dev&external=react,react-dom",
-            "motion/react": "https://esm.sh/framer-motion@11.15.0?dev&external=react,react-dom",
-            "clsx": "https://esm.sh/clsx?dev",
-            "tailwind-merge": "https://esm.sh/tailwind-merge?dev"
-        }
-    }
-    </script>
-    <!-- Babel Standalone -->
-    <script src="https://fastly.jsdelivr.net/npm/@babel/standalone/babel.min.js" crossorigin></script>
-    
-    <!-- 埋点统计脚本示例 (请替换为实际的统计代码，如百度统计/Google Analytics) -->
-    <script>
-    var _hmt = _hmt || [];
-    (function() {
-      var hm = document.createElement("script");
-      hm.src = "https://hm.baidu.com/hm.js?d2452a4f1dbbda1051d8eaa3af70c96b";
-      var s = document.getElementsByTagName("script")[0]; 
-      s.parentNode.insertBefore(hm, s);
-    })();
-    </script>
-</head>
-<body class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 h-screen w-screen overflow-hidden">
-    <div id="root" class="h-full w-full"></div>
 
-    <!-- Main Entry -->
-    <script id="app-source" type="text/plain">
 // Consolidated Imports
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ArrowUp, AtSign, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, ChevronLeft, Circle, Clock, Copy, FileText, Filter, History, Image as ImageIcon, ListFilter, Loader2, Mail, MessageSquare, MoreHorizontal, Play, Plus, RefreshCw, Search, Send, Slash, Smile, Square, User, UserPlus, Users, X, Zap, LineChart, UserCircle, FolderPlus, Eye, Trash2, PanelLeftOpen, AlertCircle, Megaphone, Tag, Settings, LayoutGrid, Command, Image, FolderOpen, Flame, Heart, MessageCircle, Share2, ExternalLink, Compass } from 'lucide-react';
+import { ArrowUp, AtSign, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, ChevronLeft, Circle, Clock, Copy, FileText, Filter, History, Image as ImageIcon, ListFilter, Loader2, Mail, MessageSquare, MoreHorizontal, Play, Plus, RefreshCw, Search, Send, Slash, Square, User, UserPlus, Users, X, Zap, LineChart, UserCircle, FolderPlus, Eye, Trash2, PanelLeftOpen, AlertCircle, Megaphone, Tag, Settings, LayoutGrid, Command, Image, FolderOpen, Flame, Heart, MessageCircle, Share2, ExternalLink, Compass } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
 // --- Analytics Hook (埋点统计工具) ---
@@ -184,7 +100,6 @@ interface MomentComment {
     name: string;
     avatar: string;
     content: string;
-    image?: string;
     time: string;
     replyToName?: string; // Name of the person being replied to
     replyToId?: string;   // ID of the person being replied to
@@ -192,7 +107,6 @@ interface MomentComment {
 
 interface SimMoment {
     id: string;
-    groupId: string;
     accountId: string; // The enterprise account that posted this
     content: string;
     media: { 
@@ -1128,13 +1042,12 @@ interface MomentsViewProps {
     selectedMomentId: string | null;
     onSelectMoment: (id: string) => void;
     onOpenProfile: (userId: string) => void;
-    onSendMessage: (target: { userId: string; name: string; avatar?: string }) => void;
-    filter: 'all' | 'interacted';
+    onSendMessage: (userId: string) => void;
+    filter: 'all' | 'pending' | 'interacted' | 'replied';
     tabs?: WorkspaceTab[];
     setTabs?: React.Dispatch<React.SetStateAction<WorkspaceTab[]>>;
     setActiveTabId?: React.Dispatch<React.SetStateAction<string | null>>;
     setActiveModule?: React.Dispatch<React.SetStateAction<string>>;
-    customerProfiles?: Record<string, ChatCustomerProfile>;
 }
 
 const MomentsView: React.FC<MomentsViewProps> = ({ 
@@ -1148,26 +1061,20 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     tabs,
     setTabs,
     setActiveTabId,
-    setActiveModule,
-    customerProfiles
+    setActiveModule
 }) => {
-    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, userId: string, name: string, avatar?: string } | null>(null);
+    const [contextMenu, setContextMenu] = useState<{ x: number, y: number, userId: string } | null>(null);
+    const [activeDetailTab, setActiveDetailTab] = useState<'likes' | 'comments'>('likes');
     const [selectedLikers, setSelectedLikers] = useState<string[]>([]);
+    const [commentSearchQuery, setCommentSearchQuery] = useState('');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [replyingTo, setReplyingTo] = useState<{ accountId: string, commentId: string, userName: string, replyToId: string } | null>(null);
     const [replyContent, setReplyContent] = useState('');
     const [myLikes, setMyLikes] = useState<Record<string, boolean>>({});
     const [myComments, setMyComments] = useState<Record<string, string[]>>({});
     const [replyingToGroupId, setReplyingToGroupId] = useState<string | null>(null);
     const [groupReplyContent, setGroupReplyContent] = useState('');
-    const [selectedCustomer, setSelectedCustomer] = useState<{ userId: string, name: string, avatar?: string } | null>(null);
-    const [activeCustomerPanelTab, setActiveCustomerPanelTab] = useState<'客户档案' | '客户画像' | '客户行为'>('客户档案');
-    const [selectedMomentCity, setSelectedMomentCity] = useState('南京');
-    const [groupReplyImage, setGroupReplyImage] = useState<string | null>(null);
-    const [replyImage, setReplyImage] = useState<string | null>(null);
-    const [isGroupEmojiPickerOpen, setIsGroupEmojiPickerOpen] = useState(false);
-    const [isReplyEmojiPickerOpen, setIsReplyEmojiPickerOpen] = useState(false);
-    const groupReplyImageInputRef = React.useRef<HTMLInputElement>(null);
-    const replyImageInputRef = React.useRef<HTMLInputElement>(null);
+    const accountRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
     
     // Batch reply modal states
     const [isBatchReplyOpen, setIsBatchReplyOpen] = useState(false);
@@ -1177,10 +1084,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     // Added for new features
     const [commentSortBy, setCommentSortBy] = useState<'time' | 'heat'>('time');
     const [hoveredAccountId, setHoveredAccountId] = useState<string | null>(null);
-    const [selectedCommentAccountId, setSelectedCommentAccountId] = useState<string | null>(null);
     const [expandedContents, setExpandedContents] = useState<Record<string, boolean>>({});
-    const [contentOverflowMap, setContentOverflowMap] = useState<Record<string, boolean>>({});
-    const contentRefs = React.useRef<Record<string, HTMLParagraphElement | null>>({});
 
     // Custom hook to manage mock state updates for moments
     const [mockMomentsState, setMockMomentsState] = useState<SimMoment[]>(moments);
@@ -1194,33 +1098,9 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         }
     }, [moments]);
 
-    const isEnterpriseUserId = (userId?: string | null) => !!userId && (userId === 'me' || accounts.some(a => a.id === userId));
-    const getEnterpriseDisplayName = (userId?: string | null, fallbackName?: string) => {
-        if (userId === 'me') return accounts[0]?.name || fallbackName || '我';
-        const acc = accounts.find(a => a.id === userId);
-        return acc?.name || fallbackName || '';
-    };
-    const renderEnterpriseName = (
-        userId: string | null | undefined,
-        fallbackName: string,
-        textClassName = '',
-        badgeClassName = ''
-    ) => {
-        const displayName = getEnterpriseDisplayName(userId, fallbackName);
-        if (!isEnterpriseUserId(userId)) {
-            return <span className={textClassName}>{displayName}</span>;
-        }
-        return (
-            <span className="inline-flex items-baseline gap-0.5 min-w-0 max-w-full">
-                <span className={textClassName}>{displayName}</span>
-                <span className={`shrink-0 text-[#fb923c] ${badgeClassName}`}>@365淘房</span>
-            </span>
-        );
-    };
-
-    const handleContextMenu = (e: React.MouseEvent, userId: string, name: string, avatar?: string) => {
+    const handleContextMenu = (e: React.MouseEvent, userId: string) => {
         e.preventDefault();
-        setContextMenu({ x: e.clientX, y: e.clientY, userId, name, avatar });
+        setContextMenu({ x: e.clientX, y: e.clientY, userId });
     };
 
     const closeContextMenu = () => setContextMenu(null);
@@ -1251,8 +1131,8 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         }));
     };
 
-    const handleAddGroupComment = (content: string, text: string, image?: string | null) => {
-        if (!text.trim() && !image) return;
+    const handleAddGroupComment = (content: string, text: string) => {
+        if (!text.trim()) return;
         setMockMomentsState(prev => prev.map(m => {
             if (m.content === content) {
                 // Use the account name of the moment's creator if available, otherwise fallback to generic
@@ -1266,7 +1146,6 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                     name: userName,
                     avatar: userAvatar,
                     content: text.trim(),
-                    image: image || undefined,
                     time: '刚刚'
                 };
                 return { ...m, comments: [...(m.comments || []), newComment] };
@@ -1274,12 +1153,11 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             return m;
         }));
         setGroupReplyContent('');
-        setGroupReplyImage(null);
         setReplyingToGroupId(null);
     };
 
-    const handleAddReply = (momentId: string, replyToId: string, replyToName: string, text: string, image?: string | null) => {
-        if (!text.trim() && !image) return;
+    const handleAddReply = (momentId: string, replyToId: string, replyToName: string, text: string) => {
+        if (!text.trim()) return;
         setMockMomentsState(prev => prev.map(m => {
             if (m.id === momentId) {
                 const account = accounts.find(a => a.id === m.accountId);
@@ -1292,7 +1170,6 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                     name: userName,
                     avatar: userAvatar,
                     content: text.trim(),
-                    image: image || undefined,
                     time: '刚刚',
                     replyToId,
                     replyToName
@@ -1303,140 +1180,43 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         }));
         setReplyingTo(null);
         setReplyContent('');
-        setReplyImage(null);
-    };
-
-    const parseDateTime = (value: string) => {
-        const date = new Date(value.replace(/-/g, '/'));
-        return Number.isNaN(date.getTime()) ? new Date() : date;
-    };
-
-    const formatMomentLeftDate = (value: string) => {
-        const date = parseDateTime(value);
-        return {
-            day: String(date.getDate()).padStart(2, '0'),
-            month: `${date.getMonth() + 1}月`
-        };
-    };
-
-    const formatMomentFullTime = (value: string) => {
-        const date = parseDateTime(value);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day} ${hours}:${minutes}`;
     };
 
     // Group moments by content
     const groupedMoments = React.useMemo(() => {
-        const groups: {
-            content: string;
-            groupId: string;
-            moments: SimMoment[];
-            latestTime: string;
-            media: any[];
-            publisherAccounts: EnterpriseAccount[];
-            pendingLikesCount: number;
-            pendingCommentsCount: number;
-            dateKey: string;
-        }[] = [];
-        const seenGroupIds = new Set<string>();
-        const isCompanyUser = (userId: string) => accounts.some(a => a.id === userId) || userId === 'me';
+        const groups: { content: string, moments: SimMoment[], latestTime: string, media: any[] }[] = [];
+        const seenContents = new Set<string>();
+        
+        // Filter moments based on active filter
+        const filteredMoments = mockMomentsState.filter(m => {
+            if (filter === 'all') return true;
+            if (filter === 'pending') {
+                // Pending interactions: has likes or comments from users, but no comments/replies from enterprise accounts
+                const hasUserInteractions = (m.likes && m.likes.length > 0) || (m.comments && m.comments.length > 0);
+                const hasEnterpriseReply = m.comments?.some(c => accounts.some(a => a.id === c.userId) || c.userId === 'me');
+                return hasUserInteractions && !hasEnterpriseReply;
+            }
+            if (filter === 'interacted') return m.likes?.length > 0 || m.comments?.length > 0;
+            if (filter === 'replied') {
+                return m.comments?.some(c => accounts.some(a => a.id === c.userId));
+            }
+            return true;
+        });
 
-        mockMomentsState.forEach(m => {
-            if (seenGroupIds.has(m.groupId)) return;
-            seenGroupIds.add(m.groupId);
-
-            const related = mockMomentsState.filter(rm => rm.groupId === m.groupId);
-            const sortedRelated = [...related].sort((a, b) => parseDateTime(b.time).getTime() - parseDateTime(a.time).getTime());
-            const latestMoment = sortedRelated[0];
-            const customerCommentUserIds = new Set<string>();
-            const pendingCommentIds = new Set<string>();
-
-            related.forEach(momentItem => {
-                (momentItem.comments || []).forEach((comment, index, comments) => {
-                    if (isCompanyUser(comment.userId)) return;
-                    customerCommentUserIds.add(comment.userId);
-                    const nextCompanyReply = comments.slice(index + 1).find(next => (
-                        isCompanyUser(next.userId) &&
-                        (next.replyToId === comment.userId || (comment.replyToId && next.replyToId === comment.replyToId))
-                    ));
-                    if (!nextCompanyReply) {
-                        pendingCommentIds.add(comment.id);
-                    }
+        filteredMoments.forEach(m => {
+            if (!seenContents.has(m.content)) {
+                seenContents.add(m.content);
+                const related = filteredMoments.filter(rm => rm.content === m.content);
+                groups.push({
+                    content: m.content,
+                    moments: related,
+                    latestTime: related[0].time, // assuming sorted
+                    media: related[0].media
                 });
-            });
-
-            const pendingLikesCount = Array.from(new Map(
-                related
-                    .flatMap(momentItem => momentItem.likes || [])
-                    .filter(like => !isCompanyUser(like.userId) && !customerCommentUserIds.has(like.userId))
-                    .map(like => [like.userId, like])
-            ).values()).length;
-
-            const publisherAccounts = Array.from(new Map(
-                related
-                    .map(momentItem => accounts.find(acc => acc.id === momentItem.accountId))
-                    .filter(Boolean)
-                    .map(acc => [acc!.id, acc!])
-            ).values());
-
-            const groupItem = {
-                content: latestMoment.content,
-                groupId: latestMoment.groupId,
-                moments: related,
-                latestTime: latestMoment.time,
-                media: latestMoment.media,
-                publisherAccounts,
-                pendingLikesCount,
-                pendingCommentsCount: pendingCommentIds.size,
-                dateKey: formatMomentFullTime(latestMoment.time).slice(0, 10)
-            };
-
-            const matchCity = selectedMomentCity === '全部' || groupItem.publisherAccounts.some(account => account.city === selectedMomentCity);
-            if (matchCity && (filter === 'all' || (groupItem.pendingLikesCount > 0 || groupItem.pendingCommentsCount > 0))) {
-                groups.push(groupItem);
             }
         });
-
-        return groups.sort((a, b) => parseDateTime(b.latestTime).getTime() - parseDateTime(a.latestTime).getTime());
-    }, [mockMomentsState, filter, accounts, selectedMomentCity]);
-
-    useEffect(() => {
-        const nextOverflowMap: Record<string, boolean> = {};
-
-        groupedMoments.forEach(group => {
-            const element = contentRefs.current[group.groupId];
-            if (!element || element.clientWidth === 0) return;
-
-            const computedStyle = window.getComputedStyle(element);
-            const clone = element.cloneNode(true) as HTMLParagraphElement;
-            clone.style.position = 'fixed';
-            clone.style.left = '-9999px';
-            clone.style.top = '0';
-            clone.style.visibility = 'hidden';
-            clone.style.pointerEvents = 'none';
-            clone.style.width = `${element.clientWidth}px`;
-            clone.style.display = 'block';
-            clone.style.webkitLineClamp = 'unset';
-            clone.style.webkitBoxOrient = 'unset';
-            clone.style.overflow = 'visible';
-            clone.style.maxHeight = 'none';
-            clone.style.whiteSpace = 'normal';
-
-            document.body.appendChild(clone);
-
-            const lineHeight = parseFloat(computedStyle.lineHeight) || parseFloat(computedStyle.fontSize) * 1.5;
-            const maxFiveLinesHeight = lineHeight * 5 + 1;
-            nextOverflowMap[group.groupId] = clone.scrollHeight > maxFiveLinesHeight;
-
-            document.body.removeChild(clone);
-        });
-
-        setContentOverflowMap(nextOverflowMap);
-    }, [groupedMoments]);
+        return groups;
+    }, [mockMomentsState, filter, accounts]);
 
     const selectedMoment = mockMomentsState.find(m => m.id === selectedMomentId);
     const selectedContent = selectedMoment?.content;
@@ -1450,7 +1230,6 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         const seenUserIds = new Set<string>();
         relatedMoments.forEach(m => {
             m.likes?.forEach(like => {
-                if (isEnterpriseUserId(like.userId)) return;
                 if (!seenUserIds.has(like.userId)) {
                     seenUserIds.add(like.userId);
                     likes.push(like);
@@ -1458,7 +1237,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             });
         });
         return likes;
-    }, [relatedMoments, accounts]);
+    }, [relatedMoments]);
 
     const aggregatedComments = React.useMemo(() => {
         const comments: MomentComment[] = [];
@@ -1499,18 +1278,19 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             
             rootComments.forEach(root => {
                 const isAccount = accounts.some(a => a.id === root.userId) || root.userId === 'me';
-
+                
                 // For a given root comment, find its replies.
                 // If it's a customer root, replies are comments that have replyToId === root.userId
                 // If it's an employee root, same thing.
                 const replies = momentComments.filter(c => c.replyToId === root.userId);
-
-                // Hide enterprise-only self comments; keep them only when customers join the thread.
-                const hasCustomerReply = replies.some(reply => !isEnterpriseUserId(reply.userId));
-                if (isAccount && !hasCustomerReply) {
-                    return;
-                }
-
+                
+                // If it's an employee root comment (self comment) AND it has no replies,
+                // we should ONLY show it if it's the current user's action or if we want to show all.
+                // Wait, user asked: "右侧评论区，我评论了自己的朋友圈，有重复的用户回复展示...不需要重复的用户回复内容"
+                // The issue was earlier we were pulling all replies for the moment and misattributing them.
+                // Now replies are strictly filtered by replyToId === root.userId.
+                // This means employee root comments will correctly only show replies actually replying to them.
+                
                 threads.push({
                     id: `${m.id}-${root.id}`,
                     momentId: m.id,
@@ -1527,9 +1307,6 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     const sortedCommentThreads = React.useMemo(() => {
         const parseTime = (timeStr: string) => {
             if (!timeStr || timeStr === '刚刚') return 0; // '刚刚' -> 0 (most recent)
-            if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/.test(timeStr)) {
-                return parseDateTime(timeStr).getTime();
-            }
             const match = timeStr.match(/([\d.]+)/);
             const val = match ? parseFloat(match[1]) : 0;
             if (timeStr.includes('分钟')) return val * 60;
@@ -1543,9 +1320,9 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                 // Find most recent time in thread
                 const getLatestTime = (thread: typeof a) => {
                     const times = [parseTime(thread.rootComment.time), ...thread.replies.map(r => parseTime(r.time))];
-                    return Math.max(...times);
+                    return Math.min(...times);
                 };
-                return getLatestTime(b) - getLatestTime(a);
+                return getLatestTime(a) - getLatestTime(b); // Ascending, smaller value = more recent
             } else {
                 // Sort by heat (number of replies + 1 for root)
                 const heatA = 1 + a.replies.length;
@@ -1554,97 +1331,6 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             }
         });
     }, [commentThreads, commentSortBy]);
-
-    const commentAccountOptions = React.useMemo(() => {
-        const seen = new Set<string>();
-        return sortedCommentThreads.reduce<EnterpriseAccount[]>((list, thread) => {
-            if (!thread.account || seen.has(thread.account.id)) return list;
-            seen.add(thread.account.id);
-            list.push(thread.account);
-            return list;
-        }, []);
-    }, [sortedCommentThreads]);
-
-    useEffect(() => {
-        if (selectedCommentAccountId && !commentAccountOptions.some(acc => acc.id === selectedCommentAccountId)) {
-            setSelectedCommentAccountId(null);
-        }
-    }, [commentAccountOptions, selectedCommentAccountId]);
-
-    useEffect(() => {
-        setSelectedLikers(prev => prev.filter(userId => aggregatedLikes.some(like => like.userId === userId)));
-    }, [aggregatedLikes]);
-
-    const filteredCommentThreads = React.useMemo(() => {
-        if (!selectedCommentAccountId) return sortedCommentThreads;
-        return sortedCommentThreads.filter(thread => thread.account?.id === selectedCommentAccountId);
-    }, [sortedCommentThreads, selectedCommentAccountId]);
-
-    const visibleCommentCount = React.useMemo(
-        () => filteredCommentThreads.reduce((acc, thread) => acc + 1 + thread.replies.length, 0),
-        [filteredCommentThreads]
-    );
-
-    const openCustomerPanel = (userId: string, name: string, avatar?: string) => {
-        setSelectedCustomer({ userId, name, avatar });
-        setActiveCustomerPanelTab('客户档案');
-    };
-
-    const selectedCustomerProfile = React.useMemo(() => {
-        if (!selectedCustomer) return null;
-        const profile = Object.values(customerProfiles || {}).find(item => (
-            item.id788 === selectedCustomer.userId || item.name === selectedCustomer.name
-        ));
-        return profile || {
-            name: selectedCustomer.name,
-            source: '微信',
-            status: '已跟进',
-            subtitle: '正常用户',
-            phone: '135****0000',
-            baseId: '576506933939630400',
-            unionid: 'obS_rtQh4CcTdM8QJi0...',
-            id788: selectedCustomer.userId,
-            ch: 'ch**00',
-            abnormalTag: null,
-            isBlacklisted: false,
-            blacklistReason: '',
-            receptionStatus: 'AI'
-        };
-    }, [selectedCustomer, customerProfiles]);
-
-    const customerPanelTabs = ['客户档案', '客户画像', '客户行为'] as const;
-    const customerArchiveFields = selectedCustomerProfile ? [
-        { label: '意向区域', value: '梁溪区，民丰板块，新桥花园，新吴区，江溪板块，国信世家溪园，山北板块，城西花园，北大街，大华锦绣城，世茂首府，前进花园，曹巷板块，凤宾家园', tag: '固定', time: '2026-05-06 10:11:26' },
-        { label: '意向购房面积/户型', value: '134.18平，3室2厅2卫，136.71平，带院子+阳光房，128.06平，3房2厅2卫，140平，142.46平，3房2厅2卫，大平层，127平，3房，124平', tag: '固定', time: '2026-05-06 10:11:26' },
-        { label: '装修状态偏好', value: '毛坯，精装', tag: '固定', time: '2026-03-10 10:57:21' },
-        { label: '物业偏好', value: '住宅', tag: '固定', time: '2026-02-25 13:37:24' },
-        { label: '用户交易偏好', value: '买房', tag: '固定', time: '2025-12-04 11:52:19' }
-    ] : [];
-    const customerPortraitBaseInfo = selectedCustomerProfile ? [
-        { label: '手机号码', value: selectedCustomerProfile.phone || '189****8666', copyable: true },
-        { label: 'base_id', value: selectedCustomerProfile.baseId || '172952193421911697', copyable: true },
-        { label: 'unionid', value: selectedCustomerProfile.unionid || 'obS_rt2d_NDALZvQRS...', copyable: true },
-        { label: '788ID', value: selectedCustomerProfile.id788 || selectedCustomer?.userId || '7881299921083644', copyable: true },
-        { label: '语义手机号(2)', value: '139****8666', copyable: false }
-    ] : [];
-    const customerPortraitTagGroups = [
-        { title: '语料识别-总价偏好', tags: ['150万-200万'] },
-        { title: '语料识别-新房板块偏好', tags: ['无锡-梁溪区-火车站'] },
-        { title: '语料识别-面积偏好', tags: ['120-140㎡', '140-160㎡'] },
-        { title: '语料识别-业务偏好', tags: ['新房', '二手房'] },
-        { title: 'CDP标签', tags: ['新房_总价偏好_300-350万元', '板块偏好_府南-wx-480-93，砺成-wx-420-52', '业务偏好_新房'] }
-    ];
-    const customerFollowupNotes = [
-        { time: '2026-05-05 15:14:30', content: '5.5朋友圈前进花园' },
-        { time: '2026-05-02 14:58:47', content: '5.2朋友圈蔚蓝观邸' }
-    ];
-    const customerBehaviorItems = selectedCustomerProfile ? [
-        { title: '页面浏览-特价房列表-13秒', time: '2026-04-06 10:31:49', desc: '吉宝季景铭邸，141.0万-490.0万/98.0㎡-265.0㎡' },
-        { title: '页面浏览-楼盘详情页-6秒', time: '2026-04-03 23:45:37', desc: '深巷壹号，新吴区/工博园，48.0万-124.0万/44.0㎡-106.0㎡' },
-        { title: '页面浏览-特价房列表-3秒', time: '2026-04-03 23:45:30', desc: '深巷壹号，48.0万-124.0万/44.0㎡-106.0㎡' },
-        { title: '点击咨询-新房-特价房列表', time: '2026-04-03 23:45:12', desc: '深巷壹号' },
-        { title: '页面浏览-特价房列表-9秒', time: '2026-03-27 23:13:45', desc: '长江国际，60.0万-160.0万/47.0㎡-155.0㎡' }
-    ] : [];
 
     const renderContent = (text: string) => {
         const urlRegex = /(https?:\/\/[^\s]+|#小程序:\/\/[^\s]+)/g;
@@ -1667,390 +1353,201 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         });
     };
 
-    const readImageAsDataUrl = (file: File, onLoad: (result: string) => void) => {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            if (typeof ev.target?.result === 'string') {
-                onLoad(ev.target.result);
-            }
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const appendEmoji = (setter: React.Dispatch<React.SetStateAction<string>>, emoji: string) => {
-        setter(prev => `${prev}${emoji}`);
-    };
-
-    const momentEmojiList = ['😀', '😁', '😂', '🤣', '😊', '😍', '😘', '🤔', '😭', '😎', '👍', '🙏', '🎉', '❤️', '🔥', '🏠'];
-
-    const getCommentSortValue = (time: string) => {
-        if (!time || time === '刚刚') return Date.now();
-        if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/.test(time)) {
-            return parseDateTime(time).getTime();
-        }
-        const match = time.match(/([\d.]+)/);
-        const value = match ? parseFloat(match[1]) : 0;
-        if (time.includes('分钟')) return Date.now() - value * 60 * 1000;
-        if (time.includes('小时')) return Date.now() - value * 3600 * 1000;
-        if (time.includes('天')) return Date.now() - value * 86400 * 1000;
-        return 0;
-    };
-
     return (
         <div className="flex h-full w-full overflow-hidden bg-white" onClick={closeContextMenu}>
             {/* 3rd Column: Moments List */}
-            <div className="w-[540px] min-w-[540px] border-r border-slate-200 flex flex-col bg-[#f8fafc] overflow-x-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-white">
-                    <div className="flex items-center justify-between gap-3">
-                        <h3 className="font-bold text-slate-800">朋友圈动态</h3>
-                        <div className="relative">
-                            <select
-                                value={selectedMomentCity}
-                                onChange={(e) => setSelectedMomentCity(e.target.value)}
-                                className="appearance-none bg-slate-50 border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
-                            >
-                                {['南京', '无锡', '苏州', '合肥', '芜湖', '西安'].map(city => (
-                                    <option key={city} value={city}>{city}</option>
-                                ))}
-                            </select>
-                            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                        </div>
-                    </div>
+            <div className="w-[420px] border-r border-slate-200 flex flex-col bg-[#f8fafc]">
+                <div className="h-16 flex items-center px-6 border-b border-slate-100 bg-white">
+                    <h3 className="font-bold text-slate-800">朋友圈动态</h3>
                 </div>
-                <div className="flex-1 overflow-y-auto px-3 py-5 space-y-5">
+                <div className="flex-1 overflow-y-auto p-3 space-y-3">
                     {groupedMoments.map((group) => {
                         const isActive = selectedMoment?.content === group.content;
-                        const leftDate = formatMomentLeftDate(group.latestTime);
-                        const visiblePublisherAccounts = group.publisherAccounts.slice(0, 1);
-                        const publisherSuffix = group.publisherAccounts.length > 1
-                            ? `等${group.publisherAccounts.length}个账号发布`
-                            : '发布';
                         return (
-                            <React.Fragment key={group.groupId}>
-                                <div className="flex gap-3 items-start">
-                                    <div className="w-[56px] shrink-0 pt-2 text-right">
-                                        <div className="text-[28px] leading-none font-bold text-slate-900">{leftDate.day}</div>
-                                        <div className="text-sm text-slate-500 mt-1">{leftDate.month}</div>
-                                        {filter === 'interacted' && (group.pendingLikesCount > 0 || group.pendingCommentsCount > 0) && (
-                                            <div className="mt-2 flex flex-col items-end gap-1">
-                                                {group.pendingLikesCount > 0 && (
-                                                    <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 shadow-sm">
-                                                        <Heart size={12} className="fill-current" />
-                                                        <span className="text-[12px] font-bold leading-none">+{group.pendingLikesCount}</span>
-                                                    </div>
-                                                )}
-                                                {group.pendingCommentsCount > 0 && (
-                                                    <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100 shadow-sm">
-                                                        <MessageCircle size={12} />
-                                                        <span className="text-[12px] font-bold leading-none">+{group.pendingCommentsCount}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div
-                                        onClick={() => {
-                                            onSelectMoment(group.moments[0].id);
-                                        }}
-                                        className={`flex-1 min-w-0 text-left p-4 rounded-2xl transition-all duration-200 group cursor-pointer bg-white border border-slate-200
-                                            ${isActive
-                                                ? 'shadow-md ring-1 ring-blue-100 border-blue-100'
-                                                : 'hover:shadow-sm hover:border-slate-300'}`}
-                                    >
-                                        <div className="flex items-start justify-between gap-3 mb-2">
-                                            <div className="text-[11px] font-medium text-slate-400">ID：{group.groupId}</div>
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <div className="text-xs text-slate-400">{formatMomentFullTime(group.latestTime)}</div>
-                                            </div>
-                                        </div>
-
-                                        <div className="mb-3">
-                                            <div className="relative min-w-0 group/publisher">
-                                                <div className="flex items-center gap-0.5 min-w-0 max-w-[300px] text-[12px] whitespace-nowrap overflow-hidden">
-                                                    <span className="truncate min-w-0 font-semibold text-indigo-600 inline-flex items-center gap-0.5 overflow-hidden">
-                                                        {visiblePublisherAccounts.map((account, index) => (
-                                                            <React.Fragment key={account.id}>
-                                                                {index > 0 && <span className="text-slate-400">、</span>}
-                                                                {renderEnterpriseName(account.id, account.name, 'truncate min-w-0', 'text-[12px]')}
-                                                            </React.Fragment>
-                                                        ))}
-                                                    </span>
-                                                    <span className="shrink-0 whitespace-nowrap text-slate-500">{publisherSuffix}</span>
-                                                </div>
-                                                <div className="absolute left-0 top-[calc(100%+8px)] hidden group-hover/publisher:block z-20 w-64 bg-white border border-slate-200 rounded-xl shadow-xl p-2">
-                                                    <div className="text-[11px] text-slate-400 px-2 py-1">发布账号列表</div>
-                                                    {group.publisherAccounts.map(account => (
-                                                        <div key={account.id} className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50">
-                                                            <img src={account.avatar} className="w-6 h-6 rounded-md border border-slate-200" alt="" />
-                                                            {renderEnterpriseName(account.id, account.name, 'text-xs font-semibold text-indigo-600', 'text-[12px]')}
-                                                            <span className="text-[10px] text-slate-500 ml-auto px-1.5 py-0.5 rounded bg-slate-100">{account.city}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="relative mb-3">
-                                            <p
-                                                ref={(node) => { contentRefs.current[group.groupId] = node; }}
-                                                className={`text-[15px] text-slate-700 leading-relaxed ${!expandedContents[group.groupId] ? 'line-clamp-5' : ''}`}
-                                                title={!expandedContents[group.groupId] ? group.content : undefined}
+                            <div
+                                key={group.moments[0].id}
+                                onClick={() => onSelectMoment(group.moments[0].id)}
+                                className={`w-full text-left p-4 rounded-2xl transition-all duration-200 group cursor-pointer
+                                    ${isActive 
+                                        ? 'bg-white shadow-md ring-1 ring-blue-100' 
+                                        : 'hover:bg-white hover:shadow-sm'}`}
+                            >
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{group.latestTime}</span>
+                                </div>
+                                <div className="relative mb-3">
+                                    <p className={`text-[15px] text-slate-700 leading-relaxed ${!expandedContents[group.content] ? 'line-clamp-4' : ''}`} title={!expandedContents[group.content] ? group.content : undefined}>
+                                        {renderContent(group.content)}
+                                    </p>
+                                    {group.content.length > 80 && (
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setExpandedContents(prev => ({
+                                                    ...prev,
+                                                    [group.content]: !prev[group.content]
+                                                }));
+                                            }}
+                                            className="text-[13px] text-[#576b95] font-medium mt-1 hover:opacity-80 transition-opacity"
+                                        >
+                                            {expandedContents[group.content] ? '收起' : '全文'}
+                                        </button>
+                                    )}
+                                </div>
+                                {group.media.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 overflow-hidden rounded-lg" onClick={(e) => e.stopPropagation()}>
+                                        {group.media.slice(0, expandedContents[group.content] ? undefined : 3).map((item, idx) => (
+                                            <div 
+                                                key={idx} 
+                                                className={`relative bg-slate-100 ${group.media.length === 1 ? 'w-full h-32' : group.media.length === 2 || (expandedContents[group.content] && group.media.length === 4) ? 'w-[calc(50%-2px)] aspect-square' : 'w-[calc(33.333%-3px)] aspect-square'}`}
                                             >
-                                                {renderContent(group.content)}
-                                            </p>
-                                            {contentOverflowMap[group.groupId] && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setExpandedContents(prev => ({
-                                                            ...prev,
-                                                            [group.groupId]: !prev[group.groupId]
-                                                        }));
-                                                    }}
-                                                    className="text-[13px] text-[#576b95] font-medium mt-1 hover:opacity-80 transition-opacity"
-                                                >
-                                                    {expandedContents[group.groupId] ? '收起' : '全文'}
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {group.media.length > 0 && (
-                                            <div className="flex flex-wrap gap-1 overflow-hidden rounded-lg" onClick={(e) => e.stopPropagation()}>
-                                                {group.media.slice(0, expandedContents[group.groupId] ? undefined : 3).map((item, idx) => (
-                                                    <div
-                                                        key={idx}
-                                                        className={`relative bg-slate-100 ${group.media.length === 1 ? 'w-full h-32' : group.media.length === 2 || (expandedContents[group.groupId] && group.media.length === 4) ? 'w-[calc(50%-2px)] aspect-square' : 'w-[calc(33.333%-3px)] aspect-square'}`}
+                                                <img src={item.url} referrerPolicy="no-referrer" className="w-full h-full object-cover rounded-sm cursor-zoom-in" alt="" />
+                                                {(item.type === 'video' || item.type === 'channels') && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-sm">
+                                                        <Play size={20} className="text-white fill-current" />
+                                                    </div>
+                                                )}
+                                                {!expandedContents[group.content] && idx === 2 && group.media.length > 3 && (
+                                                    <div 
+                                                        className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white cursor-pointer rounded-sm hover:bg-black/40 transition-colors"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setExpandedContents(prev => ({
+                                                                ...prev,
+                                                                [group.content]: true
+                                                            }));
+                                                        }}
                                                     >
-                                                        <img src={item.url} referrerPolicy="no-referrer" className="w-full h-full object-cover rounded-sm cursor-zoom-in" alt="" />
-                                                        {(item.type === 'video' || item.type === 'channels') && (
-                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-sm">
-                                                                <Play size={20} className="text-white fill-current" />
-                                                            </div>
-                                                        )}
-                                                        {!expandedContents[group.groupId] && idx === 2 && group.media.length > 3 && (
-                                                            <div
-                                                                className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white cursor-pointer rounded-sm hover:bg-black/40 transition-colors"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setExpandedContents(prev => ({
-                                                                        ...prev,
-                                                                        [group.groupId]: true
-                                                                    }));
-                                                                }}
-                                                            >
-                                                                <span className="text-xl font-bold">+{group.media.length - 3}</span>
-                                                            </div>
-                                                        )}
+                                                        <span className="text-xl font-bold">+{group.media.length - 3}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                
+                                {/* Self Actions Section */}
+                                <div className="mt-4 flex flex-col gap-2" onClick={e => e.stopPropagation()}>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => handleToggleLike(group.content)}
+                                            className={`flex-1 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors border ${group.moments.some(m => {
+                                                const accId = m.accountId || 'me';
+                                                return m.likes?.some(l => l.userId === accId);
+                                            }) ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-inner' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border-slate-200/60'}`}
+                                        >
+                                            <Heart size={14} className={group.moments.some(m => {
+                                                const accId = m.accountId || 'me';
+                                                return m.likes?.some(l => l.userId === accId);
+                                            }) ? 'fill-current' : ''} />
+                                            {group.moments.some(m => {
+                                                const accId = m.accountId || 'me';
+                                                return m.likes?.some(l => l.userId === accId);
+                                            }) ? '已点赞' : '点赞'}
+                                            {(() => {
+                                                const likesCount = group.moments.reduce((acc, m) => acc + (m.likes?.length || 0), 0);
+                                                return likesCount > 0 ? <span className="ml-1 text-[11px] font-bold">({likesCount})</span> : null;
+                                            })()}
+                                        </button>
+                                        
+                                        <button 
+                                            onClick={() => setReplyingToGroupId(replyingToGroupId === group.content ? null : group.content)}
+                                            className="flex-1 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors border border-slate-200/60"
+                                        >
+                                            <MessageCircle size={14} />
+                                            评论
+                                            {(() => {
+                                                const commentsCount = group.moments.reduce((acc, m) => acc + (m.comments?.length || 0), 0);
+                                                return commentsCount > 0 ? <span className="ml-1 text-[11px] font-bold">({commentsCount})</span> : null;
+                                            })()}
+                                        </button>
+                                    </div>
+
+                                    {/* Input section */}
+                                    <AnimatePresence>
+                                        {replyingToGroupId === group.content && (
+                                            <motion.div 
+                                                initial={{ height: 0, opacity: 0 }} 
+                                                animate={{ height: 'auto', opacity: 1 }} 
+                                                exit={{ height: 0, opacity: 0 }}
+                                                className="overflow-hidden mt-1"
+                                            >
+                                               <div className="flex gap-2 items-center bg-slate-50 border border-slate-200 rounded-lg pr-1">
+                                                   <input 
+                                                     autoFocus
+                                                     type="text" 
+                                                     value={groupReplyContent}
+                                                     onChange={e => setGroupReplyContent(e.target.value)}
+                                                     placeholder="输入评论内容..."
+                                                     className="flex-1 text-xs bg-transparent px-3 py-2 outline-none"
+                                                     onKeyDown={e => {
+                                                         if (e.key === 'Enter' && groupReplyContent.trim()) {
+                                                             handleAddGroupComment(group.content, groupReplyContent);
+                                                         }
+                                                     }}
+                                                   />
+                                                   <button 
+                                                    disabled={!groupReplyContent.trim()}
+                                                    onClick={() => handleAddGroupComment(group.content, groupReplyContent)}
+                                                    className="w-6 h-6 flex items-center justify-center bg-blue-600 text-white rounded-md disabled:opacity-50"
+                                                   >
+                                                      <Share2 size={12} />
+                                                   </button>
+                                               </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                
+                                    {/* Display My Comments */}
+                                    {(() => {
+                                        // Find all root comments by me or company accounts
+                                        const myRootComments = group.moments.flatMap(m => m.comments || []).filter(c => (c.userId === 'me' || accounts.some(a => a.id === c.userId)) && !c.replyToId);
+                                        if (myRootComments.length === 0) return null;
+                                        
+                                        // Group consecutive comments by ALL users (me + company) for a cleaner display
+                                        // Wait, the requirement was: "如果为自己多条评论的情况下，也是这样展示，但是需要再增加一条评论...展示样式为：客服1、客服2、客服3:你好"
+                                        // Ah, I see! "客服1、客服2、客服3:你好" means: if multiple employees commented the exact same text, or just grouping them?
+                                        // Let's read carefully: "一个朋友圈内容可能有很多客服一起发出，这样平铺展示也不太好，希望展示样式为：'客服1、客服2、客服3:你好'，其中客服1、客服2、客服3对应具体的客服昵称。如果为自己多条评论的情况下，也是这样展示，但是需要再增加一条评论。"
+                                        // This means we should group by CONTENT, not by author! If 3 authors say "你好", it shows "A, B, C: 你好".
+                                        // If I say "你好" and "哈哈", it should show "我: 你好" and "我: 哈哈".
+                                        
+                                        const groupedByContent: { content: string, authors: { id: string, name: string }[] }[] = [];
+                                        
+                                        myRootComments.forEach(c => {
+                                            // Check if ANY group has the same content, to group ALL identical comments regardless of order
+                                            const existingGroup = groupedByContent.find(g => g.content === c.content);
+                                            if (existingGroup) {
+                                                // Add author if not already in the list for this exact same content
+                                                if (!existingGroup.authors.some(a => a.id === c.userId)) {
+                                                    existingGroup.authors.push({ id: c.userId, name: c.name });
+                                                }
+                                            } else {
+                                                groupedByContent.push({ 
+                                                    content: c.content, 
+                                                    authors: [{ id: c.userId, name: c.name }] 
+                                                });
+                                            }
+                                        });
+                                        
+                                        return (
+                                            <div className="flex flex-col gap-1 mt-2">
+                                                {groupedByContent.map((group, idx) => (
+                                                    <div 
+                                                        key={`content-group-${idx}`}
+                                                        className="bg-slate-50/80 hover:bg-slate-100 rounded-lg p-2.5 text-[13px] text-slate-600 break-words whitespace-normal border border-slate-100 flex items-start gap-1 transition-colors"
+                                                    >
+                                                        <span className="font-bold text-slate-700 whitespace-nowrap shrink-0 mt-0.5 flex items-center">
+                                                            <MessageCircle size={14} className="mr-1.5 text-blue-500" />
+                                                            {group.authors.map(a => a.name).join('、')}: 
+                                                        </span>
+                                                        <span className="leading-relaxed mt-0.5">{group.content}</span>
                                                     </div>
                                                 ))}
                                             </div>
-                                        )}
-
-                                        <div className="mt-4 flex flex-col gap-2" onClick={e => e.stopPropagation()}>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => handleToggleLike(group.content)}
-                                                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors border ${group.moments.some(m => {
-                                                        const accId = m.accountId || 'me';
-                                                        return m.likes?.some(l => l.userId === accId);
-                                                    }) ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-inner' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border-slate-200/60'}`}
-                                                >
-                                                    <Heart size={14} className={group.moments.some(m => {
-                                                        const accId = m.accountId || 'me';
-                                                        return m.likes?.some(l => l.userId === accId);
-                                                    }) ? 'fill-current' : ''} />
-                                                    {group.moments.some(m => {
-                                                        const accId = m.accountId || 'me';
-                                                        return m.likes?.some(l => l.userId === accId);
-                                                    }) ? '已点赞' : '点赞'}
-                                                    {(() => {
-                                                        const likesCount = group.moments.reduce((acc, m) => acc + (m.likes?.length || 0), 0);
-                                                        return likesCount > 0 ? <span className="ml-1 text-[12px] font-bold">({likesCount})</span> : null;
-                                                    })()}
-                                                </button>
-
-                                                <button
-                                                    onClick={() => setReplyingToGroupId(replyingToGroupId === group.content ? null : group.content)}
-                                                    className="flex-1 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors border border-slate-200/60"
-                                                >
-                                                    <MessageCircle size={14} />
-                                                    评论
-                                                    {(() => {
-                                                        const commentsCount = group.moments.reduce((acc, m) => acc + (m.comments?.length || 0), 0);
-                                                        return commentsCount > 0 ? <span className="ml-1 text-[12px] font-bold">({commentsCount})</span> : null;
-                                                    })()}
-                                                </button>
-                                            </div>
-
-                                            {(() => {
-                                                const myRootComments = group.moments
-                                                    .flatMap(m => m.comments || [])
-                                                    .filter(c => (c.userId === 'me' || accounts.some(a => a.id === c.userId)) && !c.replyToId)
-                                                    .sort((a, b) => getCommentSortValue(a.time) - getCommentSortValue(b.time));
-                                                if (myRootComments.length === 0) return null;
-
-                                                const groupedByContent: { content: string, image?: string, authors: { id: string, name: string }[], latestOrder: number, latestIndex: number }[] = [];
-
-                                                myRootComments.forEach((c, idx) => {
-                                                    const existingGroup = groupedByContent.find(g => g.content === c.content && g.image === c.image);
-                                                    if (existingGroup) {
-                                                        if (!existingGroup.authors.some(a => a.id === c.userId)) {
-                                                            existingGroup.authors.push({ id: c.userId, name: c.name });
-                                                        }
-                                                        existingGroup.latestOrder = getCommentSortValue(c.time);
-                                                        existingGroup.latestIndex = idx;
-                                                    } else {
-                                                        groupedByContent.push({
-                                                            content: c.content,
-                                                            image: c.image,
-                                                            authors: [{ id: c.userId, name: c.name }],
-                                                            latestOrder: getCommentSortValue(c.time),
-                                                            latestIndex: idx
-                                                        });
-                                                    }
-                                                });
-
-                                                return (
-                                                    <div className="flex flex-col gap-1 mt-2">
-                                                        {groupedByContent
-                                                            .sort((a, b) => a.latestOrder === b.latestOrder ? a.latestIndex - b.latestIndex : a.latestOrder - b.latestOrder)
-                                                            .map((commentGroup, idx) => (
-                                                            <div
-                                                                key={`content-group-${idx}`}
-                                                                className="bg-slate-50/80 hover:bg-slate-100 rounded-lg p-2.5 text-[13px] text-slate-600 break-words whitespace-normal border border-slate-100 flex items-start gap-1 transition-colors"
-                                                            >
-                                                                <span className="font-bold text-slate-700 mt-0.5 flex items-center flex-wrap leading-6 min-w-0">
-                                                                    <MessageCircle size={14} className="mr-1.5 text-blue-500" />
-                                                                    {commentGroup.authors.map((a, authorIndex) => (
-                                                                        <React.Fragment key={a.id}>
-                                                                            {authorIndex > 0 && <span className="text-slate-400">、</span>}
-                                                                            {renderEnterpriseName(a.id, a.name, 'text-slate-700', 'text-[13px]')}
-                                                                        </React.Fragment>
-                                                                    ))}
-                                                                    <span>:</span>
-                                                                </span>
-                                                                <div className="leading-relaxed mt-0.5 min-w-0">
-                                                                    {commentGroup.content ? <div>{commentGroup.content}</div> : null}
-                                                                    {commentGroup.image && (
-                                                                        <img src={commentGroup.image} className="mt-2 w-24 h-24 object-cover rounded-lg border border-slate-200" alt="评论图片" />
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                );
-                                            })()}
-
-                                            <AnimatePresence>
-                                                {replyingToGroupId === group.content && (
-                                                    <motion.div
-                                                        initial={{ height: 0, opacity: 0 }}
-                                                        animate={{ height: 'auto', opacity: 1 }}
-                                                        exit={{ height: 0, opacity: 0 }}
-                                                        className="overflow-hidden mt-2"
-                                                    >
-                                                       <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
-                                                           <textarea
-                                                             autoFocus
-                                                             value={groupReplyContent}
-                                                             onChange={e => setGroupReplyContent(e.target.value)}
-                                                             placeholder="输入评论内容..."
-                                                             className="w-full text-xs bg-transparent outline-none resize-none min-h-[64px] leading-5 placeholder:text-slate-400"
-                                                           />
-                                                           {groupReplyImage && (
-                                                               <div className="relative mt-2 w-20 h-20">
-                                                                   <img src={groupReplyImage} className="w-full h-full object-cover rounded-lg border border-slate-200" alt="评论图片" />
-                                                                   <button
-                                                                       onClick={() => setGroupReplyImage(null)}
-                                                                       className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-black/65 text-white text-[10px] flex items-center justify-center"
-                                                                   >
-                                                                       <X size={12} />
-                                                                   </button>
-                                                               </div>
-                                                           )}
-                                                           <div className="mt-2 flex items-center justify-between gap-2">
-                                                               <div className="flex items-center gap-1.5 relative">
-                                                                   <button
-                                                                       type="button"
-                                                                       onClick={() => setIsGroupEmojiPickerOpen(prev => !prev)}
-                                                                       className="w-8 h-8 rounded-md border border-slate-200 bg-white hover:bg-slate-100 flex items-center justify-center text-slate-500"
-                                                                       title="选择表情"
-                                                                   >
-                                                                       <Smile size={14} />
-                                                                   </button>
-                                                                   {isGroupEmojiPickerOpen && (
-                                                                       <div className="absolute left-0 top-[calc(100%+8px)] z-20 w-56 rounded-xl border border-slate-200 bg-white shadow-xl p-2">
-                                                                           <div className="grid grid-cols-4 gap-1">
-                                                                               {momentEmojiList.map(emoji => (
-                                                                                   <button
-                                                                                       key={emoji}
-                                                                                       type="button"
-                                                                                       onClick={() => {
-                                                                                           appendEmoji(setGroupReplyContent, emoji);
-                                                                                           setIsGroupEmojiPickerOpen(false);
-                                                                                       }}
-                                                                                       className="h-9 rounded-lg hover:bg-slate-100 text-lg flex items-center justify-center"
-                                                                                   >
-                                                                                       {emoji}
-                                                                                   </button>
-                                                                               ))}
-                                                                           </div>
-                                                                       </div>
-                                                                   )}
-                                                                   <button
-                                                                       type="button"
-                                                                       onClick={() => groupReplyImageInputRef.current?.click()}
-                                                                       className="px-2 py-1 text-xs rounded-md border border-slate-200 bg-white hover:bg-slate-100 flex items-center gap-1"
-                                                                   >
-                                                                       <ImageIcon size={12} /> 图片
-                                                                   </button>
-                                                                   <input
-                                                                       ref={groupReplyImageInputRef}
-                                                                       type="file"
-                                                                       accept="image/*"
-                                                                       className="hidden"
-                                                                       onChange={(e) => {
-                                                                           const file = e.target.files?.[0];
-                                                                           if (file) {
-                                                                               readImageAsDataUrl(file, setGroupReplyImage);
-                                                                           }
-                                                                           e.target.value = '';
-                                                                       }}
-                                                                   />
-                                                               </div>
-                                                               <div className="flex items-center gap-2">
-                                                                   <button
-                                                                       onClick={() => {
-                                                                           setReplyingToGroupId(null);
-                                                                           setGroupReplyContent('');
-                                                                           setGroupReplyImage(null);
-                                                                           setIsGroupEmojiPickerOpen(false);
-                                                                       }}
-                                                                       className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1"
-                                                                   >
-                                                                       取消
-                                                                   </button>
-                                                                   <button
-                                                                       disabled={!groupReplyContent.trim() && !groupReplyImage}
-                                                                       onClick={() => {
-                                                                           handleAddGroupComment(group.content, groupReplyContent, groupReplyImage);
-                                                                           setIsGroupEmojiPickerOpen(false);
-                                                                       }}
-                                                                       className="px-3 py-1.5 flex items-center justify-center gap-1 bg-blue-600 text-white rounded-md text-xs font-bold disabled:opacity-50"
-                                                                   >
-                                                                      <Share2 size={12} />
-                                                                      发送
-                                                                   </button>
-                                                               </div>
-                                                           </div>
-                                                       </div>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-                                        </div>
-                                    </div>
+                                        );
+                                    })()}
                                 </div>
-                            </React.Fragment>
+                            </div>
                         );
                     })}
                 </div>
@@ -2060,21 +1557,23 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             <div className="flex-1 flex flex-col min-w-0 bg-white">
                 {selectedMoment ? (
                     <div className="flex-1 overflow-y-auto">
-                        <div className="w-full py-8 px-4">
-                            {/* Likes and Comments */}
-                            <div className="mt-2">
-                                <div className="flex flex-col gap-6">
-                                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="flex items-center gap-2">
-                                                <Heart size={16} className="text-blue-500" />
-                                                <span className="text-[15px] font-bold text-slate-800">点赞人 ({aggregatedLikes.length})</span>
-                                            </div>
-                                            {aggregatedLikes.length > 0 && (
+                        <div className="max-w-5xl mx-auto py-8 px-6">
+                            {/* Section for Likes and Comments (3:7 ratio vertically) */}
+                            <div className="mt-2 flex flex-col h-[calc(100vh-160px)]">
+                                {/* Likes Section (Top 30%) */}
+                                <div className="flex flex-col border-b border-slate-200 pb-4 mb-4" style={{ flex: 3, minHeight: '200px', overflowY: 'auto' }}>
+                                    <div className="flex items-center justify-between mb-4 px-2">
+                                        <div className="text-[15px] font-bold text-slate-800">
+                                            点赞人 ({aggregatedLikes.length})
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col flex-1">
+                                        {aggregatedLikes.length > 0 && (
+                                            <div className="flex justify-between items-center mb-4 px-2 sticky top-0 bg-white z-20 pb-2">
                                                 <div className="flex items-center gap-4">
                                                     <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
+                                                        <input 
+                                                            type="checkbox" 
                                                             className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                                             checked={selectedLikers.length === aggregatedLikes.length && aggregatedLikes.length > 0}
                                                             onChange={(e) => {
@@ -2087,399 +1586,374 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                         />
                                                         全选
                                                     </label>
-                                                    <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                                            checked={uncommentedLikers.length > 0 && uncommentedLikers.every(id => selectedLikers.includes(id))}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) {
-                                                                    setSelectedLikers(prev => {
-                                                                        const next = new Set(prev);
-                                                                        uncommentedLikers.forEach(id => next.add(id));
-                                                                        return Array.from(next);
-                                                                    });
+                                                    {aggregatedLikes.length > 0 && (
+                                                        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                                                            <input 
+                                                                type="checkbox" 
+                                                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                                checked={uncommentedLikers.length > 0 && uncommentedLikers.every(id => selectedLikers.includes(id))}
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) {
+                                                                        // Select all uncommented users
+                                                                        setSelectedLikers(prev => {
+                                                                            const next = new Set(prev);
+                                                                            uncommentedLikers.forEach(id => next.add(id));
+                                                                            return Array.from(next);
+                                                                        });
+                                                                    } else {
+                                                                        // Deselect all uncommented users
+                                                                        setSelectedLikers(prev => prev.filter(id => !uncommentedLikers.includes(id)));
+                                                                    }
+                                                                }}
+                                                            />
+                                                            选择未评论用户
+                                                        </label>
+                                                    )}
+                                                </div>
+                                                <button 
+                                                    disabled={selectedLikers.length === 0}
+                                                    onClick={() => {
+                                                        if (selectedLikers.length > 0) {
+                                                            setIsBatchReplyOpen(true);
+                                                        }
+                                                    }}
+                                                    className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-[13px] font-bold shadow-sm hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    私聊回复 {selectedLikers.length > 0 ? `(${selectedLikers.length})` : ''}
+                                                </button>
+                                            </div>
+                                        )}
+                                        <div className="grid grid-cols-5 gap-6 p-4">
+                                            {aggregatedLikes.length > 0 ? (
+                                                aggregatedLikes.map((like) => (
+                                                    <div key={like.userId} className="flex flex-col items-center gap-2 relative">
+                                                        <div className="absolute top-1 right-1 z-10 bg-white/80 backdrop-blur-sm rounded-md flex items-center justify-center w-6 h-6 shadow-sm border border-slate-200">
+                                                            <input 
+                                                                type="checkbox" 
+                                                                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 shadow-sm cursor-pointer"
+                                                                checked={selectedLikers.includes(like.userId)}
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) {
+                                                                        setSelectedLikers(prev => [...prev, like.userId]);
+                                                                    } else {
+                                                                        setSelectedLikers(prev => prev.filter(id => id !== like.userId));
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div 
+                                                            onClick={() => {
+                                                                if (selectedLikers.includes(like.userId)) {
+                                                                    setSelectedLikers(prev => prev.filter(id => id !== like.userId));
                                                                 } else {
-                                                                    setSelectedLikers(prev => prev.filter(id => !uncommentedLikers.includes(id)));
+                                                                    setSelectedLikers(prev => [...prev, like.userId]);
                                                                 }
                                                             }}
-                                                        />
-                                                        选择未评论用户
-                                                    </label>
-                                                    <button
-                                                        disabled={selectedLikers.length === 0}
-                                                        onClick={() => {
-                                                            if (selectedLikers.length > 0) {
-                                                                setIsBatchReplyOpen(true);
-                                                            }
-                                                        }}
-                                                        className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-[13px] font-bold shadow-sm hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    >
-                                                        私聊回复 {selectedLikers.length > 0 ? `(${selectedLikers.length})` : ''}
-                                                    </button>
+                                                            onContextMenu={(e) => handleContextMenu(e, like.userId)}
+                                                            className="group relative inline-block cursor-pointer mb-1"
+                                                        >
+                                                            <img src={(() => {
+                                                                if (like.userId === 'me') return accounts[0]?.avatar;
+                                                                const acc = accounts.find(a => a.id === like.userId);
+                                                                if (acc) return acc.avatar;
+                                                                return like.avatar;
+                                                            })()} referrerPolicy="no-referrer" className="w-14 h-14 rounded-xl border border-slate-200 shadow-sm group-hover:scale-105 group-hover:shadow-md transition-all duration-200" alt="" />
+                                                            {hasCommented(like.userId) && (
+                                                                <div className="absolute -bottom-1.5 -right-1.5 bg-white text-blue-500 rounded-full p-1 border border-blue-100 shadow-sm" title="已回评论">
+                                                                    <MessageCircle size={12} className="fill-blue-50 stroke-blue-500" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <button onClick={(e) => { e.stopPropagation(); onOpenProfile(like.userId); }} className="text-[13px] text-slate-700 font-bold truncate w-full text-center hover:text-blue-600 transition-colors">
+                                                                {(() => {
+                                                                    if (like.userId === 'me') {
+                                                                        return accounts[0]?.name || '我';
+                                                                    }
+                                                                    // Check if the liker is actually a known enterprise account
+                                                                    const acc = accounts.find(a => a.id === like.userId);
+                                                                    if (acc) return acc.name;
+                                                                    return like.name;
+                                                                })()}
+                                                            </button>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-300">
+                                                    <Heart size={32} strokeWidth={1} className="mb-2" />
+                                                    <p className="text-xs">暂无点赞</p>
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="min-h-[220px] max-h-[300px] overflow-y-auto pr-1">
-                                            <div className="grid grid-cols-5 gap-6 p-2">
-                                                {aggregatedLikes.length > 0 ? (
-                                                    aggregatedLikes.map((like) => (
-                                                        <div key={like.userId} className="flex flex-col items-center gap-2 relative">
-                                                            <div className="absolute top-1 right-1 z-10 bg-white/80 backdrop-blur-sm rounded-md flex items-center justify-center w-6 h-6 shadow-sm border border-slate-200">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 shadow-sm cursor-pointer"
-                                                                    checked={selectedLikers.includes(like.userId)}
-                                                                    onChange={(e) => {
-                                                                        if (e.target.checked) {
-                                                                            setSelectedLikers(prev => [...prev, like.userId]);
-                                                                        } else {
-                                                                            setSelectedLikers(prev => prev.filter(id => id !== like.userId));
-                                                                        }
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => openCustomerPanel(
-                                                                    like.userId,
-                                                                    (() => {
-                                                                        if (like.userId === 'me') return accounts[0]?.name || '我';
-                                                                        const acc = accounts.find(a => a.id === like.userId);
-                                                                        if (acc) return acc.name;
-                                                                        return like.name;
-                                                                    })(),
-                                                                    (() => {
-                                                                        if (like.userId === 'me') return accounts[0]?.avatar;
-                                                                        const acc = accounts.find(a => a.id === like.userId);
-                                                                        if (acc) return acc.avatar;
-                                                                        return like.avatar;
-                                                                    })()
-                                                                )}
-                                                                onContextMenu={(e) => handleContextMenu(e, like.userId, like.name, like.avatar)}
-                                                                className="group relative inline-block cursor-pointer mb-1"
-                                                            >
-                                                                <img src={(() => {
-                                                                    if (like.userId === 'me') return accounts[0]?.avatar;
-                                                                    const acc = accounts.find(a => a.id === like.userId);
-                                                                    if (acc) return acc.avatar;
-                                                                    return like.avatar;
-                                                                })()} referrerPolicy="no-referrer" className="w-14 h-14 rounded-xl border border-slate-200 shadow-sm group-hover:scale-105 group-hover:shadow-md transition-all duration-200" alt="" />
-                                                                {hasCommented(like.userId) && (
-                                                                    <div className="absolute -bottom-1.5 -right-1.5 bg-white text-blue-500 rounded-full p-1 border border-blue-100 shadow-sm" title="已回评论">
-                                                                        <MessageCircle size={12} className="fill-blue-50 stroke-blue-500" />
-                                                                    </div>
-                                                                )}
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    openCustomerPanel(
-                                                                        like.userId,
-                                                                        (() => {
-                                                                            if (like.userId === 'me') return accounts[0]?.name || '我';
-                                                                            const acc = accounts.find(a => a.id === like.userId);
-                                                                            if (acc) return acc.name;
-                                                                            return like.name;
-                                                                        })(),
-                                                                        (() => {
-                                                                            if (like.userId === 'me') return accounts[0]?.avatar;
-                                                                            const acc = accounts.find(a => a.id === like.userId);
-                                                                            if (acc) return acc.avatar;
-                                                                            return like.avatar;
-                                                                        })()
-                                                                    );
-                                                                }}
-                                                                className="text-[13px] text-slate-700 font-bold w-full text-center hover:text-blue-600 transition-colors break-words whitespace-normal leading-5"
-                                                            >
-                                                                {(() => {
-                                                                    if (like.userId === 'me') {
-                                                                        return renderEnterpriseName('me', accounts[0]?.name || '我', 'break-words whitespace-normal', 'text-[13px]');
-                                                                    }
-                                                                    const acc = accounts.find(a => a.id === like.userId);
-                                                                    if (acc) return renderEnterpriseName(acc.id, acc.name, 'break-words whitespace-normal', 'text-[13px]');
-                                                                    return renderEnterpriseName(like.userId, like.name, 'break-words whitespace-normal', 'text-[13px]');
-                                                                })()}
-                                                            </button>
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-300">
-                                                        <Heart size={32} strokeWidth={1} className="mb-2" />
-                                                        <p className="text-xs">暂无点赞</p>
-                                                    </div>
-                                                )}
-                                            </div>
+                                    </div>
+                                </div>
+
+                                {/* Comments Section (Bottom 70%) */}
+                                <div className="flex flex-col" style={{ flex: 7, minHeight: '400px', overflowY: 'auto' }}>
+                                    <div className="flex items-center justify-between mb-4 px-2 sticky top-0 bg-white z-20 pb-2 border-b border-slate-100">
+                                        <div className="text-[15px] font-bold text-slate-800">
+                                            评论区 ({commentThreads.reduce((acc, t) => acc + 1 + t.replies.length, 0)})
+                                        </div>
+                                        <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-100">
+                                            <button 
+                                                onClick={() => setCommentSortBy('time')}
+                                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${commentSortBy === 'time' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+                                            >
+                                                按时间
+                                            </button>
+                                            <button 
+                                                onClick={() => setCommentSortBy('heat')}
+                                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${commentSortBy === 'heat' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+                                            >
+                                                按热度
+                                            </button>
                                         </div>
                                     </div>
-
-                                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                                        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-                                            <div className="flex items-center gap-2">
-                                                <MessageSquare size={16} className="text-blue-500" />
-                                                <span className="text-[15px] font-bold text-slate-800">评论区 ({visibleCommentCount})</span>
+                                    <div className="flex gap-6 h-full p-2">
+                                        <div className="w-[180px] shrink-0 border-r border-slate-100 pr-4">
+                                            <div className="text-[13px] font-bold text-slate-500 mb-4 px-1 flex items-center gap-1.5">
+                                                <Compass size={14} className="text-blue-500" /> 发布账号
                                             </div>
-                                            <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-100">
-                                                <button
-                                                    onClick={() => setCommentSortBy('time')}
-                                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${commentSortBy === 'time' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
-                                                >
-                                                    按时间
-                                                </button>
-                                                <button
-                                                    onClick={() => setCommentSortBy('heat')}
-                                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${commentSortBy === 'heat' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
-                                                >
-                                                    按热度
-                                                </button>
+                                            <div className="space-y-1.5">
+                                                {Array.from(new Set(relatedMoments.map(m => m.accountId))).map(accId => {
+                                                    const acc = accounts.find(a => a.id === accId);
+                                                    if (!acc) return null;
+                                                    const isHovered = hoveredAccountId === acc.id;
+                                                    return (
+                                                        <div 
+                                                            key={acc.id}
+                                                            className={`flex items-center gap-2.5 p-2 rounded-lg cursor-pointer transition-colors border
+                                                                ${isHovered ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-slate-50/50 hover:bg-slate-100 border-transparent'}`}
+                                                            onClick={() => {
+                                                                const firstThread = sortedCommentThreads.find(t => t.account?.id === acc.id);
+                                                                if (firstThread && accountRefs.current[firstThread.id]) {
+                                                                    accountRefs.current[firstThread.id]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                                }
+                                                            }}
+                                                        >
+                                                            <img src={acc.avatar} className="w-7 h-7 rounded-md border border-slate-200" alt="" />
+                                                            <span className={`text-[13px] truncate ${isHovered ? 'text-blue-700 font-bold' : 'text-slate-700 font-medium'}`}>{acc.name}</span>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
 
-                                        <div className="flex gap-4 min-h-[520px]">
-                                            <div className="w-[230px] shrink-0 border-r border-slate-100 pr-3">
-                                                <div className="text-[13px] font-bold text-slate-500 mb-4 px-1 flex items-center gap-1.5">
-                                                    <Compass size={14} className="text-blue-500" /> 发布账号
-                                                </div>
-                                                <div className="space-y-1.5">
-                                                    {commentAccountOptions.map(acc => {
-                                                        const isHovered = hoveredAccountId === acc.id;
-                                                        const isSelected = selectedCommentAccountId === acc.id;
-                                                        return (
-                                                            <div
-                                                                key={acc.id}
-                                                                className={`flex items-center gap-2.5 p-2 rounded-lg cursor-pointer transition-colors border
-                                                                    ${isSelected ? 'bg-blue-50 border-blue-200 shadow-sm' : isHovered ? 'bg-slate-100 border-slate-200' : 'bg-slate-50/50 hover:bg-slate-100 border-transparent'}`}
-                                                                onClick={() => setSelectedCommentAccountId(prev => prev === acc.id ? null : acc.id)}
-                                                            >
-                                                                <img src={acc.avatar} className="w-7 h-7 rounded-md border border-slate-200" alt="" />
-                                                                {renderEnterpriseName(acc.id, acc.name, `text-[13px] whitespace-nowrap ${isSelected ? 'text-blue-700 font-bold' : isHovered ? 'text-slate-800 font-semibold' : 'text-slate-700 font-medium'}`, 'text-[13px]')}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-
-                                            <div className="flex-1 space-y-6">
-                                                {filteredCommentThreads.length > 0 ? (
-                                                    filteredCommentThreads.map((thread) => (
-                                                        <div
-                                                            key={thread.id}
-                                                            className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-sm transition-shadow scroll-mt-4 relative group/thread"
-                                                            onMouseEnter={() => setHoveredAccountId(thread.account?.id || null)}
-                                                            onMouseLeave={() => setHoveredAccountId(null)}
+                                        {/* Right Comments List */}
+                                        <div className="flex-1 space-y-6">
+                                            {commentThreads.length > 0 && (
+                                                <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-sm pb-4 pt-2 -mx-2 px-2">
+                                                    <div className="relative">
+                                                        <div 
+                                                            className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-2.5 cursor-pointer hover:border-blue-300 hover:shadow-sm transition-all"
+                                                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                                         >
-                                                            <div className="flex justify-between items-start mb-2">
-                                                                <div className="flex gap-2">
-                                                                <button
-                                                                    onClick={() => openCustomerPanel(thread.rootComment.userId, thread.rootComment.name, thread.rootComment.avatar)}
-                                                                        onContextMenu={(e) => handleContextMenu(e, thread.rootComment.userId, thread.rootComment.name, thread.rootComment.avatar)}
-                                                                    >
-                                                                        <img src={thread.rootComment.avatar} className="w-8 h-8 rounded-full border border-slate-100" alt="" />
-                                                                    </button>
-                                                                    <div>
-                                                                    <button
-                                                                        onClick={() => openCustomerPanel(thread.rootComment.userId, thread.rootComment.name, thread.rootComment.avatar)}
-                                                                        className="text-[14px] font-bold text-[#576b95] hover:underline"
-                                                                    >
-                                                                        {renderEnterpriseName(thread.rootComment.userId, thread.rootComment.name, 'text-[14px] font-bold text-[#576b95]', 'text-[14px]')}
-                                                                    </button>
-                                                                        <div className="text-[11px] text-slate-400">{thread.rootComment.time}</div>
-                                                                    </div>
-                                                                </div>
-                                                                {thread.account && (
-                                                                    <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-md border border-slate-100">
-                                                                        <span className="text-[10px] text-slate-400">发布账号:</span>
-                                                                        <img src={thread.account.avatar} className="w-4 h-4 rounded-sm" alt="" />
-                                                                        {renderEnterpriseName(thread.account.id, thread.account.name, 'text-[11px] text-slate-500 font-medium', 'text-[11px]')}
-                                                                    </div>
-                                                                )}
+                                                            <div className="flex items-center gap-2">
+                                                                <Compass size={16} className="text-blue-500" />
+                                                                <span className="text-sm font-medium text-slate-700">快速定位客户评论...</span>
                                                             </div>
-
-                                                            <div className="pl-10 text-sm text-slate-800 leading-relaxed mb-3">
-                                                                {thread.rootComment.content ? <div>{thread.rootComment.content}</div> : null}
-                                                                {thread.rootComment.image && (
-                                                                    <img src={thread.rootComment.image} className="mt-2 w-28 h-28 object-cover rounded-lg border border-slate-200" alt="评论图片" />
-                                                                )}
-                                                            </div>
-
-                                                            {thread.replies.length > 0 && (
-                                                                <div className="ml-10 bg-slate-50 rounded-lg p-3 space-y-3 border border-slate-100">
-                                                                    {thread.replies.map(reply => (
-                                                                        <div key={reply.id} className="text-sm group/reply relative">
-                                                                            <div className="flex items-center gap-1.5 mb-1">
-                                                                                <button onClick={() => openCustomerPanel(reply.userId, reply.name, reply.avatar)} className="font-bold text-[#576b95] hover:underline">
-                                                                                    {renderEnterpriseName(reply.userId, reply.name, 'font-bold text-[#576b95]', 'text-sm')}
-                                                                                </button>
-                                                                                {reply.replyToName && (
-                                                                                    <>
-                                                                                        <span className="text-slate-400 text-[12px]">回复</span>
-                                                                                        <button onClick={() => reply.replyToId && openCustomerPanel(reply.replyToId, reply.replyToName || '客户')} className="font-bold text-[#576b95] hover:underline">
-                                                                                            {renderEnterpriseName(reply.replyToId, reply.replyToName || '客户', 'font-bold text-[#576b95]', 'text-sm')}
-                                                                                        </button>
-                                                                                    </>
-                                                                                )}
-                                                                                <span className="text-[11px] text-slate-400 ml-auto">{reply.time}</span>
-                                                                            </div>
-                                                                            <div className="text-slate-700 leading-relaxed pr-10">
-                                                                                {reply.content ? <div>{reply.content}</div> : null}
-                                                                                {reply.image && (
-                                                                                    <img src={reply.image} className="mt-2 w-24 h-24 object-cover rounded-lg border border-slate-200" alt="回复图片" />
-                                                                                )}
-                                                                            </div>
-                                                                            {!replyingTo?.commentId && (
-                                                                                <button
+                                                            <ChevronRight size={16} className={`text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-90' : ''}`} />
+                                                        </div>
+                                                        
+                                                        <AnimatePresence>
+                                                            {isDropdownOpen && (
+                                                                <motion.div 
+                                                                    initial={{ opacity: 0, y: -10 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    exit={{ opacity: 0, y: -10 }}
+                                                                    className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50"
+                                                                >
+                                                                    <div className="p-2 border-b border-slate-100 bg-slate-50/50">
+                                                                        <input 
+                                                                            type="text" 
+                                                                            placeholder="搜索客户..." 
+                                                                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 transition-shadow"
+                                                                            value={commentSearchQuery}
+                                                                            onChange={(e) => setCommentSearchQuery(e.target.value)}
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="max-h-60 overflow-y-auto">
+                                                                        {commentThreads
+                                                                            .filter(t => !commentSearchQuery || t.rootComment.name.toLowerCase().includes(commentSearchQuery.toLowerCase()))
+                                                                            .map(t => (
+                                                                                <div 
+                                                                                    key={t.id}
+                                                                                    className="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors"
                                                                                     onClick={() => {
-                                                                                        setReplyingTo({ accountId: thread.account?.id || '', commentId: thread.rootComment.id, userName: reply.name, replyToId: reply.userId });
-                                                                                        setReplyContent('');
-                                                                                        setReplyImage(null);
-                                                                                        setIsReplyEmojiPickerOpen(false);
-                                                                                    }}
-                                                                                    className="absolute bottom-0 right-0 opacity-0 group-hover/reply:opacity-100 text-[12px] text-blue-500 hover:text-blue-600 flex items-center gap-1 transition-opacity"
-                                                                                >
-                                                                                    回复
-                                                                                </button>
-                                                                            )}
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-
-                                                            <div className="mt-2 pl-10 flex items-center justify-between">
-                                                                <div className="flex-1">
-                                                                    {replyingTo?.commentId === thread.rootComment.id && (
-                                                                        <div className="mt-2 flex gap-2 items-start">
-                                                                            <div className="flex-1 bg-white border border-slate-200 rounded-lg p-2 focus-within:border-blue-400 transition-colors">
-                                                                                <textarea
-                                                                                    autoFocus
-                                                                                    className="w-full bg-transparent border-none outline-none text-[13px] resize-none min-h-[56px] placeholder:text-slate-400"
-                                                                                    placeholder={`回复 ${replyingTo?.userName}...`}
-                                                                                    value={replyContent}
-                                                                                    onChange={(e) => setReplyContent(e.target.value)}
-                                                                                    onKeyDown={(e) => {
-                                                                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                                                                            e.preventDefault();
-                                                                                            if ((replyContent.trim() || replyImage) && replyingTo) {
-                                                                                                handleAddReply(thread.momentId, replyingTo.replyToId, replyingTo.userName, replyContent, replyImage);
-                                                                                            }
+                                                                                        setIsDropdownOpen(false);
+                                                                                        setCommentSearchQuery('');
+                                                                                        if (t.id && accountRefs.current[t.id]) {
+                                                                                            accountRefs.current[t.id]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                                                                         }
                                                                                     }}
-                                                                                ></textarea>
-                                                                                {replyImage && (
-                                                                                    <div className="relative mt-2 w-20 h-20">
-                                                                                        <img src={replyImage} className="w-full h-full object-cover rounded-lg border border-slate-200" alt="回复图片" />
-                                                                                        <button
-                                                                                            onClick={() => setReplyImage(null)}
-                                                                                            className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-black/65 text-white text-[10px] flex items-center justify-center"
-                                                                                        >
-                                                                                            <X size={12} />
-                                                                                        </button>
-                                                                                    </div>
-                                                                                )}
-                                                                                <div className="flex items-center justify-between gap-2 mt-2">
-                                                                                    <div className="flex items-center gap-1.5 relative">
-                                                                                        <button
-                                                                                            type="button"
-                                                                                            onClick={() => setIsReplyEmojiPickerOpen(prev => !prev)}
-                                                                                            className="w-8 h-8 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500"
-                                                                                            title="选择表情"
-                                                                                        >
-                                                                                            <Smile size={14} />
-                                                                                        </button>
-                                                                                        {isReplyEmojiPickerOpen && (
-                                                                                            <div className="absolute left-0 top-[calc(100%+8px)] z-20 w-56 rounded-xl border border-slate-200 bg-white shadow-xl p-2">
-                                                                                                <div className="grid grid-cols-4 gap-1">
-                                                                                                    {momentEmojiList.map(emoji => (
-                                                                                                        <button
-                                                                                                            key={emoji}
-                                                                                                            type="button"
-                                                                                                            onClick={() => {
-                                                                                                                appendEmoji(setReplyContent, emoji);
-                                                                                                                setIsReplyEmojiPickerOpen(false);
-                                                                                                            }}
-                                                                                                            className="h-9 rounded-lg hover:bg-slate-100 text-lg flex items-center justify-center"
-                                                                                                        >
-                                                                                                            {emoji}
-                                                                                                        </button>
-                                                                                                    ))}
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        )}
-                                                                                        <button
-                                                                                            type="button"
-                                                                                            onClick={() => replyImageInputRef.current?.click()}
-                                                                                            className="px-2 py-1 text-xs rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center gap-1"
-                                                                                        >
-                                                                                            <ImageIcon size={12} /> 图片
-                                                                                        </button>
-                                                                                        <input
-                                                                                            ref={replyImageInputRef}
-                                                                                            type="file"
-                                                                                            accept="image/*"
-                                                                                            className="hidden"
-                                                                                            onChange={(e) => {
-                                                                                                const file = e.target.files?.[0];
-                                                                                                if (file) {
-                                                                                                    readImageAsDataUrl(file, setReplyImage);
-                                                                                                }
-                                                                                                e.target.value = '';
-                                                                                            }}
-                                                                                        />
-                                                                                    </div>
-                                                                                    <div className="flex justify-end gap-2">
-                                                                                    <button
-                                                                                        onClick={() => {
-                                                                                            setReplyingTo(null);
-                                                                                            setReplyContent('');
-                                                                                            setReplyImage(null);
-                                                                                            setIsReplyEmojiPickerOpen(false);
-                                                                                        }}
-                                                                                        className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1"
-                                                                                    >
-                                                                                        取消
-                                                                                    </button>
-                                                                                    <button
-                                                                                        disabled={!replyContent.trim() && !replyImage}
-                                                                                        onClick={() => {
-                                                                                            if (replyingTo) {
-                                                                                                handleAddReply(thread.momentId, replyingTo.replyToId, replyingTo.userName, replyContent, replyImage);
-                                                                                            }
-                                                                                            setIsReplyEmojiPickerOpen(false);
-                                                                                        }}
-                                                                                        className="bg-blue-600 text-white px-3 py-1 rounded-md text-xs font-bold disabled:opacity-50"
-                                                                                    >
-                                                                                        发送
-                                                                                    </button>
-                                                                                    </div>
+                                                                                >
+                                                                                    {t.rootComment.avatar ? (
+                                                                                        <img src={t.rootComment.avatar} className="w-8 h-8 rounded-lg border border-slate-100 shadow-sm" alt="" />
+                                                                                    ) : (
+                                                                                        <div className="w-8 h-8 rounded-lg border border-slate-100 shadow-sm bg-slate-100 flex items-center justify-center">
+                                                                                            <User size={16} className="text-slate-400" />
+                                                                                        </div>
+                                                                                    )}
+                                                                                    <span className="text-sm font-medium text-slate-700">{t.rootComment.name}</span>
+                                                                                    <span className="text-xs text-slate-400 ml-auto bg-slate-100 px-2 py-1 rounded-full">{1 + t.replies.length} 条互动</span>
                                                                                 </div>
+                                                                            ))
+                                                                        }
+                                                                        {commentThreads.filter(t => !commentSearchQuery || t.rootComment.name.toLowerCase().includes(commentSearchQuery.toLowerCase())).length === 0 && (
+                                                                            <div className="py-8 text-center text-sm text-slate-400">
+                                                                                没有找到相关客户
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {sortedCommentThreads.length > 0 ? (
+                                                sortedCommentThreads.map((thread) => (
+                                                    <div 
+                                                        key={thread.id} 
+                                                        ref={(el) => {
+                                                            if (thread.id) {
+                                                                accountRefs.current[thread.id] = el;
+                                                            }
+                                                        }}
+                                                        className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-sm transition-shadow scroll-mt-4 relative group/thread"
+                                                        onMouseEnter={() => setHoveredAccountId(thread.account?.id || null)}
+                                                        onMouseLeave={() => setHoveredAccountId(null)}
+                                                    >
+                                                        {/* Header: Customer info & Weakened Account info */}
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div className="flex gap-2">
+                                                                <button 
+                                                                    onClick={() => onOpenProfile(thread.rootComment.userId)}
+                                                                    onContextMenu={(e) => handleContextMenu(e, thread.rootComment.userId)}
+                                                                >
+                                                                    <img src={thread.rootComment.avatar} className="w-8 h-8 rounded-full border border-slate-100" alt="" />
+                                                                </button>
+                                                                <div>
+                                                                    <div className="text-[14px] font-bold text-[#576b95]">{thread.rootComment.name}</div>
+                                                                    <div className="text-[11px] text-slate-400">{thread.rootComment.time}</div>
+                                                                </div>
+                                                            </div>
+                                                            {/* Weakened Account Info */}
+                                                            {thread.account && (
+                                                                <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-md border border-slate-100">
+                                                                    <span className="text-[10px] text-slate-400">发布账号:</span>
+                                                                    <img src={thread.account.avatar} className="w-4 h-4 rounded-sm" alt="" />
+                                                                    <span className="text-[11px] text-slate-500 font-medium">{thread.account.name}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        
+                                                        {/* Root Comment Content */}
+                                                        <div className="pl-10 text-sm text-slate-800 leading-relaxed mb-3">
+                                                            {thread.rootComment.content}
+                                                        </div>
+
+                                                        {/* Replies */}
+                                                        {thread.replies.length > 0 && (
+                                                            <div className="ml-10 bg-slate-50 rounded-lg p-3 space-y-3 border border-slate-100">
+                                                                {thread.replies.map(reply => (
+                                                                    <div key={reply.id} className="text-sm group/reply relative">
+                                                                        <div className="flex items-center gap-1.5 mb-1">
+                                                                            <button onClick={() => onOpenProfile(reply.userId)} className="font-bold text-[#576b95] hover:underline">
+                                                                                {reply.name}
+                                                                            </button>
+                                                                            {reply.replyToName && (
+                                                                                <>
+                                                                                    <span className="text-slate-400 text-[12px]">回复</span>
+                                                                                    <button onClick={() => reply.replyToId && onOpenProfile(reply.replyToId)} className="font-bold text-[#576b95] hover:underline">
+                                                                                        {reply.replyToName}
+                                                                                    </button>
+                                                                                </>
+                                                                            )}
+                                                                            <span className="text-[11px] text-slate-400 ml-auto">{reply.time}</span>
+                                                                        </div>
+                                                                        <div className="text-slate-700 leading-relaxed pr-10">
+                                                                            {reply.content}
+                                                                        </div>
+                                                                        {!replyingTo?.commentId && (
+                                                                            <button 
+                                                                                onClick={() => setReplyingTo({ accountId: thread.account?.id || '', commentId: thread.rootComment.id, userName: reply.name, replyToId: reply.userId })}
+                                                                                className="absolute bottom-0 right-0 opacity-0 group-hover/reply:opacity-100 text-[12px] text-blue-500 hover:text-blue-600 flex items-center gap-1 transition-opacity"
+                                                                            >
+                                                                                回复
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* Action Bar (Reply button) */}
+                                                        <div className="mt-2 pl-10 flex items-center justify-between">
+                                                            <div className="flex-1">
+                                                                {replyingTo?.commentId === thread.rootComment.id && (
+                                                                    <div className="mt-2 flex gap-2 items-start">
+                                                                        <div className="flex-1 bg-white border border-slate-200 rounded-lg p-2 focus-within:border-blue-400 transition-colors">
+                                                                            <textarea 
+                                                                                autoFocus
+                                                                                className="w-full bg-transparent border-none outline-none text-[13px] resize-none h-12 placeholder:text-slate-400"
+                                                                                placeholder={`回复 ${replyingTo?.userName}...`}
+                                                                                value={replyContent}
+                                                                                onChange={(e) => setReplyContent(e.target.value)}
+                                                                                onKeyDown={(e) => {
+                                                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                                                        e.preventDefault();
+                                                                                        if (replyContent.trim() && replyingTo) {
+                                                                                            handleAddReply(thread.momentId, replyingTo.replyToId, replyingTo.userName, replyContent);
+                                                                                        }
+                                                                                    }
+                                                                                }}
+                                                                            ></textarea>
+                                                                            <div className="flex justify-end gap-2 mt-1">
+                                                                                <button 
+                                                                                    onClick={() => {
+                                                                                        setReplyingTo(null);
+                                                                                        setReplyContent('');
+                                                                                    }}
+                                                                                    className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1"
+                                                                                >
+                                                                                    取消
+                                                                                </button>
+                                                                                <button 
+                                                                                    disabled={!replyContent.trim()}
+                                                                                    onClick={() => {
+                                                                                        if (replyingTo) {
+                                                                                            handleAddReply(thread.momentId, replyingTo.replyToId, replyingTo.userName, replyContent);
+                                                                                        }
+                                                                                    }}
+                                                                                    className="bg-blue-600 text-white px-3 py-1 rounded-md text-xs font-bold disabled:opacity-50"
+                                                                                >
+                                                                                    发送
+                                                                                </button>
                                                                             </div>
                                                                         </div>
-                                                                    )}
-                                                                </div>
-                                                                {!replyingTo?.commentId && (
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            setReplyingTo({ accountId: thread.account?.id || '', commentId: thread.rootComment.id, userName: thread.rootComment.name, replyToId: thread.rootComment.userId });
-                                                                            setReplyContent('');
-                                                                            setReplyImage(null);
-                                                                            setIsReplyEmojiPickerOpen(false);
-                                                                        }}
-                                                                        className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1 transition-colors"
-                                                                    >
-                                                                        <MessageCircle size={12} /> 回复
-                                                                    </button>
+                                                                    </div>
                                                                 )}
                                                             </div>
+                                                            {!replyingTo?.commentId && (
+                                                                <button 
+                                                                    onClick={() => setReplyingTo({ accountId: thread.account?.id || '', commentId: thread.rootComment.id, userName: thread.rootComment.name, replyToId: thread.rootComment.userId })}
+                                                                    className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1 transition-colors"
+                                                                >
+                                                                    <MessageCircle size={12} /> 回复
+                                                                </button>
+                                                            )}
                                                         </div>
-                                                    ))
-                                                ) : (
-                                                    <div className="py-12 flex flex-col items-center justify-center text-slate-300">
-                                                        <MessageSquare size={32} strokeWidth={1} className="mb-2" />
-                                                        <p className="text-xs">{selectedCommentAccountId ? '当前账号下暂无可展示的评论内容' : '暂无评论'}</p>
                                                     </div>
-                                                )}
+                                                ))
+                                            ) : (
+                                                <div className="py-12 flex flex-col items-center justify-center text-slate-300">
+                                                    <MessageSquare size={32} strokeWidth={1} className="mb-2" />
+                                                    <p className="text-xs">暂无评论</p>
+                                                </div>
+                                            )}
                                             </div>
                                         </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2494,172 +1968,6 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                 )}
             </div>
 
-            {selectedCustomer && selectedCustomerProfile && (
-                <div className="w-[320px] border-l border-slate-200 bg-[#f2f3f5] flex flex-col shrink-0">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white">
-                        <div className="text-sm font-semibold text-slate-800">客户详情</div>
-                        <button onClick={() => setSelectedCustomer(null)} className="p-1 rounded hover:bg-slate-100 text-slate-500">
-                            <X size={16} />
-                        </button>
-                    </div>
-
-                    <div className="p-3 bg-[#f2f3f5] border-b border-slate-200">
-                        <div className="grid grid-cols-3 gap-2 text-[13px]">
-                            {customerPanelTabs.map(tab => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveCustomerPanelTab(tab)}
-                                    className={`h-9 rounded-sm border transition-colors ${
-                                        activeCustomerPanelTab === tab
-                                            ? 'bg-white text-[#3b82f6] border-[#93c5fd]'
-                                            : 'bg-[#f7f7f8] text-slate-700 border-[#e5e7eb] hover:bg-white'
-                                    }`}
-                                >
-                                    {tab}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto bg-[#f2f3f5] p-3">
-                        {activeCustomerPanelTab === '客户档案' && (
-                            <div>
-                                <div className="flex justify-end items-center text-[#3b82f6] text-sm mb-2">
-                                    <RefreshCw size={14} className="mr-1" />
-                                    刷新
-                                </div>
-                                <div className="space-y-3">
-                                    {customerArchiveFields.map((field, index) => (
-                                        <div key={index} className="bg-white rounded-2xl border border-[#ececec] p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-                                            <div className="flex items-center justify-between gap-2 mb-2">
-                                                <span className="text-sm text-slate-500">{field.label}</span>
-                                                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#f5f5f5] text-slate-500 border border-[#ebebeb]">
-                                                    {field.tag}
-                                                </span>
-                                            </div>
-                                            <div className="text-[16px] leading-8 font-semibold text-slate-700">{field.value}</div>
-                                            <div className="text-xs text-slate-400 mt-2">{field.time}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {activeCustomerPanelTab === '客户画像' && (
-                            <div className="relative pb-16">
-                                <div className="space-y-3">
-                                    <div className="bg-white rounded-xl border border-slate-200 p-4">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                {selectedCustomer.avatar ? (
-                                                    <img src={selectedCustomer.avatar} className="w-11 h-11 rounded-full object-cover border border-slate-200" alt="" />
-                                                ) : (
-                                                    <div className="w-11 h-11 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                                                        {selectedCustomer.name.slice(0, 1)}
-                                                    </div>
-                                                )}
-                                                <div className="min-w-0">
-                                                    <div className="text-[18px] font-semibold text-slate-800 truncate">{selectedCustomerProfile.name}</div>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-[11px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-500">在线</span>
-                                                        <span className="text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-500">已授权</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <button className="text-slate-400 hover:text-slate-600">
-                                                <MoreHorizontal size={16} />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white rounded-xl border border-slate-200 p-4">
-                                        <div className="text-sm font-semibold text-slate-800 mb-4">基础信息</div>
-                                        <div className="space-y-3 text-[13px]">
-                                            {customerPortraitBaseInfo.map((item, index) => (
-                                                <div key={index} className="flex items-center justify-between gap-3">
-                                                    <span className="text-slate-500">{item.label}：</span>
-                                                    <div className="flex items-center gap-1.5 min-w-0 text-slate-800">
-                                                        <span className="truncate">{item.value}</span>
-                                                        {item.copyable && <Copy size={13} className="text-slate-400 shrink-0" />}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white rounded-xl border border-slate-200 p-4">
-                                        <div className="text-sm font-semibold text-slate-800 mb-4">客户标签</div>
-                                        <div className="space-y-3">
-                                            {customerPortraitTagGroups.map((group, index) => (
-                                                <div key={index}>
-                                                    <div className="text-[13px] text-slate-700 mb-2">{group.title}</div>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {group.tags.map(tag => (
-                                                            <span key={tag} className="text-[12px] px-2.5 py-1 rounded-full bg-[#eef2ff] text-[#6366f1]">
-                                                                {tag}
-                                                            </span>
-                                                        ))}
-                                                        {index === customerPortraitTagGroups.length - 1 && selectedCustomerProfile.abnormalTag && (
-                                                            <span className="text-[12px] px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">
-                                                                {selectedCustomerProfile.abnormalTag}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white rounded-xl border border-slate-200 p-4">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="text-sm font-semibold text-slate-800">跟进备注</div>
-                                            <div className="flex items-center gap-3 text-[12px] text-slate-500">
-                                                <button className="flex items-center gap-1 hover:text-blue-600">
-                                                    <Plus size={12} className="bg-blue-500 text-white rounded-full p-0.5" />
-                                                    添加
-                                                </button>
-                                                <button className="hover:text-blue-600">查看全部</button>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-4">
-                                            {customerFollowupNotes.map((item, index) => (
-                                                <div key={index} className="relative pl-5">
-                                                    <div className="absolute left-0 top-1.5 w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.12)]"></div>
-                                                    <div className="text-[13px] text-slate-400">{item.time}</div>
-                                                    <div className="text-[15px] text-slate-700 mt-1">{item.content}</div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                                <button className="absolute right-1 bottom-0 w-14 h-14 rounded-full bg-[#2563eb] text-white flex items-center justify-center shadow-lg">
-                                    <Bot size={24} />
-                                </button>
-                            </div>
-                        )}
-
-                        {activeCustomerPanelTab === '客户行为' && (
-                            <div className="relative pb-16">
-                                <div className="space-y-3">
-                                    {customerBehaviorItems.map((item, index) => (
-                                        <div key={index} className="relative bg-white rounded-xl border border-slate-200 p-4 pl-6">
-                                            <div className="absolute left-3 top-5 w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.12)]"></div>
-                                            <div className="text-[13px] text-slate-400">{item.time}</div>
-                                            <div className="text-[16px] font-medium text-slate-800 mt-1">{item.title}</div>
-                                            <div className="text-[13px] text-slate-500 leading-6 mt-1">{item.desc}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <button className="absolute right-1 bottom-0 w-14 h-14 rounded-full bg-[#2563eb] text-white flex items-center justify-center shadow-lg">
-                                    <Bot size={24} />
-                                </button>
-                            </div>
-                        )}
-
-                    </div>
-                </div>
-            )}
-
             {/* Context Menu */}
             <AnimatePresence>
                 {contextMenu && (
@@ -2672,7 +1980,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                     >
                         <button 
                             onClick={() => {
-                                onSendMessage({ userId: contextMenu.userId, name: contextMenu.name, avatar: contextMenu.avatar });
+                                onSendMessage(contextMenu.userId);
                                 closeContextMenu();
                             }}
                             className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
@@ -2874,7 +2182,6 @@ const SHARED_MOMENT_CONTENT = '🔥【河西中·精装现房】万科·星雨�
 const MOCK_MOMENTS: SimMoment[] = [
     {
         id: 'm1',
-        groupId: 'PYQ-20260428-001',
         accountId: 'a1',
         content: SHARED_MOMENT_CONTENT,
         media: [
@@ -2888,80 +2195,76 @@ const MOCK_MOMENTS: SimMoment[] = [
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/house8/800/600' },
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/house9/800/600' }
         ],
-        time: '2026-04-28 10:18:00',
+        time: '10分钟前',
         likes: [
             { userId: 'u1', name: '陈先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
             { userId: 'u2', name: '刘女士', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' }
         ],
         comments: [
-            { id: 'c1', userId: 'u1', name: '陈先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '这套房还在吗？', time: '2026-04-28 10:23:00' },
-            { id: 'c2', userId: 'a1', name: '365选房师-淘淘', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff', content: '还在的，陈先生，您什么时候方便看房？', time: '2026-04-28 10:25:00', replyToName: '陈先生', replyToId: 'u1' }
+            { id: 'c1', userId: 'u1', name: '陈先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '这套房还在吗？', time: '5分钟前' },
+            { id: 'c2', userId: 'a1', name: '365选房师-淘淘', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff', content: '还在的，陈先生，您什么时候方便看房？', time: '3分钟前', replyToName: '陈先生', replyToId: 'u1' }
         ]
     },
     {
         id: 'm1-2',
-        groupId: 'PYQ-20260428-001',
         accountId: 'a2',
         content: SHARED_MOMENT_CONTENT,
         media: [
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/house1/800/600' },
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/house2/800/600' }
         ],
-        time: '2026-04-28 10:16:00',
+        time: '12分钟前',
         likes: [
             { userId: 'u3', name: '王总', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' }
         ],
         comments: [
-            { id: 'c3', userId: 'u3', name: '王总', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '周末可以安排看下吗？', time: '2026-04-28 10:21:00' }
+            { id: 'c3', userId: 'u3', name: '王总', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '周末可以安排看下吗？', time: '10分钟前' }
         ]
     },
     {
         id: 'm1-3',
-        groupId: 'PYQ-20260428-001',
         accountId: 'a3',
         content: SHARED_MOMENT_CONTENT,
         media: [
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/house1/800/600' },
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/house2/800/600' }
         ],
-        time: '2026-04-28 10:13:00',
+        time: '15分钟前',
         likes: [],
         comments: [
-            { id: 'c4', userId: 'u4', name: '李阿姨', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '这个小区环境怎么样？', time: '2026-04-28 10:20:00' },
-            { id: 'c5', userId: 'a3', name: '365淘房官方号', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=365&background=ff9900&color=fff', content: '环境非常不错，绿化率高。', time: '2026-04-28 10:22:00', replyToName: '李阿姨', replyToId: 'u4' },
-            { id: 'c9', userId: 'a1', name: '365选房师-淘淘', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff', content: '你好', time: '2026-04-28 10:27:00' },
-            { id: 'c10', userId: 'a2', name: '365选房师-宁宁', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Ning&background=10B981&color=fff', content: '你好', time: '2026-04-28 10:27:00' },
-            { id: 'c11', userId: 'a3', name: '365淘房官方号', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=365&background=ff9900&color=fff', content: '你好', time: '2026-04-28 10:27:00' }
+            { id: 'c4', userId: 'u4', name: '李阿姨', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '这个小区环境怎么样？', time: '12分钟前' },
+            { id: 'c5', userId: 'a3', name: '365淘房官方号', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=365&background=ff9900&color=fff', content: '环境非常不错，绿化率高。', time: '10分钟前', replyToName: '李阿姨', replyToId: 'u4' },
+            { id: 'c9', userId: 'a1', name: '365选房师-淘淘', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff', content: '你好', time: '1分钟前' },
+            { id: 'c10', userId: 'a2', name: '365选房师-宁宁', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Ning&background=10B981&color=fff', content: '你好', time: '1分钟前' },
+            { id: 'c11', userId: 'a3', name: '365淘房官方号', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=365&background=ff9900&color=fff', content: '你好', time: '1分钟前' }
         ]
     },
     {
         id: 'm3',
-        groupId: 'PYQ-20260425-002',
         accountId: 'a1',
         content: '重磅！首付比例再降！\n\n新政出台，首套房首付低至15%，二套低至25%！\n这对刚需和改善群体都是极大利好。抓住窗口期，买房正当时！🏠\n\n有想了解具体政策的客户，欢迎私聊我！',
         media: [
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/policy1/800/600' }
         ],
-        time: '2026-04-25 15:30:00',
+        time: '3小时前',
         likes: [
             { userId: 'u1', name: '陈先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
             { userId: 'u5', name: '赵姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' }
         ],
         comments: [
-            { id: 'c6', userId: 'u5', name: '赵姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '二套房利率有降吗？', time: '2026-04-25 15:36:00' },
-            { id: 'c7', userId: 'a1', name: '365选房师-淘淘', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff', content: '赵姐，二套利率目前也是历史低点，具体我发您一份明细。', time: '2026-04-25 15:42:00', replyToName: '赵姐', replyToId: 'u5' },
-            { id: 'c8', userId: 'u5', name: '赵姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '好的，发我微信上。', time: '2026-04-25 15:50:00', replyToName: '365选房师-淘淘', replyToId: 'a1' }
+            { id: 'c6', userId: 'u5', name: '赵姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '二套房利率有降吗？', time: '2小时前' },
+            { id: 'c7', userId: 'a1', name: '365选房师-淘淘', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff', content: '赵姐，二套利率目前也是历史低点，具体我发您一份明细。', time: '1.5小时前', replyToName: '赵姐', replyToId: 'u5' },
+            { id: 'c8', userId: 'u5', name: '赵姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '好的，发我微信上。', time: '1小时前', replyToName: '365选房师-淘淘', replyToId: 'a1' }
         ]
     },
     {
         id: 'm2',
-        groupId: 'PYQ-20260401-003',
         accountId: 'a1',
         content: '今日带看日记：燕子矶板块热度不减！👍\n\n虽然天气转凉，但购房者的热情依然高涨。今天带客户看了燕子矶的几个热销盘，客户对区域配套和未来规划非常认可。\n\n视频号：365淘房南京',
         media: [
             { type: 'channels', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/video1/800/450', title: '燕子矶板块实探', thumbnail: 'https://images.weserv.nl/?url=https://picsum.photos/seed/video1/800/450', desc: '365淘房南京 · 视频号' }
         ],
-        time: '2026-04-01 09:12:00',
+        time: '2小时前',
         likes: [],
         comments: []
     }
@@ -3010,7 +2313,7 @@ function Workspace() {
   const [activeRightPanelTab, setActiveRightPanelTab] = useState('客户档案');
   const [activeModule, setActiveModule] = useState<'chat' | 'groups' | 'moments'>('chat');
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(MOCK_MOMENTS[0].id);
-  const [activeMomentFilter, setActiveMomentFilter] = useState<'all' | 'interacted'>('all');
+  const [activeMomentFilter, setActiveMomentFilter] = useState<'all' | 'pending' | 'interacted' | 'replied'>('all');
   const [isCustomerMoreMenuOpen, setIsCustomerMoreMenuOpen] = useState(false);
   const [isBlacklistModalOpen, setIsBlacklistModalOpen] = useState(false);
   const [isReceptionConfirmModalOpen, setIsReceptionConfirmModalOpen] = useState(false);
@@ -3369,36 +2672,6 @@ function Workspace() {
         ...updates
       }
     }));
-  };
-
-  const openCustomerChat = (target: { userId: string; name: string; avatar?: string }) => {
-    const matchedSession = sessionUsers.find(
-      session => session.customer788Id === target.userId || session.profileName === target.name || session.name === target.name
-    );
-    const tabTitle = matchedSession?.tabTitle || target.name || '新会话';
-    const tabId = matchedSession ? `chat-${matchedSession.customer788Id}` : `chat-${target.userId}`;
-    const existingProfile = chatCustomerProfiles[tabTitle];
-    const fallbackProfile = existingProfile || getDefaultChatCustomerProfile(tabTitle);
-
-    setChatCustomerProfiles(prev => ({
-      ...prev,
-      [tabTitle]: {
-        ...fallbackProfile,
-        name: target.name || fallbackProfile.name,
-        id788: target.userId || fallbackProfile.id788,
-        subtitle: matchedSession?.abnormalTag ? '异常用户' : fallbackProfile.subtitle,
-        abnormalTag: matchedSession?.abnormalTag ?? fallbackProfile.abnormalTag,
-        isBlacklisted: matchedSession?.isBlacklisted ?? fallbackProfile.isBlacklisted
-      }
-    }));
-
-    setTabs(prev => {
-      if (prev.some(tab => tab.id === tabId)) return prev;
-      return [...prev, { id: tabId, title: tabTitle, type: 'chat' }];
-    });
-    setActiveTabId(tabId);
-    setActiveModule('chat');
-    setActiveRightPanelTab('客户档案');
   };
 
   const handleValidLeadClick = () => {
@@ -4518,7 +3791,7 @@ function Workspace() {
 
       {/* Group List Panel */}
       {isGroupPanelOpen && (
-        <div className="w-[156px] border-r border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-zinc-50/30 dark:bg-zinc-900/10">
+        <div className="w-[180px] border-r border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-zinc-50/30 dark:bg-zinc-900/10">
           <div className="p-4 flex items-center gap-2 font-medium text-zinc-900 dark:text-zinc-100">
             <button 
               onClick={() => setIsGroupPanelOpen(false)}
@@ -4646,8 +3919,8 @@ function Workspace() {
                 </div>
 
                 <div className="mt-1">
-                  <div onClick={() => setActiveMomentFilter('interacted')} className={`flex items-center gap-2 px-4 py-2 cursor-pointer ${activeMomentFilter === 'interacted' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}>
-                    <MessageCircle size={16} className={activeMomentFilter === 'interacted' ? 'text-current' : 'text-zinc-400'} />
+                  <div onClick={() => setActiveMomentFilter('pending')} className={`flex items-center gap-2 px-4 py-2 cursor-pointer ${activeMomentFilter === 'pending' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}>
+                    <MessageCircle size={16} className={activeMomentFilter === 'pending' ? 'text-current' : 'text-zinc-400'} />
                     <span className="flex-1">待处理互动</span>
                   </div>
                 </div>
@@ -4942,13 +4215,22 @@ function Workspace() {
                selectedMomentId={selectedMomentId}
                onSelectMoment={setSelectedMomentId}
                onOpenProfile={() => {}}
-              onSendMessage={openCustomerChat}
+               onSendMessage={(userId) => {
+                 // Open a new tab for the user if it doesn't exist, and switch to it
+                 const user = sessionList.find(s => s.customer788Id === userId) || sessionList[0];
+                 const tabId = user ? `chat-${user.customer788Id}` : `chat-${userId}`;
+                 const existingTab = tabs.find(t => t.id === tabId);
+                 if (!existingTab) {
+                   setTabs([...tabs, { id: tabId, title: user ? user.name : '新会话', type: 'chat' }]);
+                 }
+                 setActiveTabId(tabId);
+                 setActiveModule('chat');
+               }}
                filter={activeMomentFilter}
                tabs={tabs}
                setTabs={setTabs}
                setActiveTabId={setActiveTabId}
                setActiveModule={setActiveModule}
-               customerProfiles={chatCustomerProfiles}
              />
            ) : renderContent()}
         </div>
@@ -6291,25 +5573,3 @@ if (rootElement) {
   root.render(<App />);
 }
 
-</script>
-<script>
-window.addEventListener('DOMContentLoaded', () => {
-    if (typeof Babel === 'undefined') {
-        const errorMsg = 'Babel standalone 加载失败，请检查网络连接或更换 CDN。';
-        console.error(errorMsg);
-        document.body.innerHTML = `<div style="padding: 20px; color: red;">${errorMsg}</div>`;
-        return;
-    }
-    try {
-        const sourceEl = document.getElementById('app-source');
-        const sourceCode = sourceEl ? sourceEl.textContent : '';
-        const transformed = Babel.transform(sourceCode, { presets: ['typescript', 'react'], sourceType: 'module', filename: 'app.tsx' });
-        const blobUrl = URL.createObjectURL(new Blob([transformed.code], { type: 'text/javascript' }));
-        import(blobUrl).catch((err) => { throw err; }).finally(() => URL.revokeObjectURL(blobUrl));
-    } catch (err) {
-        console.error('Babel 编译失败:', err);
-    }
-});
-</script>
-</body>
-</html>
