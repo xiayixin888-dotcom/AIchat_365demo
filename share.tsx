@@ -1153,32 +1153,6 @@ const MomentsView: React.FC<MomentsViewProps> = ({
 
     const closeContextMenu = () => setContextMenu(null);
 
-    const handleToggleLike = (content: string) => {
-        setMockMomentsState(prev => prev.map(m => {
-            if (m.content === content) {
-                // Use the account name of the moment's creator if available, otherwise fallback
-                const account = accounts.find(a => a.id === m.accountId);
-                const userName = account ? account.name : '365淘房官方号';
-                const userAvatar = account ? account.avatar : 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Official&background=0D8ABC&color=fff';
-                
-                const hasLiked = m.likes?.some(l => l.userId === (account ? account.id : 'me'));
-                if (hasLiked) {
-                    return { ...m, likes: m.likes.filter(l => l.userId !== (account ? account.id : 'me')) };
-                } else {
-                    return { 
-                        ...m, 
-                        likes: [...(m.likes || []), { 
-                            userId: account ? account.id : 'me', 
-                            name: userName, 
-                            avatar: userAvatar 
-                        }] 
-                    };
-                }
-            }
-            return m;
-        }));
-    };
-
     const handleMarkGroupProcessed = (groupId: string) => {
         setProcessedMomentGroups(prev => ({ ...prev, [groupId]: true }));
     };
@@ -1793,44 +1767,28 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         )}
 
                                         <div className="mt-4 flex flex-col gap-2" onClick={e => e.stopPropagation()}>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => handleToggleLike(group.content)}
-                                                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors border ${group.moments.some(m => {
-                                                        const accId = m.accountId || 'me';
-                                                        return m.likes?.some(l => l.userId === accId);
-                                                    }) ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-inner' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border-slate-200/60'}`}
-                                                >
-                                                    <Heart size={14} className={group.moments.some(m => {
-                                                        const accId = m.accountId || 'me';
-                                                        return m.likes?.some(l => l.userId === accId);
-                                                    }) ? 'fill-current' : ''} />
-                                                    {group.moments.some(m => {
-                                                        const accId = m.accountId || 'me';
-                                                        return m.likes?.some(l => l.userId === accId);
-                                                    }) ? '已点赞' : '点赞'}
-                                                    {(() => {
-                                                        const likesCount = group.pendingLikesCount;
-                                                        return likesCount > 0 ? <span className="ml-1 text-[12px] font-bold">({likesCount})</span> : null;
-                                                    })()}
-                                                </button>
-
+                                            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50/80 border border-slate-100 text-[12px] text-slate-500">
+                                                <Heart size={13} className="text-amber-500" />
+                                                <span>点赞</span>
+                                                <span className="font-semibold text-slate-700">{group.pendingLikesCount}</span>
+                                                <span className="text-slate-300">·</span>
+                                                <MessageCircle size={13} className="text-rose-500" />
+                                                <span>评论</span>
+                                                <span className="font-semibold text-slate-700">{group.pendingCommentsCount}</span>
+                                            </div>
+                                            <div className="flex justify-end gap-2">
                                                 <button
                                                     onClick={() => setReplyingToGroupId(replyingToGroupId === group.content ? null : group.content)}
-                                                    className="flex-1 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors border border-slate-200/60"
+                                                    className="px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center justify-center gap-1 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
                                                 >
-                                                    <MessageCircle size={14} />
+                                                    <MessageCircle size={13} />
                                                     评论
-                                                    {(() => {
-                                                        const commentsCount = group.pendingCommentsCount;
-                                                        return commentsCount > 0 ? <span className="ml-1 text-[12px] font-bold">({commentsCount})</span> : null;
-                                                    })()}
                                                 </button>
 
                                                 {filter === 'pending' && (
                                                     <button
                                                         onClick={() => handleMarkGroupProcessed(group.groupId)}
-                                                        className="flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-200 shadow-sm"
+                                                        className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-200 shadow-sm"
                                                     >
                                                         <CheckCircle2 size={14} />
                                                         标记已处理
