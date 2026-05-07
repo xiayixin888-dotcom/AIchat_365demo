@@ -83,10 +83,11 @@
 
     <!-- Main Entry -->
     <script id="app-source" type="text/plain">
+
 // Consolidated Imports
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ArrowUp, AtSign, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, ChevronLeft, Circle, Clock, Copy, FileText, Filter, History, Image as ImageIcon, ListFilter, Loader2, Mail, MessageSquare, MoreHorizontal, Play, Plus, RefreshCw, Search, Send, Slash, Smile, Square, User, UserPlus, Users, X, Zap, LineChart, UserCircle, FolderPlus, Eye, Trash2, PanelLeftOpen, AlertCircle, Megaphone, Tag, Settings, LayoutGrid, Command, Image, FolderOpen, Flame, Heart, MessageCircle, Share2, ExternalLink, Compass } from 'lucide-react';
+import { ArrowUp, AtSign, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, ChevronLeft, Circle, Clock, Copy, FileText, Filter, History, Image as ImageIcon, ListFilter, Loader2, Mail, MessageSquare, MoreHorizontal, Play, Plus, RefreshCw, Search, Send, Slash, Smile, Square, User, UserPlus, Users, X, Zap, LineChart, UserCircle, FolderPlus, Eye, Trash2, PanelLeftOpen, AlertCircle, Megaphone, Tag, Settings, LayoutGrid, Command, Image, FolderOpen, Flame, Heart, MessageCircle, Share2, ExternalLink, Compass, Link as LinkIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
 // --- Analytics Hook (埋点统计工具) ---
@@ -1129,7 +1130,7 @@ interface MomentsViewProps {
     onSelectMoment: (id: string) => void;
     onOpenProfile: (userId: string) => void;
     onSendMessage: (target: { userId: string; name: string; avatar?: string }) => void;
-    filter: 'all' | 'interacted';
+    filter: 'all' | 'pending';
     tabs?: WorkspaceTab[];
     setTabs?: React.Dispatch<React.SetStateAction<WorkspaceTab[]>>;
     setActiveTabId?: React.Dispatch<React.SetStateAction<string | null>>;
@@ -1161,7 +1162,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     const [groupReplyContent, setGroupReplyContent] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState<{ userId: string, name: string, avatar?: string } | null>(null);
     const [activeCustomerPanelTab, setActiveCustomerPanelTab] = useState<'客户档案' | '客户画像' | '客户行为'>('客户档案');
-    const [selectedMomentCity, setSelectedMomentCity] = useState('南京');
+    const [selectedMomentCity, setSelectedMomentCity] = useState('合肥');
     const [groupReplyImage, setGroupReplyImage] = useState<string | null>(null);
     const [replyImage, setReplyImage] = useState<string | null>(null);
     const [isGroupEmojiPickerOpen, setIsGroupEmojiPickerOpen] = useState(false);
@@ -1173,6 +1174,11 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     const [isBatchReplyOpen, setIsBatchReplyOpen] = useState(false);
     const [batchReplyText, setBatchReplyText] = useState('');
     const [batchReplyImage, setBatchReplyImage] = useState<string | null>(null);
+    const [batchReplyMiniProgram, setBatchReplyMiniProgram] = useState<string | null>(null);
+    const [isBatchMaterialDropdownOpen, setIsBatchMaterialDropdownOpen] = useState(false);
+    const [batchMaterialTab, setBatchMaterialTab] = useState<'图片' | '小程序卡片'>('图片');
+    const [batchMaterialQuery, setBatchMaterialQuery] = useState('');
+    const [isLikesExpanded, setIsLikesExpanded] = useState(false);
     
     // Added for new features
     const [commentSortBy, setCommentSortBy] = useState<'time' | 'heat'>('time');
@@ -1180,6 +1186,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     const [selectedCommentAccountId, setSelectedCommentAccountId] = useState<string | null>(null);
     const [expandedContents, setExpandedContents] = useState<Record<string, boolean>>({});
     const [contentOverflowMap, setContentOverflowMap] = useState<Record<string, boolean>>({});
+    const [processedMomentGroups, setProcessedMomentGroups] = useState<Record<string, boolean>>({});
     const contentRefs = React.useRef<Record<string, HTMLParagraphElement | null>>({});
 
     // Custom hook to manage mock state updates for moments
@@ -1195,6 +1202,12 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     }, [moments]);
 
     const isEnterpriseUserId = (userId?: string | null) => !!userId && (userId === 'me' || accounts.some(a => a.id === userId));
+    const getEnterpriseAvatar = (userId: string | null | undefined, fallbackAvatar?: string) => {
+        if (!userId) return fallbackAvatar;
+        if (userId === 'me') return accounts[0]?.avatar || fallbackAvatar;
+        const acc = accounts.find(a => a.id === userId);
+        return acc?.avatar || fallbackAvatar;
+    };
     const getEnterpriseDisplayName = (userId?: string | null, fallbackName?: string) => {
         if (userId === 'me') return accounts[0]?.name || fallbackName || '我';
         const acc = accounts.find(a => a.id === userId);
@@ -1251,6 +1264,10 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         }));
     };
 
+    const handleMarkGroupProcessed = (groupId: string) => {
+        setProcessedMomentGroups(prev => ({ ...prev, [groupId]: true }));
+    };
+
     const handleAddGroupComment = (content: string, text: string, image?: string | null) => {
         if (!text.trim() && !image) return;
         setMockMomentsState(prev => prev.map(m => {
@@ -1274,7 +1291,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             return m;
         }));
         setGroupReplyContent('');
-        setGroupReplyImage(null);
+        
         setReplyingToGroupId(null);
     };
 
@@ -1303,7 +1320,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         }));
         setReplyingTo(null);
         setReplyContent('');
-        setReplyImage(null);
+        
     };
 
     const parseDateTime = (value: string) => {
@@ -1329,6 +1346,24 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         return `${year}-${month}-${day} ${hours}:${minutes}`;
     };
 
+    const getDisplayedCommentCountForMoments = React.useCallback((momentsForCount: SimMoment[]) => {
+        let total = 0;
+        momentsForCount.forEach(moment => {
+            const momentComments = moment.comments || [];
+            const rootComments = momentComments.filter(comment => !comment.replyToId);
+            rootComments.forEach(root => {
+                const rootIsEnterprise = isEnterpriseUserId(root.userId);
+                const replies = momentComments.filter(comment => comment.replyToId === root.userId);
+                const hasCustomerReply = replies.some(reply => !isEnterpriseUserId(reply.userId));
+                if (rootIsEnterprise && !hasCustomerReply) {
+                    return;
+                }
+                total += 1 + replies.length;
+            });
+        });
+        return total;
+    }, [accounts]);
+
     // Group moments by content
     const groupedMoments = React.useMemo(() => {
         const groups: {
@@ -1352,27 +1387,12 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             const related = mockMomentsState.filter(rm => rm.groupId === m.groupId);
             const sortedRelated = [...related].sort((a, b) => parseDateTime(b.time).getTime() - parseDateTime(a.time).getTime());
             const latestMoment = sortedRelated[0];
-            const customerCommentUserIds = new Set<string>();
-            const pendingCommentIds = new Set<string>();
-
-            related.forEach(momentItem => {
-                (momentItem.comments || []).forEach((comment, index, comments) => {
-                    if (isCompanyUser(comment.userId)) return;
-                    customerCommentUserIds.add(comment.userId);
-                    const nextCompanyReply = comments.slice(index + 1).find(next => (
-                        isCompanyUser(next.userId) &&
-                        (next.replyToId === comment.userId || (comment.replyToId && next.replyToId === comment.replyToId))
-                    ));
-                    if (!nextCompanyReply) {
-                        pendingCommentIds.add(comment.id);
-                    }
-                });
-            });
+            const pendingCommentsCount = getDisplayedCommentCountForMoments(related);
 
             const pendingLikesCount = Array.from(new Map(
                 related
                     .flatMap(momentItem => momentItem.likes || [])
-                    .filter(like => !isCompanyUser(like.userId) && !customerCommentUserIds.has(like.userId))
+                    .filter(like => !isCompanyUser(like.userId))
                     .map(like => [like.userId, like])
             ).values()).length;
 
@@ -1391,18 +1411,21 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                 media: latestMoment.media,
                 publisherAccounts,
                 pendingLikesCount,
-                pendingCommentsCount: pendingCommentIds.size,
+                pendingCommentsCount,
                 dateKey: formatMomentFullTime(latestMoment.time).slice(0, 10)
             };
 
             const matchCity = selectedMomentCity === '全部' || groupItem.publisherAccounts.some(account => account.city === selectedMomentCity);
-            if (matchCity && (filter === 'all' || (groupItem.pendingLikesCount > 0 || groupItem.pendingCommentsCount > 0))) {
+            const hasPendingInteractions = groupItem.pendingLikesCount > 0 || groupItem.pendingCommentsCount > 0;
+            const shouldShowInCurrentFilter = filter === 'all' || (hasPendingInteractions && !processedMomentGroups[groupItem.groupId]);
+
+            if (matchCity && shouldShowInCurrentFilter) {
                 groups.push(groupItem);
             }
         });
 
         return groups.sort((a, b) => parseDateTime(b.latestTime).getTime() - parseDateTime(a.latestTime).getTime());
-    }, [mockMomentsState, filter, accounts, selectedMomentCity]);
+    }, [mockMomentsState, filter, accounts, selectedMomentCity, getDisplayedCommentCountForMoments, processedMomentGroups]);
 
     useEffect(() => {
         const nextOverflowMap: Record<string, boolean> = {};
@@ -1539,19 +1562,11 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         };
 
         return [...commentThreads].sort((a, b) => {
-            if (commentSortBy === 'time') {
-                // Find most recent time in thread
-                const getLatestTime = (thread: typeof a) => {
-                    const times = [parseTime(thread.rootComment.time), ...thread.replies.map(r => parseTime(r.time))];
-                    return Math.max(...times);
-                };
-                return getLatestTime(b) - getLatestTime(a);
-            } else {
-                // Sort by heat (number of replies + 1 for root)
-                const heatA = 1 + a.replies.length;
-                const heatB = 1 + b.replies.length;
-                return heatB - heatA; // Descending
-            }
+            const getLatestTime = (thread: typeof a) => {
+                const times = [parseTime(thread.rootComment.time), ...thread.replies.map(r => parseTime(r.time))];
+                return Math.max(...times);
+            };
+            return getLatestTime(b) - getLatestTime(a);
         });
     }, [commentThreads, commentSortBy]);
 
@@ -1574,11 +1589,20 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     useEffect(() => {
         setSelectedLikers(prev => prev.filter(userId => aggregatedLikes.some(like => like.userId === userId)));
     }, [aggregatedLikes]);
+    
+    useEffect(() => {
+        setIsLikesExpanded(false);
+    }, [selectedContent]);
 
     const filteredCommentThreads = React.useMemo(() => {
         if (!selectedCommentAccountId) return sortedCommentThreads;
         return sortedCommentThreads.filter(thread => thread.account?.id === selectedCommentAccountId);
     }, [sortedCommentThreads, selectedCommentAccountId]);
+
+    const totalCommentCount = React.useMemo(
+        () => commentThreads.reduce((acc, thread) => acc + 1 + thread.replies.length, 0),
+        [commentThreads]
+    );
 
     const visibleCommentCount = React.useMemo(
         () => filteredCommentThreads.reduce((acc, thread) => acc + 1 + thread.replies.length, 0),
@@ -1718,6 +1742,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                     </div>
                 </div>
                 <div className="flex-1 overflow-y-auto px-3 py-5 space-y-5">
+                    <AnimatePresence initial={false}>
                     {groupedMoments.map((group) => {
                         const isActive = selectedMoment?.content === group.content;
                         const leftDate = formatMomentLeftDate(group.latestTime);
@@ -1726,12 +1751,19 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                             ? `等${group.publisherAccounts.length}个账号发布`
                             : '发布';
                         return (
-                            <React.Fragment key={group.groupId}>
+                            <motion.div
+                                key={group.groupId}
+                                layout
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                                transition={{ duration: 0.18 }}
+                            >
                                 <div className="flex gap-3 items-start">
                                     <div className="w-[56px] shrink-0 pt-2 text-right">
                                         <div className="text-[28px] leading-none font-bold text-slate-900">{leftDate.day}</div>
                                         <div className="text-sm text-slate-500 mt-1">{leftDate.month}</div>
-                                        {filter === 'interacted' && (group.pendingLikesCount > 0 || group.pendingCommentsCount > 0) && (
+                                        {filter === 'pending' && (group.pendingLikesCount > 0 || group.pendingCommentsCount > 0) && (
                                             <div className="mt-2 flex flex-col items-end gap-1">
                                                 {group.pendingLikesCount > 0 && (
                                                     <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 shadow-sm">
@@ -1754,7 +1786,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         }}
                                         className={`flex-1 min-w-0 text-left p-4 rounded-2xl transition-all duration-200 group cursor-pointer bg-white border border-slate-200
                                             ${isActive
-                                                ? 'shadow-md ring-1 ring-blue-100 border-blue-100'
+                                                ? 'shadow-xl ring-2 ring-blue-400 border-blue-400 bg-blue-50/40'
                                                 : 'hover:shadow-sm hover:border-slate-300'}`}
                                     >
                                         <div className="flex items-start justify-between gap-3 mb-2">
@@ -1777,13 +1809,12 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                     </span>
                                                     <span className="shrink-0 whitespace-nowrap text-slate-500">{publisherSuffix}</span>
                                                 </div>
-                                                <div className="absolute left-0 top-[calc(100%+8px)] hidden group-hover/publisher:block z-20 w-64 bg-white border border-slate-200 rounded-xl shadow-xl p-2">
-                                                    <div className="text-[11px] text-slate-400 px-2 py-1">发布账号列表</div>
+                                                <div className="absolute left-0 top-[calc(100%+8px)] hidden group-hover/publisher:block z-20 w-64 bg-white border border-slate-200 rounded-xl shadow-xl p-2 max-h-[300px] overflow-y-auto">
+                                                    <div className="text-[11px] text-slate-400 px-2 py-1 sticky top-0 bg-white/90 backdrop-blur-sm z-10">发布账号列表</div>
                                                     {group.publisherAccounts.map(account => (
                                                         <div key={account.id} className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50">
-                                                            <img src={account.avatar} className="w-6 h-6 rounded-md border border-slate-200" alt="" />
-                                                            {renderEnterpriseName(account.id, account.name, 'text-xs font-semibold text-indigo-600', 'text-[12px]')}
-                                                            <span className="text-[10px] text-slate-500 ml-auto px-1.5 py-0.5 rounded bg-slate-100">{account.city}</span>
+                                                            <img src={account.avatar} className="w-6 h-6 rounded-md border border-slate-200 shrink-0" alt="" />
+                                                            {renderEnterpriseName(account.id, account.name, 'text-xs font-semibold text-indigo-600 min-w-0 truncate', 'text-[12px]')}
                                                         </div>
                                                     ))}
                                                 </div>
@@ -1864,7 +1895,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                         return m.likes?.some(l => l.userId === accId);
                                                     }) ? '已点赞' : '点赞'}
                                                     {(() => {
-                                                        const likesCount = group.moments.reduce((acc, m) => acc + (m.likes?.length || 0), 0);
+                                                        const likesCount = group.pendingLikesCount;
                                                         return likesCount > 0 ? <span className="ml-1 text-[12px] font-bold">({likesCount})</span> : null;
                                                     })()}
                                                 </button>
@@ -1876,10 +1907,20 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                     <MessageCircle size={14} />
                                                     评论
                                                     {(() => {
-                                                        const commentsCount = group.moments.reduce((acc, m) => acc + (m.comments?.length || 0), 0);
+                                                        const commentsCount = group.pendingCommentsCount;
                                                         return commentsCount > 0 ? <span className="ml-1 text-[12px] font-bold">({commentsCount})</span> : null;
                                                     })()}
                                                 </button>
+
+                                                {filter === 'pending' && (
+                                                    <button
+                                                        onClick={() => handleMarkGroupProcessed(group.groupId)}
+                                                        className="flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-200 shadow-sm"
+                                                    >
+                                                        <CheckCircle2 size={14} />
+                                                        标记已处理
+                                                    </button>
+                                                )}
                                             </div>
 
                                             {(() => {
@@ -1921,12 +1962,14 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                             >
                                                                 <span className="font-bold text-slate-700 mt-0.5 flex items-center flex-wrap leading-6 min-w-0">
                                                                     <MessageCircle size={14} className="mr-1.5 text-blue-500" />
-                                                                    {commentGroup.authors.map((a, authorIndex) => (
-                                                                        <React.Fragment key={a.id}>
-                                                                            {authorIndex > 0 && <span className="text-slate-400">、</span>}
-                                                                            {renderEnterpriseName(a.id, a.name, 'text-slate-700', 'text-[13px]')}
-                                                                        </React.Fragment>
-                                                                    ))}
+                                                                    {commentGroup.authors.length > 1 ? (
+                                                                        <>
+                                                                            {renderEnterpriseName(commentGroup.authors[0].id, commentGroup.authors[0].name, 'text-slate-700', 'text-[13px]')}
+                                                                            <span className="text-slate-700">等{commentGroup.authors.length}个账号</span>
+                                                                        </>
+                                                                    ) : (
+                                                                        renderEnterpriseName(commentGroup.authors[0].id, commentGroup.authors[0].name, 'text-slate-700', 'text-[13px]')
+                                                                    )}
                                                                     <span>:</span>
                                                                 </span>
                                                                 <div className="leading-relaxed mt-0.5 min-w-0">
@@ -1957,17 +2000,6 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                              placeholder="输入评论内容..."
                                                              className="w-full text-xs bg-transparent outline-none resize-none min-h-[64px] leading-5 placeholder:text-slate-400"
                                                            />
-                                                           {groupReplyImage && (
-                                                               <div className="relative mt-2 w-20 h-20">
-                                                                   <img src={groupReplyImage} className="w-full h-full object-cover rounded-lg border border-slate-200" alt="评论图片" />
-                                                                   <button
-                                                                       onClick={() => setGroupReplyImage(null)}
-                                                                       className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-black/65 text-white text-[10px] flex items-center justify-center"
-                                                                   >
-                                                                       <X size={12} />
-                                                                   </button>
-                                                               </div>
-                                                           )}
                                                            <div className="mt-2 flex items-center justify-between gap-2">
                                                                <div className="flex items-center gap-1.5 relative">
                                                                    <button
@@ -1997,33 +2029,14 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                            </div>
                                                                        </div>
                                                                    )}
-                                                                   <button
-                                                                       type="button"
-                                                                       onClick={() => groupReplyImageInputRef.current?.click()}
-                                                                       className="px-2 py-1 text-xs rounded-md border border-slate-200 bg-white hover:bg-slate-100 flex items-center gap-1"
-                                                                   >
-                                                                       <ImageIcon size={12} /> 图片
-                                                                   </button>
-                                                                   <input
-                                                                       ref={groupReplyImageInputRef}
-                                                                       type="file"
-                                                                       accept="image/*"
-                                                                       className="hidden"
-                                                                       onChange={(e) => {
-                                                                           const file = e.target.files?.[0];
-                                                                           if (file) {
-                                                                               readImageAsDataUrl(file, setGroupReplyImage);
-                                                                           }
-                                                                           e.target.value = '';
-                                                                       }}
-                                                                   />
+
                                                                </div>
                                                                <div className="flex items-center gap-2">
                                                                    <button
                                                                        onClick={() => {
                                                                            setReplyingToGroupId(null);
                                                                            setGroupReplyContent('');
-                                                                           setGroupReplyImage(null);
+                                                                           
                                                                            setIsGroupEmojiPickerOpen(false);
                                                                        }}
                                                                        className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1"
@@ -2031,9 +2044,9 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                        取消
                                                                    </button>
                                                                    <button
-                                                                       disabled={!groupReplyContent.trim() && !groupReplyImage}
+                                                                       disabled={!groupReplyContent.trim()}
                                                                        onClick={() => {
-                                                                           handleAddGroupComment(group.content, groupReplyContent, groupReplyImage);
+                                                                           handleAddGroupComment(group.content, groupReplyContent, null);
                                                                            setIsGroupEmojiPickerOpen(false);
                                                                        }}
                                                                        className="px-3 py-1.5 flex items-center justify-center gap-1 bg-blue-600 text-white rounded-md text-xs font-bold disabled:opacity-50"
@@ -2050,9 +2063,10 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         </div>
                                     </div>
                                 </div>
-                            </React.Fragment>
+                            </motion.div>
                         );
                     })}
+                    </AnimatePresence>
                 </div>
             </div>
 
@@ -2123,7 +2137,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         <div className="min-h-[220px] max-h-[300px] overflow-y-auto pr-1">
                                             <div className="grid grid-cols-5 gap-6 p-2">
                                                 {aggregatedLikes.length > 0 ? (
-                                                    aggregatedLikes.map((like) => (
+                                                    (isLikesExpanded ? aggregatedLikes : aggregatedLikes.slice(0, 10)).map((like) => (
                                                         <div key={like.userId} className="flex flex-col items-center gap-2 relative">
                                                             <div className="absolute top-1 right-1 z-10 bg-white/80 backdrop-blur-sm rounded-md flex items-center justify-center w-6 h-6 shadow-sm border border-slate-200">
                                                                 <input
@@ -2210,6 +2224,17 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                     </div>
                                                 )}
                                             </div>
+                                            {aggregatedLikes.length > 10 && (
+                                                <div className="flex justify-center mt-2 mb-4">
+                                                    <button 
+                                                        onClick={() => setIsLikesExpanded(!isLikesExpanded)}
+                                                        className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"
+                                                    >
+                                                        {isLikesExpanded ? '收起' : '查看更多'}
+                                                        <ChevronDown size={12} className={`transform transition-transform ${isLikesExpanded ? 'rotate-180' : ''}`} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -2217,22 +2242,9 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
                                             <div className="flex items-center gap-2">
                                                 <MessageSquare size={16} className="text-blue-500" />
-                                                <span className="text-[15px] font-bold text-slate-800">评论区 ({visibleCommentCount})</span>
+                                                <span className="text-[15px] font-bold text-slate-800">评论区 ({totalCommentCount})</span>
                                             </div>
-                                            <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-lg border border-slate-100">
-                                                <button
-                                                    onClick={() => setCommentSortBy('time')}
-                                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${commentSortBy === 'time' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
-                                                >
-                                                    按时间
-                                                </button>
-                                                <button
-                                                    onClick={() => setCommentSortBy('heat')}
-                                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${commentSortBy === 'heat' ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
-                                                >
-                                                    按热度
-                                                </button>
-                                            </div>
+
                                         </div>
 
                                         <div className="flex gap-4 min-h-[520px]">
@@ -2274,7 +2286,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                     onClick={() => openCustomerPanel(thread.rootComment.userId, thread.rootComment.name, thread.rootComment.avatar)}
                                                                         onContextMenu={(e) => handleContextMenu(e, thread.rootComment.userId, thread.rootComment.name, thread.rootComment.avatar)}
                                                                     >
-                                                                        <img src={thread.rootComment.avatar} className="w-8 h-8 rounded-full border border-slate-100" alt="" />
+                                                                        <img src={getEnterpriseAvatar(thread.rootComment.userId, thread.rootComment.avatar)} className="w-8 h-8 rounded-full border border-slate-100 object-cover" alt="" />
                                                                     </button>
                                                                     <div>
                                                                     <button
@@ -2307,13 +2319,15 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                     {thread.replies.map(reply => (
                                                                         <div key={reply.id} className="text-sm group/reply relative">
                                                                             <div className="flex items-center gap-1.5 mb-1">
-                                                                                <button onClick={() => openCustomerPanel(reply.userId, reply.name, reply.avatar)} className="font-bold text-[#576b95] hover:underline">
+                                                                                <button onClick={() => openCustomerPanel(reply.userId, reply.name, reply.avatar)} className="flex items-center gap-1.5 font-bold text-[#576b95] hover:underline">
+                                                                                    <img src={getEnterpriseAvatar(reply.userId, reply.avatar)} className="w-5 h-5 rounded-full border border-slate-100 object-cover" alt="" />
                                                                                     {renderEnterpriseName(reply.userId, reply.name, 'font-bold text-[#576b95]', 'text-sm')}
                                                                                 </button>
                                                                                 {reply.replyToName && (
                                                                                     <>
                                                                                         <span className="text-slate-400 text-[12px]">回复</span>
-                                                                                        <button onClick={() => reply.replyToId && openCustomerPanel(reply.replyToId, reply.replyToName || '客户')} className="font-bold text-[#576b95] hover:underline">
+                                                                                        <button onClick={() => reply.replyToId && openCustomerPanel(reply.replyToId, reply.replyToName || '客户')} className="flex items-center gap-1.5 font-bold text-[#576b95] hover:underline">
+                                                                                            <img src={getEnterpriseAvatar(reply.replyToId, 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=C&background=f1f5f9&color=94a3b8')} className="w-5 h-5 rounded-full border border-slate-100 object-cover" alt="" />
                                                                                             {renderEnterpriseName(reply.replyToId, reply.replyToName || '客户', 'font-bold text-[#576b95]', 'text-sm')}
                                                                                         </button>
                                                                                     </>
@@ -2331,7 +2345,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                                     onClick={() => {
                                                                                         setReplyingTo({ accountId: thread.account?.id || '', commentId: thread.rootComment.id, userName: reply.name, replyToId: reply.userId });
                                                                                         setReplyContent('');
-                                                                                        setReplyImage(null);
+                                                                                        
                                                                                         setIsReplyEmojiPickerOpen(false);
                                                                                     }}
                                                                                     className="absolute bottom-0 right-0 opacity-0 group-hover/reply:opacity-100 text-[12px] text-blue-500 hover:text-blue-600 flex items-center gap-1 transition-opacity"
@@ -2359,22 +2373,11 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                                         if (e.key === 'Enter' && !e.shiftKey) {
                                                                                             e.preventDefault();
                                                                                             if ((replyContent.trim() || replyImage) && replyingTo) {
-                                                                                                handleAddReply(thread.momentId, replyingTo.replyToId, replyingTo.userName, replyContent, replyImage);
+                                                                                                handleAddReply(thread.momentId, replyingTo.replyToId, replyingTo.userName, replyContent, null);
                                                                                             }
                                                                                         }
                                                                                     }}
                                                                                 ></textarea>
-                                                                                {replyImage && (
-                                                                                    <div className="relative mt-2 w-20 h-20">
-                                                                                        <img src={replyImage} className="w-full h-full object-cover rounded-lg border border-slate-200" alt="回复图片" />
-                                                                                        <button
-                                                                                            onClick={() => setReplyImage(null)}
-                                                                                            className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-black/65 text-white text-[10px] flex items-center justify-center"
-                                                                                        >
-                                                                                            <X size={12} />
-                                                                                        </button>
-                                                                                    </div>
-                                                                                )}
                                                                                 <div className="flex items-center justify-between gap-2 mt-2">
                                                                                     <div className="flex items-center gap-1.5 relative">
                                                                                         <button
@@ -2404,33 +2407,14 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                                                 </div>
                                                                                             </div>
                                                                                         )}
-                                                                                        <button
-                                                                                            type="button"
-                                                                                            onClick={() => replyImageInputRef.current?.click()}
-                                                                                            className="px-2 py-1 text-xs rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center gap-1"
-                                                                                        >
-                                                                                            <ImageIcon size={12} /> 图片
-                                                                                        </button>
-                                                                                        <input
-                                                                                            ref={replyImageInputRef}
-                                                                                            type="file"
-                                                                                            accept="image/*"
-                                                                                            className="hidden"
-                                                                                            onChange={(e) => {
-                                                                                                const file = e.target.files?.[0];
-                                                                                                if (file) {
-                                                                                                    readImageAsDataUrl(file, setReplyImage);
-                                                                                                }
-                                                                                                e.target.value = '';
-                                                                                            }}
-                                                                                        />
+
                                                                                     </div>
                                                                                     <div className="flex justify-end gap-2">
                                                                                     <button
                                                                                         onClick={() => {
                                                                                             setReplyingTo(null);
                                                                                             setReplyContent('');
-                                                                                            setReplyImage(null);
+                                                                                            
                                                                                             setIsReplyEmojiPickerOpen(false);
                                                                                         }}
                                                                                         className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1"
@@ -2438,10 +2422,10 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                                         取消
                                                                                     </button>
                                                                                     <button
-                                                                                        disabled={!replyContent.trim() && !replyImage}
+                                                                                        disabled={!replyContent.trim()}
                                                                                         onClick={() => {
                                                                                             if (replyingTo) {
-                                                                                                handleAddReply(thread.momentId, replyingTo.replyToId, replyingTo.userName, replyContent, replyImage);
+                                                                                                handleAddReply(thread.momentId, replyingTo.replyToId, replyingTo.userName, replyContent, null);
                                                                                             }
                                                                                             setIsReplyEmojiPickerOpen(false);
                                                                                         }}
@@ -2460,7 +2444,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                         onClick={() => {
                                                                             setReplyingTo({ accountId: thread.account?.id || '', commentId: thread.rootComment.id, userName: thread.rootComment.name, replyToId: thread.rootComment.userId });
                                                                             setReplyContent('');
-                                                                            setReplyImage(null);
+                                                                            
                                                                             setIsReplyEmojiPickerOpen(false);
                                                                         }}
                                                                         className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1 transition-colors"
@@ -2692,7 +2676,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white rounded-xl shadow-2xl w-[480px] flex flex-col overflow-hidden"
+                            className="bg-white rounded-xl shadow-2xl w-[600px] flex flex-col overflow-hidden"
                         >
                             <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                                 <h3 className="font-bold text-slate-800">私聊回复 ({selectedLikers.length}人)</h3>
@@ -2701,6 +2685,8 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         setIsBatchReplyOpen(false);
                                         setBatchReplyText('');
                                         setBatchReplyImage(null);
+                                        setBatchReplyMiniProgram(null);
+                                        setIsBatchMaterialDropdownOpen(false);
                                     }}
                                     className="text-slate-400 hover:text-slate-600 transition-colors"
                                 >
@@ -2717,30 +2703,160 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         className="w-full h-32 p-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">添加图片 (可选)</label>
-                                    <div className="flex items-center gap-4">
-                                        <button 
-                                            className="w-20 h-20 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-400 hover:text-blue-500 hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer"
-                                            onClick={() => {
-                                                // Mock selecting an image
-                                                setBatchReplyImage('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=400');
-                                            }}
-                                        >
-                                            <ImageIcon size={24} className="mb-1" />
-                                            <span className="text-[10px]">选择图片</span>
-                                        </button>
-                                        {batchReplyImage && (
-                                            <div className="relative w-20 h-20 group">
-                                                <img src={batchReplyImage} className="w-full h-full object-cover rounded-lg border border-slate-200" alt="Selected" />
-                                                <button 
-                                                    onClick={() => setBatchReplyImage(null)}
-                                                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <X size={12} />
-                                                </button>
-                                            </div>
-                                        )}
+                                <div className="grid grid-cols-2 gap-6">
+                                    {/* Image Section */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">添加图片 (可选)</label>
+                                        <div className="flex flex-wrap items-center gap-4 relative">
+                                            <input 
+                                                type="file" 
+                                                accept="image/*"
+                                                className="hidden"
+                                                ref={groupReplyImageInputRef}
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        const reader = new FileReader();
+                                                        reader.onload = (e) => setBatchReplyImage(e.target?.result as string);
+                                                        reader.readAsDataURL(file);
+                                                    }
+                                                }}
+                                            />
+                                            <button 
+                                                className="w-20 h-20 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-400 hover:text-blue-500 hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer"
+                                                onClick={() => {
+                                                    setIsBatchMaterialDropdownOpen(true);
+                                                    setBatchMaterialTab('图片');
+                                                    setBatchMaterialQuery('');
+                                                }}
+                                            >
+                                                <ImageIcon size={24} className="mb-1" />
+                                                <span className="text-[10px]">添加图片</span>
+                                            </button>
+
+                                            {batchReplyImage && (
+                                                <div className="relative w-20 h-20 group">
+                                                    <img src={batchReplyImage} className="w-full h-full object-cover rounded-lg border border-slate-200" alt="Selected" />
+                                                    <button 
+                                                        onClick={() => setBatchReplyImage(null)}
+                                                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {isBatchMaterialDropdownOpen && batchMaterialTab === '图片' && (
+                                                <div className="absolute bottom-full left-0 mb-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden flex flex-col">
+                                                    <div className="p-2 border-b border-slate-100 flex gap-2">
+                                                        <input 
+                                                            type="text" 
+                                                            value={batchMaterialQuery}
+                                                            onChange={e => setBatchMaterialQuery(e.target.value)}
+                                                            placeholder="搜索图片素材..."
+                                                            className="flex-1 text-xs px-2 py-1.5 bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-400"
+                                                        />
+                                                        <button 
+                                                            onClick={() => {
+                                                                setIsBatchMaterialDropdownOpen(false);
+                                                                if (groupReplyImageInputRef.current) {
+                                                                    groupReplyImageInputRef.current.value = '';
+                                                                    groupReplyImageInputRef.current.click();
+                                                                }
+                                                            }}
+                                                            className="px-2 py-1.5 text-[10px] font-medium bg-white border border-slate-200 text-slate-600 rounded hover:bg-slate-50 shrink-0 whitespace-nowrap"
+                                                        >本地上传</button>
+                                                    </div>
+                                                    <div className="max-h-48 overflow-y-auto p-1">
+                                                        {(() => {
+                                                            const results = ['春季上新海报.png', '双十一大促.jpg', '产品介绍图.png'].filter(i => i.toLowerCase().includes(batchMaterialQuery.toLowerCase()));
+                                                            if (results.length === 0) return <div className="py-4 text-center text-xs text-slate-400">暂无数据</div>;
+                                                            return results.map(item => (
+                                                                <div 
+                                                                    key={item}
+                                                                    className="px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 rounded cursor-pointer flex items-center gap-2"
+                                                                    onClick={() => {
+                                                                        setBatchReplyImage('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=200&h=200&fit=crop');
+                                                                        setIsBatchMaterialDropdownOpen(false);
+                                                                    }}
+                                                                >
+                                                                    <ImageIcon size={12} className="text-slate-400" />
+                                                                    {item}
+                                                                </div>
+                                                            ));
+                                                        })()}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Mini Program Section */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">添加小程序 (可选)</label>
+                                        <div className="flex flex-col gap-2 relative">
+                                            <button 
+                                                className="w-full h-10 border border-dashed border-slate-300 rounded-lg flex items-center justify-center gap-2 text-slate-500 hover:text-indigo-500 hover:border-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer"
+                                                onClick={() => {
+                                                    setIsBatchMaterialDropdownOpen(true);
+                                                    setBatchMaterialTab('小程序卡片');
+                                                    setBatchMaterialQuery('');
+                                                }}
+                                            >
+                                                <FileText size={16} />
+                                                <span className="text-xs font-medium">选择小程序</span>
+                                            </button>
+
+                                            {batchReplyMiniProgram && (
+                                                <div className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 flex items-center justify-between group">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <LinkIcon size={14} className="text-indigo-500 shrink-0" />
+                                                        <span className="text-xs font-medium text-slate-700 truncate" title={batchReplyMiniProgram}>
+                                                            {batchReplyMiniProgram}
+                                                        </span>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => setBatchReplyMiniProgram(null)}
+                                                        className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {isBatchMaterialDropdownOpen && batchMaterialTab === '小程序卡片' && (
+                                                <div className="absolute bottom-full left-0 mb-2 w-full bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden flex flex-col">
+                                                    <div className="p-2 border-b border-slate-100 flex gap-2">
+                                                        <input 
+                                                            type="text" 
+                                                            value={batchMaterialQuery}
+                                                            onChange={e => setBatchMaterialQuery(e.target.value)}
+                                                            placeholder="搜索小程序..."
+                                                            className="flex-1 text-xs px-2 py-1.5 bg-slate-50 border border-slate-200 rounded outline-none focus:border-indigo-400"
+                                                        />
+                                                    </div>
+                                                    <div className="max-h-48 overflow-y-auto p-1">
+                                                        {(() => {
+                                                            const results = ['商品详情页', '活动主会场', '会员中心'].filter(i => i.toLowerCase().includes(batchMaterialQuery.toLowerCase()));
+                                                            if (results.length === 0) return <div className="py-4 text-center text-xs text-slate-400">暂无数据</div>;
+                                                            return results.map(item => (
+                                                                <div 
+                                                                    key={item}
+                                                                    className="px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 rounded cursor-pointer flex items-center gap-2"
+                                                                    onClick={() => {
+                                                                        setBatchReplyMiniProgram(item);
+                                                                        setIsBatchMaterialDropdownOpen(false);
+                                                                    }}
+                                                                >
+                                                                    <FileText size={12} className="text-slate-400" />
+                                                                    {item}
+                                                                </div>
+                                                            ));
+                                                        })()}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2750,6 +2866,8 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         setIsBatchReplyOpen(false);
                                         setBatchReplyText('');
                                         setBatchReplyImage(null);
+                                        setBatchReplyMiniProgram(null);
+                                        setIsBatchMaterialDropdownOpen(false);
                                     }}
                                     className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
                                 >
@@ -2867,14 +2985,273 @@ const MOCK_ACCOUNTS: EnterpriseAccount[] = [
         city: '南京',
         lastMoment: { type: 'channels' }
     },
+    { 
+        id: 'hf1', 
+        name: '海房夏夏', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=夏&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf2', 
+        name: '海房秋秋', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=秋&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf3', 
+        name: '海房蕾蕾', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=蕾&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf4', 
+        name: '海房含含', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=含&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf5', 
+        name: '海房小助手', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=手&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf6', 
+        name: '房博士楼哥', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=哥&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf7', 
+        name: '房博士小安', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=安&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf8', 
+        name: '海房菲菲', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=菲&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf9', 
+        name: '海房妙妙', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=妙&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf10', 
+        name: '海房小赞', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=赞&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf11', 
+        name: 'AI找房-澄澄', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=澄&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf12', 
+        name: '海房苏苏', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=苏&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf13', 
+        name: '海房雅雅', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=雅&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf14', 
+        name: 'AI找房-小希', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=娅&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf15', 
+        name: 'AI找房-月月', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=希&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf16', 
+        name: '海房琪琪', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=月&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf17', 
+        name: '海房柴柴', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=琪&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf18', 
+        name: '海房可乐', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=柴&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf19', 
+        name: '海房冰冰', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=乐&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf20', 
+        name: '选房分析师霏霏', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=冰&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf21', 
+        name: '选房分析师家家', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=霏&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf22', 
+        name: 'AI找房', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=家&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf23', 
+        name: 'AI找房-柒柒', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=房&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf24', 
+        name: '海房时一', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=柒&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf25', 
+        name: '海房露露', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=一&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf26', 
+        name: '海房在在', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=露&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf27', 
+        name: '房博士妍姐', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=在&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf28', 
+        name: '选房分析师合合', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=姐&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf29', 
+        name: '房博士奋斗', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=合&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf30', 
+        name: 'AI找房-雪碧', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=斗&background=random&color=fff', 
+        city: '合肥'
+    },
+    { 
+        id: 'hf31', 
+        name: '选房分析师娅娅', 
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=碧&background=random&color=fff', 
+        city: '合肥'
+    },
 ];
 
-const SHARED_MOMENT_CONTENT = '🔥【河西中·精装现房】万科·星雨华府，业主急售！\n\n单价仅需3.X万/平，比同户型便宜50万！\n满二唯一，省税费。看房随时有钥匙！🔑\n\n户型方正，南北通透，采光极佳。周边配套成熟，距离地铁站仅500米，双学区加持，未来升值空间大。\n\n房东因为工作调动急需置换，价格还有很大谈的空间。近期河西中板块热度持续上升，这样高性价比的房源出来一套少一套。\n\n🔗点链接查看详情#小程序://365淘房/kGqr6SUQCfq038c\n\n#南京房产 #河西买房 #捡漏房源';
+const HEFEI_MOMENT_CONTENT = `🏠总价89万！瑶海保利精装四房
+📅2018年交房 满五唯一税费低
+🙂中间楼层不挡采光 通透边户
+
+💰价格好谈，感兴趣私发「9」看位置~`;
+const HEFEI_MOMENT_MEDIA = [
+    { type: 'image', url: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=400&q=80' }
+];
+const HEFEI_MOMENT_ACCOUNT_IDS = ['hf1', 'hf2', 'hf3', 'hf4', 'hf5', 'hf6', 'hf7', 'hf8', 'hf9', 'hf10', 'hf11', 'hf12', 'hf13', 'hf14', 'hf15', 'hf16', 'hf17', 'hf18', 'hf19', 'hf20', 'hf21', 'hf22', 'hf23', 'hf24', 'hf25', 'hf26', 'hf27', 'hf28', 'hf29', 'hf30', 'hf31'];
+const HEFEI_MOMENT_LIKES: MomentLike[] = [
+    { userId: 'c_hf_l1', name: '李姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l2', name: '王哥', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l3', name: '张老师', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l4', name: '陈女士', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l5', name: '刘先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l6', name: '周姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l7', name: '吴总', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l8', name: '徐女士', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l9', name: '孙先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1504257432389-52343af06ae3?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l10', name: '朱姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l11', name: '胡哥', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l12', name: '郭老师', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1546961329-78bef0414d7c?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l13', name: '何女士', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1517365830460-955ce3ccd263?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l14', name: '高先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l15', name: '林姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l16', name: '马先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l17', name: '罗女士', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l18', name: '梁哥', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1504257432389-52343af06ae3?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l19', name: '郑姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1517365830460-955ce3ccd263?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l20', name: '谢先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l21', name: '宋女士', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l22', name: '唐哥', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
+    { userId: 'c_hf_l23', name: '许姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' }
+];
+const HEFEI_MOMENT_COMMENTS: MomentComment[] = [
+    { id: 'hf_c1', userId: 'c_hf_l2', name: '王哥', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80', content: '首付大概准备多少能上车？', time: '2026-05-06 10:11:00' },
+    { id: 'hf_c2', userId: 'c_hf_l4', name: '陈女士', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80', content: '这个户型客厅朝南吗？', time: '2026-05-06 10:14:00' },
+    { id: 'hf_c3', userId: 'c_hf_l7', name: '吴总', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80', content: '89万能做到四房，性价比挺高的', time: '2026-05-06 10:18:00' },
+    { id: 'hf_c4', userId: 'c_hf_l9', name: '孙先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1504257432389-52343af06ae3?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80', content: '离地铁口大概几分钟？', time: '2026-05-06 10:22:00' },
+    { id: 'hf_c5', userId: 'c_hf_l12', name: '郭老师', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1546961329-78bef0414d7c?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80', content: '学区和物业这边方便说下吗？', time: '2026-05-06 10:29:00' },
+    { id: 'hf_c6', userId: 'c_hf_l14', name: '高先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80', content: '有这套房的实拍视频吗？', time: '2026-05-06 10:35:00' },
+    { id: 'hf_c7', userId: 'c_hf_l17', name: '罗女士', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1524250502761-1ac6f2e30d43?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80', content: '这个楼层采光看着确实不错', time: '2026-05-06 10:43:00' },
+    { id: 'hf_c8', userId: 'c_hf_c8', name: '叶先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80', content: '晚上方便约带看吗？', time: '2026-05-06 10:56:00' },
+    { id: 'hf_c9', userId: 'c_hf_l21', name: '宋女士', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80', content: '我已经私发9了，麻烦把具体位置发我', time: '2026-05-06 11:05:00' }
+];
+const HEFEI_MOMENT_COMMENT_GROUPS: Record<number, MomentComment[]> = {
+    0: [HEFEI_MOMENT_COMMENTS[0], HEFEI_MOMENT_COMMENTS[1]],
+    5: [HEFEI_MOMENT_COMMENTS[2], HEFEI_MOMENT_COMMENTS[3]],
+    11: [HEFEI_MOMENT_COMMENTS[4], HEFEI_MOMENT_COMMENTS[5]],
+    18: [HEFEI_MOMENT_COMMENTS[6]],
+    24: [HEFEI_MOMENT_COMMENTS[7], HEFEI_MOMENT_COMMENTS[8]]
+};
+const SHARED_MOMENT_CONTENT = `🔥【河西中·精装现房】万科·星雨华府，业主急售！
+
+单价仅需3.X万/平，比同户型便宜50万！
+满二唯一，省税费。看房随时有钥匙！🔑
+
+户型方正，南北通透，采光极佳。周边配套成熟，距离地铁站仅500米，双学区加持，未来升值空间大。
+
+房东因为工作调动急需置换，价格还有很大谈的空间。近期河西中板块热度持续上升，这样高性价比的房源出来一套少一套。
+
+🔗点链接查看详情#小程序://365淘房/kGqr6SUQCfq038c
+
+#南京房产 #河西买房 #捡漏房源`;
 
 const MOCK_MOMENTS: SimMoment[] = [
+    ...HEFEI_MOMENT_ACCOUNT_IDS.map((accountId, index) => ({
+        id: `m_hf_${index + 1}`,
+        groupId: 'PYQ-20260506-HF',
+        accountId,
+        content: HEFEI_MOMENT_CONTENT,
+        media: HEFEI_MOMENT_MEDIA,
+        time: '2026-05-06 09:30:00',
+        likes: index === 0 ? HEFEI_MOMENT_LIKES : [],
+        comments: HEFEI_MOMENT_COMMENT_GROUPS[index] || []
+    })),
     {
         id: 'm1',
-        groupId: 'PYQ-20260428-001',
+        groupId: 'PYQ-NJ-20260506-001',
         accountId: 'a1',
         content: SHARED_MOMENT_CONTENT,
         media: [
@@ -2888,80 +3265,80 @@ const MOCK_MOMENTS: SimMoment[] = [
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/house8/800/600' },
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/house9/800/600' }
         ],
-        time: '2026-04-28 10:18:00',
+        time: '2026-05-06 16:30:00',
         likes: [
             { userId: 'u1', name: '陈先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
             { userId: 'u2', name: '刘女士', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' }
         ],
         comments: [
-            { id: 'c1', userId: 'u1', name: '陈先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '这套房还在吗？', time: '2026-04-28 10:23:00' },
-            { id: 'c2', userId: 'a1', name: '365选房师-淘淘', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff', content: '还在的，陈先生，您什么时候方便看房？', time: '2026-04-28 10:25:00', replyToName: '陈先生', replyToId: 'u1' }
+            { id: 'c1', userId: 'u1', name: '陈先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '这套房还在吗？', time: '2026-05-06 16:36:00' },
+            { id: 'c2', userId: 'a1', name: '365选房师-淘淘', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff', content: '还在的，陈先生，您什么时候方便看房？', time: '2026-05-06 16:39:00', replyToName: '陈先生', replyToId: 'u1' }
         ]
     },
     {
         id: 'm1-2',
-        groupId: 'PYQ-20260428-001',
+        groupId: 'PYQ-NJ-20260506-001',
         accountId: 'a2',
         content: SHARED_MOMENT_CONTENT,
         media: [
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/house1/800/600' },
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/house2/800/600' }
         ],
-        time: '2026-04-28 10:16:00',
+        time: '2026-05-06 16:27:00',
         likes: [
             { userId: 'u3', name: '王总', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' }
         ],
         comments: [
-            { id: 'c3', userId: 'u3', name: '王总', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '周末可以安排看下吗？', time: '2026-04-28 10:21:00' }
+            { id: 'c3', userId: 'u3', name: '王总', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '周末可以安排看下吗？', time: '2026-05-06 16:34:00' }
         ]
     },
     {
         id: 'm1-3',
-        groupId: 'PYQ-20260428-001',
+        groupId: 'PYQ-NJ-20260506-001',
         accountId: 'a3',
         content: SHARED_MOMENT_CONTENT,
         media: [
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/house1/800/600' },
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/house2/800/600' }
         ],
-        time: '2026-04-28 10:13:00',
+        time: '2026-05-06 16:24:00',
         likes: [],
         comments: [
-            { id: 'c4', userId: 'u4', name: '李阿姨', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '这个小区环境怎么样？', time: '2026-04-28 10:20:00' },
-            { id: 'c5', userId: 'a3', name: '365淘房官方号', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=365&background=ff9900&color=fff', content: '环境非常不错，绿化率高。', time: '2026-04-28 10:22:00', replyToName: '李阿姨', replyToId: 'u4' },
-            { id: 'c9', userId: 'a1', name: '365选房师-淘淘', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff', content: '你好', time: '2026-04-28 10:27:00' },
-            { id: 'c10', userId: 'a2', name: '365选房师-宁宁', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Ning&background=10B981&color=fff', content: '你好', time: '2026-04-28 10:27:00' },
-            { id: 'c11', userId: 'a3', name: '365淘房官方号', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=365&background=ff9900&color=fff', content: '你好', time: '2026-04-28 10:27:00' }
+            { id: 'c4', userId: 'u4', name: '李阿姨', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '这个小区环境怎么样？', time: '2026-05-06 16:31:00' },
+            { id: 'c5', userId: 'a3', name: '365淘房官方号', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=365&background=ff9900&color=fff', content: '环境非常不错，绿化率高。', time: '2026-05-06 16:33:00', replyToName: '李阿姨', replyToId: 'u4' },
+            { id: 'c9', userId: 'a1', name: '365选房师-淘淘', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff', content: '你好', time: '2026-05-06 16:41:00' },
+            { id: 'c10', userId: 'a2', name: '365选房师-宁宁', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Ning&background=10B981&color=fff', content: '你好', time: '2026-05-06 16:42:00' },
+            { id: 'c11', userId: 'a3', name: '365淘房官方号', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=365&background=ff9900&color=fff', content: '你好', time: '2026-05-06 16:43:00' }
         ]
     },
     {
         id: 'm3',
-        groupId: 'PYQ-20260425-002',
+        groupId: 'PYQ-NJ-20260506-002',
         accountId: 'a1',
         content: '重磅！首付比例再降！\n\n新政出台，首套房首付低至15%，二套低至25%！\n这对刚需和改善群体都是极大利好。抓住窗口期，买房正当时！🏠\n\n有想了解具体政策的客户，欢迎私聊我！',
         media: [
             { type: 'image', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/policy1/800/600' }
         ],
-        time: '2026-04-25 15:30:00',
+        time: '2026-05-05 14:10:00',
         likes: [
             { userId: 'u1', name: '陈先生', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
             { userId: 'u5', name: '赵姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' }
         ],
         comments: [
-            { id: 'c6', userId: 'u5', name: '赵姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '二套房利率有降吗？', time: '2026-04-25 15:36:00' },
-            { id: 'c7', userId: 'a1', name: '365选房师-淘淘', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff', content: '赵姐，二套利率目前也是历史低点，具体我发您一份明细。', time: '2026-04-25 15:42:00', replyToName: '赵姐', replyToId: 'u5' },
-            { id: 'c8', userId: 'u5', name: '赵姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '好的，发我微信上。', time: '2026-04-25 15:50:00', replyToName: '365选房师-淘淘', replyToId: 'a1' }
+            { id: 'c6', userId: 'u5', name: '赵姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '二套房利率有降吗？', time: '2026-05-05 14:26:00' },
+            { id: 'c7', userId: 'a1', name: '365选房师-淘淘', avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff', content: '赵姐，二套利率目前也是历史低点，具体我发您一份明细。', time: '2026-05-05 14:38:00', replyToName: '赵姐', replyToId: 'u5' },
+            { id: 'c8', userId: 'u5', name: '赵姐', avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&facepad=2&w=256&h=256&q=80', content: '好的，发我微信上。', time: '2026-05-05 14:46:00', replyToName: '365选房师-淘淘', replyToId: 'a1' }
         ]
     },
     {
         id: 'm2',
-        groupId: 'PYQ-20260401-003',
+        groupId: 'PYQ-NJ-20260506-003',
         accountId: 'a1',
         content: '今日带看日记：燕子矶板块热度不减！👍\n\n虽然天气转凉，但购房者的热情依然高涨。今天带客户看了燕子矶的几个热销盘，客户对区域配套和未来规划非常认可。\n\n视频号：365淘房南京',
         media: [
             { type: 'channels', url: 'https://images.weserv.nl/?url=https://picsum.photos/seed/video1/800/450', title: '燕子矶板块实探', thumbnail: 'https://images.weserv.nl/?url=https://picsum.photos/seed/video1/800/450', desc: '365淘房南京 · 视频号' }
         ],
-        time: '2026-04-01 09:12:00',
+        time: '2026-05-04 11:20:00',
         likes: [],
         comments: []
     }
@@ -3010,7 +3387,7 @@ function Workspace() {
   const [activeRightPanelTab, setActiveRightPanelTab] = useState('客户档案');
   const [activeModule, setActiveModule] = useState<'chat' | 'groups' | 'moments'>('chat');
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(MOCK_MOMENTS[0].id);
-  const [activeMomentFilter, setActiveMomentFilter] = useState<'all' | 'interacted'>('all');
+  const [activeMomentFilter, setActiveMomentFilter] = useState<'all' | 'pending' | 'interacted' | 'replied'>('all');
   const [isCustomerMoreMenuOpen, setIsCustomerMoreMenuOpen] = useState(false);
   const [isBlacklistModalOpen, setIsBlacklistModalOpen] = useState(false);
   const [isReceptionConfirmModalOpen, setIsReceptionConfirmModalOpen] = useState(false);
@@ -3369,36 +3746,6 @@ function Workspace() {
         ...updates
       }
     }));
-  };
-
-  const openCustomerChat = (target: { userId: string; name: string; avatar?: string }) => {
-    const matchedSession = sessionUsers.find(
-      session => session.customer788Id === target.userId || session.profileName === target.name || session.name === target.name
-    );
-    const tabTitle = matchedSession?.tabTitle || target.name || '新会话';
-    const tabId = matchedSession ? `chat-${matchedSession.customer788Id}` : `chat-${target.userId}`;
-    const existingProfile = chatCustomerProfiles[tabTitle];
-    const fallbackProfile = existingProfile || getDefaultChatCustomerProfile(tabTitle);
-
-    setChatCustomerProfiles(prev => ({
-      ...prev,
-      [tabTitle]: {
-        ...fallbackProfile,
-        name: target.name || fallbackProfile.name,
-        id788: target.userId || fallbackProfile.id788,
-        subtitle: matchedSession?.abnormalTag ? '异常用户' : fallbackProfile.subtitle,
-        abnormalTag: matchedSession?.abnormalTag ?? fallbackProfile.abnormalTag,
-        isBlacklisted: matchedSession?.isBlacklisted ?? fallbackProfile.isBlacklisted
-      }
-    }));
-
-    setTabs(prev => {
-      if (prev.some(tab => tab.id === tabId)) return prev;
-      return [...prev, { id: tabId, title: tabTitle, type: 'chat' }];
-    });
-    setActiveTabId(tabId);
-    setActiveModule('chat');
-    setActiveRightPanelTab('客户档案');
   };
 
   const handleValidLeadClick = () => {
@@ -4192,7 +4539,7 @@ function Workspace() {
               <div className="flex text-sm">
                 <span className="text-zinc-500 w-24 shrink-0">发送人:</span>
                 <div className="text-zinc-900 dark:text-zinc-100 leading-relaxed">
-                  选房分析师合合 | 选房分析师娅娅 | AI找房-小希 | 选房分析师霍霍 | 选房分析师家家 | AI找房-月月 | AI找房 | AI找房-柒柒 | 淘房小助理 | 房博士妍姐 | 房博士奋斗 | AI找房-雪碧 | 淘房蕾蕾 | 淘房含含 | 淘房小助手 | 房博士楼哥 | 房博士小安 | 淘房菲菲 | 淘房妙妙 | 淘房小赞 | AI找房-澄澄 | 淘房苏苏 | 淘房雅雅 | 淘房琪琪 | 淘房柴柴 | 淘房可乐 | 淘房冰冰 | 淘房时一 | 淘房露露 | 淘房在在 | 淘房秋秋 | 淘房夏夏
+                  海房夏夏 | 海房秋秋 | 海房蕾蕾 | 海房含含 | 海房小助手 | 房博士楼哥 | 房博士小安 | 海房菲菲 | 海房妙妙 | 海房小赞 | AI找房-澄澄 | 海房苏苏 | 海房雅雅 | AI找房-小希 | AI找房-月月 | 海房琪琪 | 海房柴柴 | 海房可乐 | 海房冰冰 | 选房分析师霏霏 | 选房分析师家家 | AI找房 | AI找房-柒柒 | 海房时一 | 海房露露 | 海房在在 | 房博士妍姐 | 选房分析师合合 | 房博士奋斗 | AI找房-雪碧 | 选房分析师娅娅
                 </div>
               </div>
             </section>
@@ -4518,7 +4865,7 @@ function Workspace() {
 
       {/* Group List Panel */}
       {isGroupPanelOpen && (
-        <div className="w-[156px] border-r border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-zinc-50/30 dark:bg-zinc-900/10">
+        <div className="w-[180px] border-r border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-zinc-50/30 dark:bg-zinc-900/10">
           <div className="p-4 flex items-center gap-2 font-medium text-zinc-900 dark:text-zinc-100">
             <button 
               onClick={() => setIsGroupPanelOpen(false)}
@@ -4646,8 +4993,8 @@ function Workspace() {
                 </div>
 
                 <div className="mt-1">
-                  <div onClick={() => setActiveMomentFilter('interacted')} className={`flex items-center gap-2 px-4 py-2 cursor-pointer ${activeMomentFilter === 'interacted' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}>
-                    <MessageCircle size={16} className={activeMomentFilter === 'interacted' ? 'text-current' : 'text-zinc-400'} />
+                  <div onClick={() => setActiveMomentFilter('pending')} className={`flex items-center gap-2 px-4 py-2 cursor-pointer ${activeMomentFilter === 'pending' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}>
+                    <MessageCircle size={16} className={activeMomentFilter === 'pending' ? 'text-current' : 'text-zinc-400'} />
                     <span className="flex-1">待处理互动</span>
                   </div>
                 </div>
@@ -4942,13 +5289,24 @@ function Workspace() {
                selectedMomentId={selectedMomentId}
                onSelectMoment={setSelectedMomentId}
                onOpenProfile={() => {}}
-              onSendMessage={openCustomerChat}
+               onSendMessage={(target) => {
+                const userId = typeof target === 'string' ? target : target.userId;
+                 // Open a new tab for the user if it doesn't exist, and switch to it
+                 const user = sessionList.find(s => s.customer788Id === userId) || sessionList[0];
+                 const tabId = user ? `chat-${user.customer788Id}` : `chat-${userId}`;
+                 const existingTab = tabs.find(t => t.id === tabId);
+                 if (!existingTab) {
+                   setTabs([...tabs, { id: tabId, title: user ? user.name : '新会话', type: 'chat' }]);
+                 }
+                 setActiveTabId(tabId);
+                 setActiveModule('chat');
+               }}
                filter={activeMomentFilter}
                tabs={tabs}
                setTabs={setTabs}
                setActiveTabId={setActiveTabId}
                setActiveModule={setActiveModule}
-               customerProfiles={chatCustomerProfiles}
+              customerProfiles={chatCustomerProfiles}
              />
            ) : renderContent()}
         </div>
