@@ -85,6 +85,7 @@
     <script id="app-source" type="text/plain">
 
 
+
 // Consolidated Imports
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -2913,16 +2914,86 @@ interface ChatCustomerProfile {
 const abnormalUserOptions = ['长周期观望', '超低预算', '已成交', '非决策人看房'];
 
 const sessionList = [
-  { name: '余接', time: '13:39', msg: '你好，昨天未收到你的回复...', tag: '小B', unread: false, customer788Id: '7881301319959301', abnormalTag: null, isBlacklisted: false, tabTitle: '杜小明精品大平层17...' },
-  { name: 'ABC', time: '13:39', msg: '您好，市区近的四代住宅确实稀缺...', tag: 'AI', unread: false, customer788Id: '7881301319959329', abnormalTag: '长周期观望', isBlacklisted: false, tabTitle: '鹏' },
-  { name: 'Eric Li', time: '13:39', msg: '芜湖路近新出了一些捡漏房，优惠...', tag: '', unread: false, customer788Id: '7881301319959329', abnormalTag: '长周期观望', isBlacklisted: false, tabTitle: '鹏' },
-  { name: '何建军', time: '13:39', msg: '好的收到，我查下哈', tag: 'AI', unread: false, customer788Id: '7881301319959304', abnormalTag: '超低预算', isBlacklisted: false, tabTitle: '灰太狼' },
-  { name: '李玉祥', time: '13:39', msg: '看到您在关注庐阳区北部附近200...', tag: '', unread: false, customer788Id: '7881301319959305', abnormalTag: null, isBlacklisted: false, tabTitle: '磐云石业' },
-  { name: '饭团 awu', time: '13:39', msg: '最近滨湖新区新出了几套捡漏房...', tag: '', unread: false, customer788Id: '7881301319959306', abnormalTag: '非决策人看房', isBlacklisted: false, tabTitle: '10-16佰' },
-  { name: '萍🙏平安安🙏', time: '13:36', msg: '您关注我朋友圈标备元面谦次新房...', tag: 'AI', unread: false, customer788Id: '7881301319959307', abnormalTag: null, isBlacklisted: false, tabTitle: '升学规划王老师189...' },
-  { name: '我的梦想', time: '13:38', msg: '您这边关注我朋友圈发的元面谦次...', tag: '', unread: false, customer788Id: '7881301319959308', abnormalTag: null, isBlacklisted: false, tabTitle: '圈子不同别硬入' },
-  { name: '微笑', time: '13:39', msg: '电话18994020257', tag: '小B', unread: true, customer788Id: '7881301319959344', abnormalTag: null, isBlacklisted: true, tabTitle: '春天' },
+  { name: '雾里看花', time: '5-06', msg: '稍等，我找了解这套房的经纪人和...', tag: '', unread: false, customer788Id: '7881301319959329', abnormalTag: null, isBlacklisted: false, tabTitle: '雾里看花' },
+  { name: '优庆状1347086...', time: '4-25', msg: '[群邀请消息]', tag: 'AI', unread: false, customer788Id: '7881301319959307', abnormalTag: null, isBlacklisted: false, tabTitle: '优庆状1347086...' },
+  { name: 'A_南京miu猫猫', time: '4-17', msg: '您最近关注哪个区域板块的楼盘和...', tag: 'AI', unread: false, customer788Id: '7881301319959305', abnormalTag: null, isBlacklisted: false, tabTitle: 'A_南京miu猫猫' },
+  { name: '二宝', time: '4-17', msg: '[群邀请消息]', tag: '', unread: false, customer788Id: '7881301319959304', abnormalTag: null, isBlacklisted: false, tabTitle: '二宝' },
+  { name: '施向阳 家庭指导师', time: '4-13', msg: '您最近关注哪个区域板块的楼盘和...', tag: '', unread: false, customer788Id: '7881301319959306', abnormalTag: null, isBlacklisted: false, tabTitle: '施向阳 家庭指导师' },
+  { name: '我已在途中', time: '4-05', msg: '看到您关注了蜀山区西七里塘、五...', tag: 'AI', unread: false, customer788Id: '7881301319959308', abnormalTag: null, isBlacklisted: false, tabTitle: '我已在途中' },
+  { name: '浩~心飞', time: '3-30', msg: '您现在关注哪个板块，我给您找几...', tag: '', unread: false, customer788Id: '7881301319959344', abnormalTag: null, isBlacklisted: false, tabTitle: '浩~心飞' },
+  { name: '钟钟鸣', time: '3-29', msg: '下午好，年后南京房价有了新变化...', tag: '', unread: false, customer788Id: '7881301319959301', abnormalTag: null, isBlacklisted: false, tabTitle: '钟钟鸣' },
 ];
+
+const DISTRIBUTION_AGENTS = [
+  { id: '7881301344951251', name: '刘建', sectors: ['五星墩', '西园', '三里庵', '柏堰湖'], company: '乐屋', store: '奥林花园店' },
+  { id: '7881303026971647', name: '测试数据', sectors: ['包公'], company: '测试数据', store: '测试门店' },
+  { id: '7881300738940293', name: '王银龙', sectors: ['三孝口', '逍遥津', '大杨', '高新区'], company: '乐屋', store: '红星路店' },
+  { id: '7881300036958169', name: '李晓晨', sectors: ['七里塘', '瑶海社区', '磨店', '柏堰湖'], company: '乐屋', store: '高速中央公园店' },
+  { id: '7881302814977818', name: '王剑剑', sectors: ['七里塘', '龙岗', '大兴镇', '高新区'], company: '乐屋', store: '高速中央公园店' },
+  { id: '7881303421981216', name: '刘巧巧', sectors: ['七里塘', '磨店', '站北', '柏堰湖'], company: '乐屋', store: '高速中央公园店' },
+  { id: '7881299888957977', name: '钱永胜', sectors: ['海棠', '高新区'], company: '乐屋', store: '上城国际店' },
+  { id: '7881300517981807', name: '朱鹏', sectors: ['森林公园', '四里河', '林店', '柏堰湖'], company: '乐屋', store: '上城国际店' },
+  { id: '7881300805089774', name: '张杰', sectors: ['森林公园', '四里河', '林店', '高新区'], company: '乐屋', store: '上城国际店' },
+  { id: '7881300322912364', name: '杜宗建', sectors: ['柏堰湖', '高新区'], company: '云房源', store: '云房源' },
+  { id: '7881300000975661', name: '张敏', sectors: ['方庙', '胜利路', '柏堰湖'], company: '乐屋', store: '濉溪路店' },
+  { id: '7881300921994582', name: '阮海洋', sectors: ['三孝口', '高新区'], company: '乐屋', store: '蒙城路店' },
+  { id: '7881299711927154', name: '程明', sectors: ['店埠', '撮镇', '肥东', '龙岗', '柏堰湖'], company: '云房源', store: '云房源' },
+  { id: '7881301429949948', name: '周中磊', sectors: ['包公', '常青', '大圩镇', '方兴', '高新区'], company: '云房源', store: '云房源' },
+  { id: '7881302169980535', name: '李王俊', sectors: ['柏堰湖'], company: '云房源', store: '云房源' },
+  { id: '7881301697916864', name: '吴存飞', sectors: ['肥东', '高新区'], company: '云房源', store: '云房源' },
+  { id: '7881301878984978', name: '张磊', sectors: ['柏堰湖'], company: '云房源', store: '云房源' },
+  { id: '7881300243993046', name: '赵晓贞', sectors: ['肥东', '高新区'], company: '云房源', store: '云房源' },
+  { id: '7881299661064044', name: '许红军', sectors: ['肥东', '柏堰湖'], company: '云房源', store: '云房源' },
+  { id: '7881301700911547', name: '蒋晓静', sectors: ['柏堰湖', '高新区'], company: '云房源', store: '云房源' },
+  { id: '7881301088730912', name: '陈倩', sectors: ['高新区', '科学岛'], company: '乐屋', store: '长江西路店' },
+  { id: '7881301187622380', name: '赵锐', sectors: ['柏堰湖', '蜀山产业园'], company: '乐屋', store: '长江西路店' },
+  { id: '7881301267190481', name: '杨帆', sectors: ['高新区', '大蜀山'], company: '乐屋', store: '长江西路店' },
+  { id: '7881301358056129', name: '孙际玉', sectors: ['柏堰湖', '科学岛'], company: '乐屋', store: '蜀山产业园店' },
+  { id: '7881301489033672', name: '曹锐报', sectors: ['高新区', '柏堰湖'], company: '乐屋', store: '蜀山产业园店' },
+  { id: '7881301598824106', name: '吴雨晴', sectors: ['柏堰湖', '桃花镇'], company: '乐屋', store: '蜀山产业园店' },
+  { id: '7881301662358009', name: '韩潇', sectors: ['高新区', '长宁社区'], company: '乐屋', store: '创新产业园店' },
+  { id: '7881301734908127', name: '郭彬', sectors: ['柏堰湖', '高新区'], company: '乐屋', store: '创新产业园店' },
+  { id: '7881301845620915', name: '秦宇', sectors: ['科学岛', '柏堰湖'], company: '乐屋', store: '创新产业园店' },
+  { id: '7881301967802238', name: '许航', sectors: ['高新区', '蜀西湖'], company: '云房源', store: '高新银泰店' },
+  { id: '7881302034186501', name: '马晓峰', sectors: ['柏堰湖', '方兴大道'], company: '云房源', store: '高新银泰店' },
+  { id: '7881302176654308', name: '陆思雨', sectors: ['高新区', '柏堰湖'], company: '云房源', store: '高新银泰店' },
+  { id: '7881302287564901', name: '汤莉', sectors: ['高新区', '软件园'], company: '乐屋', store: '软件园店' },
+  { id: '7881302398475012', name: '罗成', sectors: ['柏堰湖', '香樟大道'], company: '乐屋', store: '软件园店' },
+  { id: '7881302499586123', name: '何敏', sectors: ['高新区', '柏堰湖'], company: '乐屋', store: '软件园店' },
+  { id: '7881300914298822', name: '钱圣豪', sectors: ['包公', '常青', '淝河镇'], company: '乐屋加盟', store: '--' },
+  { id: '7881301001220186', name: '高雅', sectors: ['双凤工业区', '长丰'], company: '乐屋加盟', store: '--' }
+];
+
+const shuffleBySeed = <T,>(items: T[], seed: number) => {
+  const next = [...items];
+  let state = seed || 1;
+  for (let i = next.length - 1; i > 0; i -= 1) {
+    state = (state * 9301 + 49297) % 233280;
+    const j = Math.floor((state / 233280) * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+  return next;
+};
+
+const buildRecommendedDistributorGroups = (blocks: string[], seed = Date.now()) => {
+  const normalizedBlocks = blocks.map(block => block.trim()).filter(Boolean);
+  const matchedAgents = DISTRIBUTION_AGENTS
+    .filter(agent => agent.store && agent.store !== '--')
+    .filter(agent => agent.sectors.some(sector => normalizedBlocks.some(block => sector.includes(block) || block.includes(sector))))
+    .slice(0, 60);
+  const recommendedAgents = shuffleBySeed(matchedAgents, seed).slice(0, 30);
+  const storeMap = new Map<string, typeof recommendedAgents>();
+  recommendedAgents.forEach(agent => {
+    if (!storeMap.has(agent.store)) {
+      storeMap.set(agent.store, []);
+    }
+    storeMap.get(agent.store)!.push(agent);
+  });
+  return shuffleBySeed(Array.from(storeMap.entries()), seed + 17).map(([store, agents]) => ({
+    store,
+    agents: shuffleBySeed(agents, seed + store.length)
+  }));
+};
 
 const contactList = [
   { name: '张伟', tag: 'A类客户', status: '跟进中', avatar: 'ZW' },
@@ -3341,17 +3412,17 @@ function Workspace() {
 
   const [tabs, setTabs] = useState<WorkspaceTab[]>([
     { id: 'feature-1', title: '[AI] 合肥100w学区房', type: 'feature' },
-    { id: 'chat-1', title: '杜小明精品大平层17...', type: 'chat' },
-    { id: 'chat-2', title: '磐云石业', type: 'chat' },
-    { id: 'chat-3', title: '灰太狼', type: 'chat' },
-    { id: 'chat-4', title: '升学规划王老师189...', type: 'chat' },
-    { id: 'chat-5', title: '圈子不同别硬入', type: 'chat' },
+    { id: 'chat-7881301319959329', title: '雾里看花', type: 'chat' },
+    { id: 'chat-7881301319959307', title: '优庆状1347086...', type: 'chat' },
+    { id: 'chat-7881301319959305', title: 'A_南京miu猫猫', type: 'chat' },
+    { id: 'chat-7881301319959304', title: '二宝', type: 'chat' },
     { id: 'feature-2', title: '每日私聊推送_学区房名单', type: 'feature' },
-    { id: 'chat-6', title: '10-16佰', type: 'chat' },
-    { id: 'chat-7', title: '春天', type: 'chat' },
-    { id: 'chat-8', title: '鹏', type: 'chat' },
+    { id: 'chat-7881301319959306', title: '施向阳 家庭指导师', type: 'chat' },
+    { id: 'chat-7881301319959308', title: '我已在途中', type: 'chat' },
+    { id: 'chat-7881301319959344', title: '浩~心飞', type: 'chat' },
+    { id: 'chat-7881301319959301', title: '钟钟鸣', type: 'chat' },
   ]);
-  const [activeTabId, setActiveTabId] = useState('chat-8');
+  const [activeTabId, setActiveTabId] = useState('chat-7881301319959329');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [activeRightPanelTab, setActiveRightPanelTab] = useState('客户档案');
   const [activeModule, setActiveModule] = useState<'chat' | 'groups' | 'moments'>('chat');
@@ -3419,6 +3490,10 @@ function Workspace() {
   const [viewingLogicGroupId, setViewingLogicGroupId] = useState<string | null>(null);
   const [isGroupPanelOpen, setIsGroupPanelOpen] = useState(true);
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [miniProgramContextMenu, setMiniProgramContextMenu] = useState<{ visible: boolean; x: number; y: number }>({ visible: false, x: 0, y: 0 });
+  const [isMatchGroupModalOpen, setIsMatchGroupModalOpen] = useState(false);
+  const [selectedDistributorId, setSelectedDistributorId] = useState<string | null>(null);
+  const [matchDistributorGroups, setMatchDistributorGroups] = useState(() => buildRecommendedDistributorGroups(['柏堰湖', '高新区']));
   const [groupSearchKeyword, setGroupSearchKeyword] = useState('');
   const [selectedGroupCity, setSelectedGroupCity] = useState('合肥');
   const [groupListMode, setGroupListMode] = useState<'unread' | 'latest'>('unread');
@@ -3522,8 +3597,8 @@ function Workspace() {
       isBlacklisted: true,
       blacklistReason: '无购房需求'
     },
-    '鹏': {
-      name: '九九九五',
+    '雾里看花': {
+      name: '雾里看花',
       source: '微信',
       status: '已跟进',
       subtitle: '异常用户',
@@ -3686,11 +3761,11 @@ function Workspace() {
     const profile = chatCustomerProfiles[session.tabTitle] || null;
     return {
       ...session,
-      customer788Id: profile?.id788 || session.customer788Id,
+      customer788Id: session.customer788Id,
       abnormalTag: profile?.abnormalTag ?? session.abnormalTag,
       isBlacklisted: profile?.isBlacklisted ?? session.isBlacklisted,
       blacklistReason: profile?.blacklistReason || '',
-      profileName: profile?.name || session.name
+      profileName: session.name
     };
   });
 
@@ -3802,6 +3877,29 @@ function Workspace() {
     });
   };
 
+  const handleMiniProgramContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setMiniProgramContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY
+    });
+  };
+
+  const openMatchGroupModal = () => {
+    const nextGroups = buildRecommendedDistributorGroups(['柏堰湖', '高新区']);
+    setMatchDistributorGroups(nextGroups);
+    setSelectedDistributorId(null);
+    setIsMatchGroupModalOpen(true);
+    setMiniProgramContextMenu(prev => ({ ...prev, visible: false }));
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu(prev => ({ ...prev, visible: false }));
+    setMiniProgramContextMenu(prev => ({ ...prev, visible: false }));
+  };
+
   const openTab = (title: string) => {
     const existingTab = tabs.find(t => t.title === title);
     if (existingTab) {
@@ -3819,6 +3917,7 @@ function Workspace() {
 
   const renderContent = () => {
     if (activeTab.type === 'chat') {
+      const chatDisplayName = activeChatProfile?.name || activeTab.title;
       return (
         <div className="flex h-full w-full">
            {/* Chat Area */}
@@ -3826,7 +3925,7 @@ function Workspace() {
              {/* Chat Header */}
             <div className="h-14 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 shrink-0">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-lg">{activeTab.title === '鹏' ? '鹏' : activeTab.title}</span>
+                <span className="font-medium text-lg">{chatDisplayName}</span>
                 <span className="text-emerald-500 text-xs bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded">微信</span>
                 <span className="text-xs text-zinc-500 ml-2">合肥 | AI找房</span>
               </div>
@@ -3849,60 +3948,37 @@ function Workspace() {
 
             {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6 bg-zinc-50/30 dark:bg-zinc-900/10">
-              <div className="text-center text-xs text-zinc-400 my-2">2026-03-04 09:56:19 转AI接待</div>
+              <div className="text-center text-xs text-zinc-400 my-2">2026-05-06 10:42:07</div>
+
+              <ChatMessage
+                role="user"
+                time="2026-05-06 10:42:07"
+                name={chatDisplayName}
+                content="想"
+              />
+
+              <div className="text-center text-xs text-zinc-400 my-2">2026-05-06 10:42:40</div>
 
               <ChatMessage
                 role="ai"
-                time="2026-03-04 09:56:46"
-                name="AI找房"
-                content="您好！我是您的选房师，扎根合肥13年了。全市房源我都很熟悉，很高兴能为您服务。"
-              />
-              <ChatMessage
-                role="ai"
-                time="2026-03-04 09:57:10"
-                name="AI找房"
-                content="合肥楼市小阳春回暖明显，最近高新和柏堰湖板块关注度很高。您是看120平左右的三居室吗？这类优质房源卖得快，我可以为您筛选对比下。"
-              />
-              <ChatMessage
-                role="user"
-                time="2026-03-04 10:03:11"
-                name="鹏 | AI找房"
-                content="筛选下"
-              />
-              <ChatMessage
-                role="user"
-                time="2026-03-04 10:05:28"
-                name="鹏 | AI找房"
-                content="200万以内"
-              />
-              <ChatMessage
-                role="ai"
-                time="2026-03-04 10:05:07"
-                name="AI找房"
-                content="好的，没问题。这两个板块目前有不少高性价比的急售房源。为了帮您精准匹配，咱们总价预算大概是控制在200万左右，还是300万以上呢？"
+                time="2026-05-06 10:42:40"
+                name="选房分析师合合"
+                content={`城建琥珀御熙府，3室2厅119.12㎡，满五年。该房源位于蜀山区井岗镇板块，户型为3室2厅1厨2卫，建筑面积119.12㎡。
+
+琥珀御熙府这套房户型很正，我个人非常看好。业主议价空间我也清楚，您想深度了解吗？`}
               />
 
-              <div className="text-center text-xs text-zinc-400 my-2">2026-03-04 10:06:22 AI转运营</div>
+              <div className="flex justify-end">
+                <PrivateHouseMiniProgramCard onContextMenu={handleMiniProgramContextMenu} />
+              </div>
+
+              <div className="text-center text-xs text-zinc-400 my-2">2026-05-06 10:43:16</div>
 
               <ChatMessage
-                role="ai"
-                time="2026-03-04 10:06:22"
-                name="运营-查妍碧"
-                isHumanOp
-                content="咱们想看多大面积的，青龙岗附近有新房可考虑看看？"
-              />
-              <ChatMessage
-                role="ai"
-                time="2026-03-04 10:06:20"
-                name="运营-查妍碧"
-                isHumanOp
-                content="好的，您的需求已了解。我这就为您筛选近期调价的优质房源，重点对比下高性价比的户型，整理好后发您，请稍候。"
-              />
-              <ChatMessage
                 role="user"
-                time="2026-03-04 10:07:54"
-                name="鹏 | AI找房"
-                content="120左右 不考虑 主要考虑柏堰湖区域"
+                time="2026-05-06 10:43:16"
+                name={chatDisplayName}
+                content="好的收到，我看下哈"
               />
             </div>
 
@@ -3946,7 +4022,7 @@ function Workspace() {
            </div>
 
            {/* Right Panel: Private Chat Tools */}
-          <div className="w-[280px] border-l border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-white dark:bg-zinc-950 overflow-y-auto">
+          <div className="hidden 2xl:flex w-[280px] border-l border-zinc-200 dark:border-zinc-800 flex-col shrink-0 bg-white dark:bg-zinc-950 overflow-y-auto">
             <div className="flex flex-wrap gap-x-4 gap-y-2 p-3 border-b border-zinc-200 dark:border-zinc-800 text-xs bg-zinc-50 dark:bg-zinc-900/50">
               {privateRightPanelTabs.map(tab => (
                 <span
@@ -4805,7 +4881,7 @@ function Workspace() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#eaf4ff] text-zinc-900 dark:text-zinc-100 overflow-hidden text-sm relative">
+    <div className="flex h-screen w-full bg-[#eaf4ff] text-zinc-900 dark:text-zinc-100 overflow-hidden text-sm relative" onClick={closeContextMenu}>
       {/* Thin Left Rail */}
       <div className="w-16 border-r border-[#dbe8f7] bg-[#f6fbff] flex flex-col items-center py-4 gap-4 z-10 shrink-0">
          <div className="w-10 h-10 rounded-xl bg-[#1683ff] items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20 mb-2 hidden">AI</div>
@@ -4857,7 +4933,7 @@ function Workspace() {
 
       {/* Group List Panel */}
       {isGroupPanelOpen && (
-        <div className="w-[180px] border-r border-[#dbe8f7] bg-[#f3f9ff] flex flex-col shrink-0">
+        <div className="hidden 2xl:flex w-[180px] border-r border-[#dbe8f7] bg-[#f3f9ff] flex-col shrink-0">
           <div className="p-4 flex items-center gap-2 font-semibold text-[#102a4c]">
             <button
               onClick={() => setIsGroupPanelOpen(false)}
@@ -5095,11 +5171,15 @@ function Workspace() {
             <div className="flex-1 overflow-y-auto bg-white p-3">
               {visibleSessionList.map((session, i) => (
                 <div key={`${session.customer788Id}-${i}`} onClick={() => {
-                  const matchedTab = tabs.find(tab => tab.title === session.tabTitle);
+                  const tabId = `chat-${session.customer788Id}`;
+                  const matchedTab = tabs.find(tab => tab.id === tabId);
                   if (matchedTab) {
                     setActiveTabId(matchedTab.id);
+                  } else {
+                    setTabs(prev => [...prev, { id: tabId, title: session.name, type: 'chat' }]);
+                    setActiveTabId(tabId);
                   }
-                }} className={`flex gap-3 p-3 rounded-md cursor-pointer hover:bg-[#f4f9ff] transition-colors ${session.tabTitle === activeTab.title ? 'bg-[#e7f3ff]' : ''}`}>
+                }} className={`flex gap-3 p-3 rounded-md cursor-pointer hover:bg-[#f4f9ff] transition-colors ${`chat-${session.customer788Id}` === activeTab.id ? 'bg-[#e7f3ff]' : ''}`}>
                   <div className="relative w-10 h-10 rounded-full bg-[#e7f3ff] shrink-0 overflow-hidden border border-[#d8e5f4]">
                     <img src={`https://picsum.photos/seed/${session.name}/40/40`} alt="avatar" className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" />
                     {session.unread && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#ff5b5b] border border-white"></span>}
@@ -5431,7 +5511,134 @@ function Workspace() {
         </>
       )}
 
+      {miniProgramContextMenu.visible && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setMiniProgramContextMenu(prev => ({ ...prev, visible: false }))}
+          />
+          <div
+            className="fixed z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded shadow-lg py-2 min-w-[140px]"
+            style={{ top: miniProgramContextMenu.y, left: miniProgramContextMenu.x }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3">
+              <span className="w-4 h-4 flex items-center justify-center"><MessageSquare size={14}/></span>
+              引用
+            </button>
+            <button className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3">
+              <span className="w-4 h-4 flex items-center justify-center"><Share2 size={14}/></span>
+              转发
+            </button>
+            <button className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3">
+              <span className="w-4 h-4 flex items-center justify-center"><Plus size={15}/></span>
+              添加至素材库
+            </button>
+            <button
+              className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3"
+              onClick={openMatchGroupModal}
+            >
+              <span className="w-4 h-4 flex items-center justify-center"><Users size={14}/></span>
+              创建撮合群
+            </button>
+          </div>
+        </>
+      )}
+
       {/* --- Modals --- */}
+      <AnimatePresence>
+        {isMatchGroupModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={(e) => e.stopPropagation()}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-zinc-900 rounded shadow-xl w-[680px] max-h-[86vh] flex flex-col border border-zinc-200 dark:border-zinc-800"
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800">
+                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">创建撮合群</h3>
+                <button onClick={() => setIsMatchGroupModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="px-6 py-5 flex-1 overflow-y-auto">
+                <div className="flex items-start gap-4">
+                  <div className="w-[92px] pt-2 text-sm text-zinc-600 dark:text-zinc-400 shrink-0">
+                    <span className="text-red-500 mr-1">*</span>分销中介
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                        根据房源板块「柏堰湖、高新区」随机推荐30位分销中介，已过滤未关联门店数据
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMatchDistributorGroups(buildRecommendedDistributorGroups(['柏堰湖', '高新区']));
+                          setSelectedDistributorId(null);
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 shrink-0"
+                      >
+                        换一批
+                      </button>
+                    </div>
+                    <div className="border border-zinc-200 dark:border-zinc-700 rounded-md overflow-hidden bg-zinc-50/40 dark:bg-zinc-950/30">
+                      <div className="max-h-[420px] overflow-y-auto">
+                        {matchDistributorGroups.map(group => (
+                          <div key={group.store} className="border-b border-zinc-100 dark:border-zinc-800 last:border-b-0">
+                            <div className="sticky top-0 z-10 bg-zinc-100 dark:bg-zinc-800 px-4 py-2 text-xs font-medium text-zinc-600 dark:text-zinc-300 flex items-center justify-between">
+                              <span>{group.store}</span>
+                              <span className="text-zinc-400 font-normal">{group.agents.length}人</span>
+                            </div>
+                            <div className="divide-y divide-zinc-100 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
+                              {group.agents.map(agent => {
+                                const selected = selectedDistributorId === agent.id;
+                                return (
+                                  <label
+                                    key={agent.id}
+                                    className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${selected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60'}`}
+                                  >
+                                    <input
+                                      type="radio"
+                                      name="match-distributor"
+                                      checked={selected}
+                                      onChange={() => setSelectedDistributorId(agent.id)}
+                                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 shrink-0"
+                                    />
+                                    <span className={`text-sm font-medium truncate ${selected ? 'text-blue-700 dark:text-blue-300' : 'text-zinc-900 dark:text-zinc-100'}`}>{agent.name}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-3 bg-zinc-50/50 dark:bg-zinc-800/50">
+                <button
+                  onClick={() => setIsMatchGroupModalOpen(false)}
+                  className="px-5 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors border border-zinc-200 dark:border-zinc-700"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={() => setIsMatchGroupModalOpen(false)}
+                  disabled={!selectedDistributorId}
+                  className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  确认
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {deletingGroupId && (
@@ -5917,6 +6124,43 @@ function ChatMessage({ role, time, name, content, images, isHumanOp }: { role: '
             <User size={16} />
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function PrivateHouseMiniProgramCard({ onContextMenu }: { onContextMenu: (e: React.MouseEvent) => void }) {
+  return (
+    <div
+      onContextMenu={onContextMenu}
+      className="w-[214px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-sm overflow-hidden shadow-sm cursor-default select-none"
+    >
+      <div className="px-3 pt-3 pb-2">
+        <div className="flex items-center gap-2 text-xs text-zinc-500 mb-2">
+          <div className="w-5 h-5 rounded-full bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold">淘</div>
+          <span>365淘房</span>
+        </div>
+        <div className="text-sm text-zinc-800 dark:text-zinc-100 leading-5 line-clamp-2">
+          为您找到一套优质匹配房源~
+        </div>
+      </div>
+      <div className="mx-3 mb-3 rounded-sm overflow-hidden border border-orange-100 bg-[#fff3d7]">
+        <div className="h-[92px] relative bg-gradient-to-br from-[#ffe6a8] via-[#ffc86b] to-[#f89b2a]">
+          <div className="absolute left-2 top-2 text-[18px] leading-5 font-black text-[#3b250c]">
+            蜀山满五年改<br/>善房
+          </div>
+          <div className="absolute left-2 bottom-2 rounded bg-[#f47f20] text-white text-[10px] leading-4 px-1.5">
+            城建琥珀御熙府3室2厅1卫
+          </div>
+          <div className="absolute right-2 bottom-0 w-14 h-16 rounded-t-full bg-white/50"></div>
+        </div>
+        <div className="px-2 py-1.5 text-[10px] leading-4 text-zinc-700 bg-white">
+          城建琥珀御熙府，3室2厅119.12㎡，满五年。该房源位于蜀山区井岗镇板块
+        </div>
+      </div>
+      <div className="px-3 py-2 border-t border-zinc-100 dark:border-zinc-800 text-xs text-zinc-400 flex items-center gap-1">
+        <LinkIcon size={13} />
+        小程序
       </div>
     </div>
   );
@@ -6688,7 +6932,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const sourceCode = sourceEl ? sourceEl.textContent : '';
         const transformed = Babel.transform(sourceCode, { presets: ['typescript', 'react'], sourceType: 'module', filename: 'app.tsx' });
         const blobUrl = URL.createObjectURL(new Blob([transformed.code], { type: 'text/javascript' }));
-        import(blobUrl).catch((err) => { throw err; }).finally(() => URL.revokeObjectURL(blobUrl));
+        import(blobUrl).catch((err) => { throw err; });
     } catch (err) {
         console.error('Babel 编译失败:', err);
     }
