@@ -1,4 +1,5 @@
 
+
 // Consolidated Imports
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -57,7 +58,7 @@ interface TaskItem {
   status: TaskStatus;
 }
 
-type CardData = 
+type CardData =
   | { type: 'audience'; name: string; count: number; updateCycle: 'hour' | 'day' | 'once'; samples: string[]; confirmed?: boolean }
   | { type: 'group_package'; name: string; count: number; updateCycle: 'hour' | 'day' | 'once'; samples: string[]; confirmed?: boolean }
   | { type: 'config'; senders: string[]; blacklists: string[]; confirmed?: boolean }
@@ -111,10 +112,10 @@ interface SimMoment {
     groupId: string;
     accountId: string; // The enterprise account that posted this
     content: string;
-    media: { 
-        type: 'image' | 'video' | 'channels' | 'link', 
-        url: string, 
-        title?: string, 
+    media: {
+        type: 'image' | 'video' | 'channels' | 'link',
+        url: string,
+        title?: string,
         thumbnail?: string,
         desc?: string
     }[];
@@ -173,7 +174,7 @@ function AudienceCard({ data, onUserClick, onConfirm }: { data: Extract<CardData
             预估 {data.count.toLocaleString()} 人
           </div>
         </div>
-        
+
         <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800">
           <div className="flex justify-between text-xs">
             <span className="text-zinc-500">人群包名称</span>
@@ -184,12 +185,12 @@ function AudienceCard({ data, onUserClick, onConfirm }: { data: Extract<CardData
             <span className="font-medium text-zinc-900 dark:text-zinc-100">{cycleMap[data.updateCycle]}</span>
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <div className="text-xs text-zinc-500">抽样客户 (点击查看档案)</div>
           <div className="flex flex-wrap gap-2">
             {data.samples.map((sample, i) => (
-              <button 
+              <button
                 key={i}
                 onClick={() => onUserClick(sample, data.samples)}
                 className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-full text-xs text-zinc-700 dark:text-zinc-300 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
@@ -200,12 +201,12 @@ function AudienceCard({ data, onUserClick, onConfirm }: { data: Extract<CardData
           </div>
         </div>
 
-        <button 
+        <button
           onClick={onConfirm}
           disabled={data.confirmed}
           className={`w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors mt-2 ${
-            data.confirmed 
-              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-500 border border-emerald-200 dark:border-emerald-800/50' 
+            data.confirmed
+              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-500 border border-emerald-200 dark:border-emerald-800/50'
               : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100'
           }`}
         >
@@ -241,7 +242,7 @@ function GroupPackageCard({ data, onGroupClick, onUserClick, onConfirm }: { data
             预估 {data.count.toLocaleString()} 个
           </div>
         </div>
-        
+
         <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800">
           <div className="flex justify-between text-xs">
             <span className="text-zinc-500">群聊包名称</span>
@@ -252,16 +253,16 @@ function GroupPackageCard({ data, onGroupClick, onUserClick, onConfirm }: { data
             <span className="font-medium text-zinc-900 dark:text-zinc-100">{cycleMap[data.updateCycle]}</span>
           </div>
         </div>
-        
+
         <div className="space-y-2">
           <div className="text-xs text-zinc-500">抽样群聊 (点击查看档案)</div>
           <div className="flex flex-wrap gap-2">
             {data.samples.map((sample, i) => (
-              <div 
+              <div
                 key={i}
                 className="flex items-center border border-zinc-200 dark:border-zinc-700 rounded-full overflow-hidden transition-colors hover:border-indigo-300 dark:hover:border-indigo-700"
               >
-                <button 
+                <button
                   onClick={() => onGroupClick(sample, data.samples)}
                   className="px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-indigo-600 dark:hover:text-indigo-400 border-r border-zinc-200 dark:border-zinc-700 transition-colors"
                 >
@@ -279,12 +280,12 @@ function GroupPackageCard({ data, onGroupClick, onUserClick, onConfirm }: { data
           </div>
         </div>
 
-        <button 
+        <button
           onClick={onConfirm}
           disabled={data.confirmed}
           className={`w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors mt-2 ${
-            data.confirmed 
-              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-500 border border-emerald-200 dark:border-emerald-800/50' 
+            data.confirmed
+              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-500 border border-emerald-200 dark:border-emerald-800/50'
               : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100'
           }`}
         >
@@ -303,13 +304,13 @@ function ConfigCard({ data, onConfirm }: { data: Extract<CardData, { type: 'conf
   const [sender, setSender] = useState(data.senders[0] || 'C端客服');
   const [blacklist, setBlacklist] = useState<string[]>(data.blacklists || []);
   const [city, setCity] = useState('南京');
-  
+
   const blacklistOptions = ['中介同行', '无购房需求', '频繁转派用户', '同事'];
   const cityOptions = ['南京', '无锡', '合肥', '苏州', '西安', '芜湖'];
 
   const toggleBlacklist = (option: string) => {
     if (data.confirmed) return;
-    setBlacklist(prev => 
+    setBlacklist(prev =>
       prev.includes(option) ? prev.filter(i => i !== option) : [...prev, option]
     );
   };
@@ -323,13 +324,13 @@ function ConfigCard({ data, onConfirm }: { data: Extract<CardData, { type: 'conf
           </div>
           推送任务配置
         </div>
-        
+
         <div className="space-y-3">
           <div className="space-y-1.5">
             <label className="text-xs text-zinc-500">发送人选择</label>
             <div className="relative">
-                <select 
-                    value={sender} 
+                <select
+                    value={sender}
                     onChange={(e) => setSender(e.target.value)}
                     disabled={data.confirmed}
                     className="w-full appearance-none px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-zinc-700 dark:text-zinc-300"
@@ -340,7 +341,7 @@ function ConfigCard({ data, onConfirm }: { data: Extract<CardData, { type: 'conf
                 <ChevronDown size={14} className="absolute right-3 top-3 text-zinc-400 pointer-events-none" />
             </div>
           </div>
-          
+
           <div className="space-y-1.5">
             <label className="text-xs text-zinc-500">黑名单过滤</label>
             <div className="flex flex-wrap gap-2">
@@ -364,8 +365,8 @@ function ConfigCard({ data, onConfirm }: { data: Extract<CardData, { type: 'conf
           <div className="space-y-1.5">
             <label className="text-xs text-zinc-500">城市</label>
             <div className="relative">
-                <select 
-                    value={city} 
+                <select
+                    value={city}
                     onChange={(e) => setCity(e.target.value)}
                     disabled={data.confirmed}
                     className="w-full appearance-none px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-zinc-700 dark:text-zinc-300"
@@ -379,12 +380,12 @@ function ConfigCard({ data, onConfirm }: { data: Extract<CardData, { type: 'conf
           </div>
         </div>
 
-        <button 
+        <button
           onClick={onConfirm}
           disabled={data.confirmed}
           className={`w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
-            data.confirmed 
-              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-500 border border-emerald-200 dark:border-emerald-800/50' 
+            data.confirmed
+              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-500 border border-emerald-200 dark:border-emerald-800/50'
               : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100'
           }`}
         >
@@ -412,7 +413,7 @@ function ContentPreviewCard({ data }: { data: Extract<CardData, { type: 'content
           </div>
           {data.title}
         </div>
-        
+
         <div className="flex flex-col gap-2">
             {/* Text Content */}
             {cleanContent && (
@@ -464,7 +465,7 @@ function TaskSummaryCard({ data, onConfirm }: { data: Extract<CardData, { type: 
           </div>
           任务信息确认
         </div>
-        
+
         <div className="grid grid-cols-2 gap-3 text-xs">
           {fields.map((field, i) => (
             <div key={i} className="flex flex-col gap-1">
@@ -480,12 +481,12 @@ function TaskSummaryCard({ data, onConfirm }: { data: Extract<CardData, { type: 
           </div>
         </div>
 
-        <button 
+        <button
           onClick={onConfirm}
           disabled={data.confirmed}
           className={`w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors mt-2 ${
-            data.confirmed 
-              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-500 border border-emerald-200 dark:border-emerald-800/50' 
+            data.confirmed
+              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-500 border border-emerald-200 dark:border-emerald-800/50'
               : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100'
           }`}
         >
@@ -529,7 +530,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
   // Contexts removed as per request to have inline text
   // const [contexts, setContexts] = useState<ContextItem[]>([]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  
+
   // Image Upload State
   const [images, setImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -588,7 +589,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
       const textToAppend = pendingAction.text;
       const newValue = value ? `${value} ${textToAppend}` : textToAppend;
       onChange(newValue);
-      
+
       // Focus input and set cursor to end
       setTimeout(() => {
         if (inputRef.current) {
@@ -687,7 +688,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
     if (category === 'CDP人群包') items = ['双十一大促高潜人群', '上海地区VIP会员', '近90天未登录流失人群'];
     if (category === '图片') items = ['春季上新海报.png', '双十一大促.jpg', '产品介绍图.png'];
     if (category === '小程序卡片') items = ['商品详情页', '活动主会场', '会员中心'];
-    
+
     return items.filter(item => item.toLowerCase().includes(query.toLowerCase()));
   };
 
@@ -701,8 +702,8 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
   return (
     <div className="relative group">
       {/* Animated Border Background */}
-      <div 
-        className={`absolute -inset-[2px] rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-0 transition-opacity duration-500 ${!locked && 'group-focus-within:opacity-100'} blur-[3px]`} 
+      <div
+        className={`absolute -inset-[2px] rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-0 transition-opacity duration-500 ${!locked && 'group-focus-within:opacity-100'} blur-[3px]`}
         style={{ backgroundSize: '200% 200%', animation: 'gradient-move 3s ease infinite' }}
       ></div>
       <style>{`
@@ -712,9 +713,9 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
           100% { background-position: 0% 50%; }
         }
       `}</style>
-      
+
       <div className={`relative flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-sm transition-all ${locked ? 'opacity-80' : 'group-focus-within:border-transparent bg-clip-padding'}`}>
-      
+
       {/* Bubbles Area */}
       {bubbles.length > 0 && (
         <div className="flex flex-wrap gap-2 px-3 pt-3 pb-1 relative">
@@ -725,7 +726,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer border transition-colors ${
-                    activeBubbleId === bubble.id 
+                    activeBubbleId === bubble.id
                       ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700'
                       : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border-indigo-100 dark:border-indigo-800/50'
                   }`}
@@ -749,7 +750,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
                       </div>
                       <div className="p-1">
                         {bubble.items.map(item => (
-                          <div 
+                          <div
                             key={item.id}
                             className="flex items-center gap-2 px-2 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md cursor-pointer transition-colors"
                             onClick={() => {
@@ -776,14 +777,14 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
       {/* Top Bar: Mode Selector */}
       <div className="flex items-center justify-between px-3 pt-2 pb-1 relative">
         <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg">
-          <button 
+          <button
             onClick={() => !locked && setMode('圈选模式')}
             disabled={locked}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${mode === '圈选模式' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'} disabled:opacity-50`}
           >
             圈选模式
           </button>
-          <button 
+          <button
             onClick={() => !locked && setMode('执行模式')}
             disabled={locked}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${mode === '执行模式' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'} disabled:opacity-50`}
@@ -794,7 +795,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
       </div>
 
       {/* Contexts Area - Removed as requested */}
-      
+
       {/* Images Preview Area */}
       {images.length > 0 && (
         <div className="px-3 pt-2 flex gap-2 overflow-x-auto">
@@ -803,7 +804,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
               <div className="w-16 h-16 rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden">
                 <img src={img} alt="preview" className="w-full h-full object-cover" />
               </div>
-              <button 
+              <button
                 onClick={() => removeImage(i)}
                 className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-zinc-500 hover:bg-zinc-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity"
               >
@@ -834,20 +835,20 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
           className="relative z-10 w-full bg-transparent border-none focus:ring-0 resize-none px-3 py-2 text-sm font-sans leading-normal text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 min-h-[60px] max-h-[200px] outline-none disabled:opacity-50"
           rows={2}
         />
-        <input 
-            type="file" 
-            ref={fileInputRef} 
-            className="hidden" 
-            accept="image/*" 
-            multiple 
-            onChange={handleFileSelect} 
+        <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            multiple
+            onChange={handleFileSelect}
         />
       </div>
 
       {/* Bottom Toolbar */}
       <div className="flex items-center justify-between px-3 pb-3 pt-1">
         <div className="flex items-center gap-1">
-          <button 
+          <button
             onClick={() => fileInputRef.current?.click()}
             disabled={locked}
             className="p-1.5 text-zinc-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-md transition-colors disabled:opacity-50"
@@ -855,7 +856,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
           >
             <ImageIcon size={16} />
           </button>
-          <button 
+          <button
             onClick={() => {
               if (!locked) {
                 onChange(value + '@');
@@ -868,7 +869,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
           >
             <AtSign size={16} />
           </button>
-          <button 
+          <button
             onClick={() => {
               if (!locked) {
                 onChange(value + '/');
@@ -882,9 +883,9 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
             <Slash size={16} />
           </button>
         </div>
-        
+
         {locked ? (
-          <button 
+          <button
             onClick={onStop}
             className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors flex items-center gap-1 px-3 text-xs font-medium"
             title="停止任务"
@@ -893,7 +894,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
             停止任务
           </button>
         ) : (
-          <button 
+          <button
             onClick={() => {
                 if (!locked) {
                     onSubmit(value, images);
@@ -911,7 +912,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
       {/* Popup Menus */}
       <AnimatePresence>
         {isAtActive && !locked && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
@@ -935,11 +936,11 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
                   <div className="px-3 py-2 text-xs font-medium text-zinc-500 border-b border-zinc-100 dark:border-zinc-700">搜索素材</div>
                   <div className="p-1 max-h-48 overflow-y-auto">
                     {getAllMockResults(activeAtQuery).map(res => (
-                      <MenuItem 
-                        key={res.name} 
-                        icon={getCategoryIcon(res.category)} 
-                        label={`[${res.category}] ${res.name}`} 
-                        onClick={() => insertItem(res.name)} 
+                      <MenuItem
+                        key={res.name}
+                        icon={getCategoryIcon(res.category)}
+                        label={`[${res.category}] ${res.name}`}
+                        onClick={() => insertItem(res.name)}
                       />
                     ))}
                     {getAllMockResults(activeAtQuery).length === 0 && (
@@ -963,9 +964,9 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
             )}
           </motion.div>
         )}
-        
+
         {isSlashActive && !locked && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
@@ -994,7 +995,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
 
 function MenuItem({ icon, label, onClick }: { key?: string | number, icon: React.ReactNode, label: string, onClick: () => void }) {
   return (
-    <div 
+    <div
       className="flex items-center gap-2 px-2 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md cursor-pointer transition-colors"
       onClick={onClick}
     >
@@ -1015,7 +1016,7 @@ function TaskPlan({ tasks }: { tasks: TaskItem[] }) {
       </div>
       <div className="p-3 flex flex-col gap-3">
         {tasks.map((task, index) => (
-          <motion.div 
+          <motion.div
             key={task.id}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
@@ -1053,11 +1054,11 @@ interface MomentsViewProps {
     customerProfiles?: Record<string, ChatCustomerProfile>;
 }
 
-const MomentsView: React.FC<MomentsViewProps> = ({ 
-    moments, 
+const MomentsView: React.FC<MomentsViewProps> = ({
+    moments,
     accounts,
-    selectedMomentId, 
-    onSelectMoment, 
+    selectedMomentId,
+    onSelectMoment,
     onOpenProfile,
     onSendMessage,
     filter,
@@ -1084,7 +1085,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     const [isReplyEmojiPickerOpen, setIsReplyEmojiPickerOpen] = useState(false);
     const groupReplyImageInputRef = React.useRef<HTMLInputElement>(null);
     const replyImageInputRef = React.useRef<HTMLInputElement>(null);
-    
+
     // Batch reply modal states
     const [isBatchReplyOpen, setIsBatchReplyOpen] = useState(false);
     const [batchReplyText, setBatchReplyText] = useState('');
@@ -1094,7 +1095,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     const [batchMaterialTab, setBatchMaterialTab] = useState<'图片' | '小程序卡片'>('图片');
     const [batchMaterialQuery, setBatchMaterialQuery] = useState('');
     const [isLikesExpanded, setIsLikesExpanded] = useState(false);
-    
+
     // Added for new features
     const [commentSortBy, setCommentSortBy] = useState<'time' | 'heat'>('time');
     const [hoveredAccountId, setHoveredAccountId] = useState<string | null>(null);
@@ -1165,7 +1166,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                 const account = accounts.find(a => a.id === m.accountId);
                 const userName = account ? account.name : '365淘房官方号';
                 const userAvatar = account ? account.avatar : 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Official&background=0D8ABC&color=fff';
-                
+
                 const newComment = {
                     id: `c-me-${Date.now()}-${Math.random()}`,
                     userId: account ? account.id : 'me', // Use account ID to integrate properly
@@ -1180,7 +1181,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             return m;
         }));
         setGroupReplyContent('');
-        
+
         setReplyingToGroupId(null);
     };
 
@@ -1191,7 +1192,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                 const account = accounts.find(a => a.id === m.accountId);
                 const userName = account ? account.name : '365淘房官方号';
                 const userAvatar = account ? account.avatar : 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Official&background=0D8ABC&color=fff';
-                
+
                 const newComment = {
                     id: `c-me-${Date.now()}-${Math.random()}`,
                     userId: account ? account.id : 'me',
@@ -1209,7 +1210,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         }));
         setReplyingTo(null);
         setReplyContent('');
-        
+
     };
 
     const parseDateTime = (value: string) => {
@@ -1385,7 +1386,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         });
         return comments;
     }, [relatedMoments, accounts]);
-    
+
     // Check if user has commented
     const hasCommented = (userId: string) => {
         return aggregatedComments.some(c => c.userId === userId);
@@ -1395,11 +1396,11 @@ const MomentsView: React.FC<MomentsViewProps> = ({
 
     const commentThreads = React.useMemo(() => {
         const threads: { id: string, momentId: string, rootComment: MomentComment, replies: MomentComment[], account?: EnterpriseAccount }[] = [];
-        
+
         relatedMoments.forEach(m => {
             const account = accounts.find(a => a.id === m.accountId);
             const momentComments = m.comments || [];
-            
+
             // Customers who commented (assuming non-account users are customers)
             // We treat comments from non-accounts, OR comments without a replyToId as roots.
             const rootComments = momentComments.filter(c => {
@@ -1408,7 +1409,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                 // Wait, if a customer replies to an employee? Let's just say a root is ANY comment that has no replyToId.
                 return !c.replyToId;
             });
-            
+
             rootComments.forEach(root => {
                 const isAccount = accounts.some(a => a.id === root.userId) || root.userId === 'me';
 
@@ -1432,7 +1433,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                 });
             });
         });
-        
+
         return threads;
     }, [relatedMoments, accounts]);
 
@@ -1447,7 +1448,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             if (timeStr.includes('分钟')) return val * 60;
             if (timeStr.includes('小时')) return val * 3600;
             if (timeStr.includes('天')) return val * 86400;
-            return 0; 
+            return 0;
         };
 
         return [...commentThreads].sort((a, b) => {
@@ -1478,7 +1479,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     useEffect(() => {
         setSelectedLikers(prev => prev.filter(userId => aggregatedLikes.some(like => like.userId === userId)));
     }, [aggregatedLikes]);
-    
+
     useEffect(() => {
         setIsLikesExpanded(false);
     }, [selectedContent]);
@@ -1565,11 +1566,11 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         return parts.map((part, i) => {
             if (part.match(urlRegex)) {
                 return (
-                    <a 
-                        key={i} 
-                        href={part.startsWith('#') ? '#' : part} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
+                    <a
+                        key={i}
+                        href={part.startsWith('#') ? '#' : part}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-[#576b95] hover:opacity-80 transition-opacity break-all"
                     >
                         {part}
@@ -1610,23 +1611,26 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     };
 
     return (
-        <div className="flex h-full w-full overflow-hidden bg-white" onClick={closeContextMenu}>
+        <div className="flex h-full w-full overflow-hidden bg-[#eaf4ff]" onClick={closeContextMenu}>
             {/* 3rd Column: Moments List */}
-            <div className="w-[540px] min-w-[540px] border-r border-slate-200 flex flex-col bg-[#f8fafc] overflow-x-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-white">
+            <div className="w-[540px] min-w-[540px] border-r border-[#dbe8f7] flex flex-col bg-[#edf6ff] overflow-x-hidden">
+                <div className="px-6 py-4 border-b border-[#dbe8f7] bg-[#f8fbff]">
                     <div className="flex items-center justify-between gap-3">
-                        <h3 className="font-bold text-slate-800">朋友圈动态</h3>
+                        <h3 className="font-bold text-[#102a4c] flex items-center gap-2">
+                            <Compass size={16} className="text-[#1683ff]" />
+                            朋友圈动态
+                        </h3>
                         <div className="relative">
                             <select
                                 value={selectedMomentCity}
                                 onChange={(e) => setSelectedMomentCity(e.target.value)}
-                                className="appearance-none bg-slate-50 border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+                                className="appearance-none bg-white border border-[#cfe0f5] rounded-md pl-3 pr-8 py-1.5 text-xs text-[#31506f] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#b8dcff] focus:border-[#5caaff]"
                             >
                                 {['南京', '无锡', '苏州', '合肥', '芜湖', '西安'].map(city => (
                                     <option key={city} value={city}>{city}</option>
                                 ))}
                             </select>
-                            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7fa6ca] pointer-events-none" />
                         </div>
                     </div>
                 </div>
@@ -1650,18 +1654,18 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                             >
                                 <div className="flex gap-3 items-start">
                                     <div className="w-[56px] shrink-0 pt-2 text-right">
-                                        <div className="text-[28px] leading-none font-bold text-slate-900">{leftDate.day}</div>
-                                        <div className="text-sm text-slate-500 mt-1">{leftDate.month}</div>
+                                        <div className="text-[30px] leading-none font-bold text-[#102a4c]">{leftDate.day}</div>
+                                        <div className="text-[14px] text-[#31506f] mt-1">{leftDate.month}</div>
                                         {filter === 'pending' && (group.pendingLikesCount > 0 || group.pendingCommentsCount > 0) && (
                                             <div className="mt-2 flex flex-col items-end gap-1">
                                                 {group.pendingLikesCount > 0 && (
-                                                    <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100 shadow-sm">
+                                                    <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white text-[#ff4d4f] border border-[#ffd6d9] shadow-sm">
                                                         <Heart size={12} className="fill-current" />
                                                         <span className="text-[12px] font-bold leading-none">+{group.pendingLikesCount}</span>
                                                     </div>
                                                 )}
                                                 {group.pendingCommentsCount > 0 && (
-                                                    <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100 shadow-sm">
+                                                    <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white text-[#1683ff] border border-[#c9e3ff] shadow-sm">
                                                         <MessageCircle size={12} />
                                                         <span className="text-[12px] font-bold leading-none">+{group.pendingCommentsCount}</span>
                                                     </div>
@@ -1673,22 +1677,34 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         onClick={() => {
                                             onSelectMoment(group.moments[0].id);
                                         }}
-                                        className={`flex-1 min-w-0 text-left p-4 rounded-2xl transition-all duration-200 group cursor-pointer bg-white border border-slate-200
+                                        className={`flex-1 min-w-0 text-left p-4 rounded-xl transition-all duration-200 group cursor-pointer bg-white border border-[#d8e5f4]
                                             ${isActive
-                                                ? 'shadow-xl ring-2 ring-blue-400 border-blue-400 bg-blue-50/40'
-                                                : 'hover:shadow-sm hover:border-slate-300'}`}
+                                                ? 'shadow-[0_8px_24px_rgba(22,131,255,0.18)] ring-2 ring-[#1683ff] border-[#1683ff]'
+                                                : 'hover:shadow-[0_6px_18px_rgba(16,42,76,0.08)] hover:border-[#bcd5ef]'}`}
                                     >
                                         <div className="flex items-start justify-between gap-3 mb-2">
-                                            <div className="text-[11px] font-medium text-slate-400">ID：{group.groupId}</div>
+                                            <div className="text-[11px] font-medium text-[#8ba7c3]">ID：{group.groupId}</div>
                                             <div className="flex items-center gap-2 shrink-0">
-                                                <div className="text-xs text-slate-400">{formatMomentFullTime(group.latestTime)}</div>
+                                                <div className="text-xs text-[#8ba7c3]">{formatMomentFullTime(group.latestTime)}</div>
+                                                {filter === 'pending' && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleMarkGroupProcessed(group.groupId);
+                                                        }}
+                                                        className="px-2.5 py-1 rounded-md text-xs font-semibold inline-flex items-center justify-center gap-1 bg-[#e9fbf3] text-[#10a866] hover:bg-[#d9f7e9] transition-colors border border-[#bcebd6]"
+                                                    >
+                                                        <CheckCircle2 size={13} />
+                                                        标记已处理
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
 
                                         <div className="mb-3">
                                             <div className="relative min-w-0 group/publisher">
                                                 <div className="flex items-center gap-0.5 min-w-0 max-w-[300px] text-[12px] whitespace-nowrap overflow-hidden">
-                                                    <span className="truncate min-w-0 font-semibold text-indigo-600 inline-flex items-center gap-0.5 overflow-hidden">
+                                                    <span className="truncate min-w-0 font-semibold text-[#1683ff] inline-flex items-center gap-0.5 overflow-hidden">
                                                         {visiblePublisherAccounts.map((account, index) => (
                                                             <React.Fragment key={account.id}>
                                                                 {index > 0 && <span className="text-slate-400">、</span>}
@@ -1696,14 +1712,14 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                             </React.Fragment>
                                                         ))}
                                                     </span>
-                                                    <span className="shrink-0 whitespace-nowrap text-slate-500">{publisherSuffix}</span>
+                                                    <span className="shrink-0 whitespace-nowrap text-[#6e86a0]">{publisherSuffix}</span>
                                                 </div>
-                                                <div className="absolute left-0 top-[calc(100%+8px)] hidden group-hover/publisher:block z-20 w-64 bg-white border border-slate-200 rounded-xl shadow-xl p-2 max-h-[300px] overflow-y-auto">
-                                                    <div className="text-[11px] text-slate-400 px-2 py-1 sticky top-0 bg-white/90 backdrop-blur-sm z-10">发布账号列表</div>
+                                                <div className="absolute left-0 top-[calc(100%+8px)] hidden group-hover/publisher:block z-20 w-64 bg-white border border-[#d8e5f4] rounded-lg shadow-[0_10px_30px_rgba(16,42,76,0.16)] p-2 max-h-[300px] overflow-y-auto">
+                                                    <div className="text-[11px] text-[#8ba7c3] px-2 py-1 sticky top-0 bg-white/90 backdrop-blur-sm z-10">发布账号列表</div>
                                                     {group.publisherAccounts.map(account => (
-                                                        <div key={account.id} className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50">
-                                                            <img src={account.avatar} className="w-6 h-6 rounded-md border border-slate-200 shrink-0" alt="" />
-                                                            {renderEnterpriseName(account.id, account.name, 'text-xs font-semibold text-indigo-600 min-w-0 truncate', 'text-[12px]')}
+                                                        <div key={account.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-[#f1f7ff]">
+                                                            <img src={account.avatar} className="w-6 h-6 rounded-md border border-[#d8e5f4] shrink-0" alt="" />
+                                                            {renderEnterpriseName(account.id, account.name, 'text-xs font-semibold text-[#1683ff] min-w-0 truncate', 'text-[12px]')}
                                                         </div>
                                                     ))}
                                                 </div>
@@ -1713,7 +1729,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         <div className="relative mb-3">
                                             <p
                                                 ref={(node) => { contentRefs.current[group.groupId] = node; }}
-                                                className={`text-[15px] text-slate-700 leading-relaxed ${!expandedContents[group.groupId] ? 'line-clamp-5' : ''}`}
+                                                className={`text-[15px] text-[#1f3654] leading-relaxed ${!expandedContents[group.groupId] ? 'line-clamp-5' : ''}`}
                                                 title={!expandedContents[group.groupId] ? group.content : undefined}
                                             >
                                                 {renderContent(group.content)}
@@ -1727,7 +1743,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                             [group.groupId]: !prev[group.groupId]
                                                         }));
                                                     }}
-                                                    className="text-[13px] text-[#576b95] font-medium mt-1 hover:opacity-80 transition-opacity"
+                                                    className="text-[13px] text-[#1683ff] font-medium mt-1 hover:opacity-80 transition-opacity"
                                                 >
                                                     {expandedContents[group.groupId] ? '收起' : '全文'}
                                                 </button>
@@ -1735,21 +1751,21 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         </div>
 
                                         {group.media.length > 0 && (
-                                            <div className="flex flex-wrap gap-1 overflow-hidden rounded-lg" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex flex-wrap gap-1 overflow-hidden rounded-md" onClick={(e) => e.stopPropagation()}>
                                                 {group.media.slice(0, expandedContents[group.groupId] ? undefined : 3).map((item, idx) => (
                                                     <div
                                                         key={idx}
-                                                        className={`relative bg-slate-100 ${group.media.length === 1 ? 'w-full h-32' : group.media.length === 2 || (expandedContents[group.groupId] && group.media.length === 4) ? 'w-[calc(50%-2px)] aspect-square' : 'w-[calc(33.333%-3px)] aspect-square'}`}
+                                                        className={`relative bg-[#e8f1fb] ${group.media.length === 1 ? 'w-full h-32' : group.media.length === 2 || (expandedContents[group.groupId] && group.media.length === 4) ? 'w-[calc(50%-2px)] aspect-square' : 'w-[calc(33.333%-3px)] aspect-square'}`}
                                                     >
-                                                        <img src={item.url} referrerPolicy="no-referrer" className="w-full h-full object-cover rounded-sm cursor-zoom-in" alt="" />
+                                                        <img src={item.url} referrerPolicy="no-referrer" className="w-full h-full object-cover rounded cursor-zoom-in" alt="" />
                                                         {(item.type === 'video' || item.type === 'channels') && (
-                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-sm">
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded">
                                                                 <Play size={20} className="text-white fill-current" />
                                                             </div>
                                                         )}
                                                         {!expandedContents[group.groupId] && idx === 2 && group.media.length > 3 && (
                                                             <div
-                                                                className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white cursor-pointer rounded-sm hover:bg-black/40 transition-colors"
+                                                                className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white cursor-pointer rounded hover:bg-black/40 transition-colors"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     setExpandedContents(prev => ({
@@ -1766,34 +1782,29 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                             </div>
                                         )}
 
-                                        <div className="mt-4 flex flex-col gap-2" onClick={e => e.stopPropagation()}>
-                                            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50/80 border border-slate-100 text-[12px] text-slate-500">
-                                                <Heart size={13} className="text-amber-500" />
+                                        <div className="mt-3 flex flex-col gap-2" onClick={e => e.stopPropagation()}>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-3 text-[12px] text-[#5f7892]">
+                                                <span className="inline-flex items-center gap-1">
+                                                <Heart size={13} className="text-[#7d96b2]" />
                                                 <span>点赞</span>
-                                                <span className="font-semibold text-slate-700">{group.pendingLikesCount}</span>
-                                                <span className="text-slate-300">·</span>
-                                                <MessageCircle size={13} className="text-rose-500" />
+                                                <span className="font-semibold text-[#31506f]">{group.pendingLikesCount}</span>
+                                                </span>
+                                                <span className="inline-flex items-center gap-1">
+                                                <MessageCircle size={13} className="text-[#7d96b2]" />
                                                 <span>评论</span>
-                                                <span className="font-semibold text-slate-700">{group.pendingCommentsCount}</span>
-                                            </div>
-                                            <div className="flex justify-end gap-2">
+                                                <span className="font-semibold text-[#31506f]">{group.pendingCommentsCount}</span>
+                                                </span>
+                                                </div>
+                                                <div className="flex justify-end gap-2">
                                                 <button
                                                     onClick={() => setReplyingToGroupId(replyingToGroupId === group.content ? null : group.content)}
-                                                    className="px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center justify-center gap-1 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+                                                    className="px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center justify-center gap-1 text-[#5f7892] bg-white border border-[#d8e5f4] hover:text-[#1683ff] hover:border-[#9acbff] transition-colors"
                                                 >
                                                     <MessageCircle size={13} />
                                                     评论
                                                 </button>
-
-                                                {filter === 'pending' && (
-                                                    <button
-                                                        onClick={() => handleMarkGroupProcessed(group.groupId)}
-                                                        className="px-3 py-1.5 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-200 shadow-sm"
-                                                    >
-                                                        <CheckCircle2 size={14} />
-                                                        标记已处理
-                                                    </button>
-                                                )}
+                                                </div>
                                             </div>
 
                                             {(() => {
@@ -1831,7 +1842,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                             .map((commentGroup, idx) => (
                                                             <div
                                                                 key={`content-group-${idx}`}
-                                                                className="bg-slate-50/80 hover:bg-slate-100 rounded-lg p-2.5 text-[13px] text-slate-600 break-words whitespace-normal border border-slate-100 flex items-start gap-1 transition-colors"
+                                                                className="bg-[#f7fbff] hover:bg-[#f1f7ff] rounded-md p-2.5 text-[13px] text-[#5f7892] break-words whitespace-normal border border-[#d8e5f4] flex items-start gap-1 transition-colors"
                                                             >
                                                                 <span className="font-bold text-slate-700 mt-0.5 flex items-center flex-wrap leading-6 min-w-0">
                                                                     <MessageCircle size={14} className="mr-1.5 text-blue-500" />
@@ -1865,20 +1876,20 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                         exit={{ height: 0, opacity: 0 }}
                                                         className="overflow-hidden mt-2"
                                                     >
-                                                       <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                                                       <div className="bg-white border border-[#9acbff] rounded-md p-2.5 shadow-[0_4px_14px_rgba(22,131,255,0.08)]">
                                                            <textarea
                                                              autoFocus
                                                              value={groupReplyContent}
                                                              onChange={e => setGroupReplyContent(e.target.value)}
                                                              placeholder="输入评论内容..."
-                                                             className="w-full text-xs bg-transparent outline-none resize-none min-h-[64px] leading-5 placeholder:text-slate-400"
+                                                             className="w-full text-xs bg-transparent outline-none resize-none min-h-[64px] leading-5 placeholder:text-[#9db4ca]"
                                                            />
                                                            <div className="mt-2 flex items-center justify-between gap-2">
                                                                <div className="flex items-center gap-1.5 relative">
                                                                    <button
                                                                        type="button"
                                                                        onClick={() => setIsGroupEmojiPickerOpen(prev => !prev)}
-                                                                       className="w-8 h-8 rounded-md border border-slate-200 bg-white hover:bg-slate-100 flex items-center justify-center text-slate-500"
+                                                                       className="w-8 h-8 rounded-md border border-[#d8e5f4] bg-white hover:bg-[#f1f7ff] flex items-center justify-center text-[#7d96b2]"
                                                                        title="选择表情"
                                                                    >
                                                                        <Smile size={14} />
@@ -1909,10 +1920,10 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                        onClick={() => {
                                                                            setReplyingToGroupId(null);
                                                                            setGroupReplyContent('');
-                                                                           
+
                                                                            setIsGroupEmojiPickerOpen(false);
                                                                        }}
-                                                                       className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1"
+                                                                       className="text-xs text-[#5f7892] hover:text-[#31506f] px-2 py-1"
                                                                    >
                                                                        取消
                                                                    </button>
@@ -1922,7 +1933,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                            handleAddGroupComment(group.content, groupReplyContent, null);
                                                                            setIsGroupEmojiPickerOpen(false);
                                                                        }}
-                                                                       className="px-3 py-1.5 flex items-center justify-center gap-1 bg-blue-600 text-white rounded-md text-xs font-bold disabled:opacity-50"
+                                                                       className="px-3 py-1.5 flex items-center justify-center gap-1 bg-[#7db8ff] text-white rounded-md text-xs font-bold disabled:opacity-50 hover:bg-[#5aa6ff]"
                                                                    >
                                                                       <Share2 size={12} />
                                                                       发送
@@ -1944,25 +1955,25 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             </div>
 
             {/* 4th Column: Moment Detail */}
-            <div className="flex-1 flex flex-col min-w-0 bg-white">
+            <div className="flex-1 flex flex-col min-w-0 bg-[#eaf4ff]">
                 {selectedMoment ? (
                     <div className="flex-1 overflow-y-auto">
-                        <div className="w-full py-8 px-4">
+                        <div className="w-full py-6 px-4">
                             {/* Likes and Comments */}
-                            <div className="mt-2">
+                            <div>
                                 <div className="flex flex-col gap-6">
-                                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                                    <div className="rounded-lg border border-[#d8e5f4] bg-white p-4 shadow-[0_1px_2px_rgba(16,42,76,0.04)]">
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="flex items-center gap-2">
-                                                <Heart size={16} className="text-blue-500" />
-                                                <span className="text-[15px] font-bold text-slate-800">点赞人 ({aggregatedLikes.length})</span>
+                                                <Heart size={16} className="text-[#1683ff]" />
+                                                <span className="text-[15px] font-bold text-[#102a4c]">点赞人 ({aggregatedLikes.length})</span>
                                             </div>
                                             {aggregatedLikes.length > 0 && (
                                                 <div className="flex items-center gap-4">
-                                                    <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                                                    <label className="flex items-center gap-2 text-sm text-[#5f7892] cursor-pointer">
                                                         <input
                                                             type="checkbox"
-                                                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                            className="rounded border-[#cfe0f5] text-[#1683ff] focus:ring-[#1683ff] cursor-pointer"
                                                             checked={selectedLikers.length === aggregatedLikes.length && aggregatedLikes.length > 0}
                                                             onChange={(e) => {
                                                                 if (e.target.checked) {
@@ -1974,10 +1985,10 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                         />
                                                         全选
                                                     </label>
-                                                    <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                                                    <label className="flex items-center gap-2 text-sm text-[#5f7892] cursor-pointer">
                                                         <input
                                                             type="checkbox"
-                                                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                            className="rounded border-[#cfe0f5] text-[#1683ff] focus:ring-[#1683ff] cursor-pointer"
                                                             checked={uncommentedLikers.length > 0 && uncommentedLikers.every(id => selectedLikers.includes(id))}
                                                             onChange={(e) => {
                                                                 if (e.target.checked) {
@@ -2000,7 +2011,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                 setIsBatchReplyOpen(true);
                                                             }
                                                         }}
-                                                        className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-[13px] font-bold shadow-sm hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        className="bg-[#7db8ff] text-white px-4 py-1.5 rounded-md text-[13px] font-bold shadow-sm hover:bg-[#5aa6ff] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         私聊回复 {selectedLikers.length > 0 ? `(${selectedLikers.length})` : ''}
                                                     </button>
@@ -2008,14 +2019,14 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                             )}
                                         </div>
                                         <div className="min-h-[220px] max-h-[300px] overflow-y-auto pr-1">
-                                            <div className="grid grid-cols-5 gap-6 p-2">
+                                            <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-x-7 gap-y-5 p-2">
                                                 {aggregatedLikes.length > 0 ? (
                                                     (isLikesExpanded ? aggregatedLikes : aggregatedLikes.slice(0, 10)).map((like) => (
                                                         <div key={like.userId} className="flex flex-col items-center gap-2 relative">
-                                                            <div className="absolute top-1 right-1 z-10 bg-white/80 backdrop-blur-sm rounded-md flex items-center justify-center w-6 h-6 shadow-sm border border-slate-200">
+                                                            <div className="absolute top-1 right-1 z-10 bg-white/90 backdrop-blur-sm rounded-md flex items-center justify-center w-6 h-6 shadow-sm border border-[#d8e5f4]">
                                                                 <input
                                                                     type="checkbox"
-                                                                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 shadow-sm cursor-pointer"
+                                                                    className="w-4 h-4 rounded border-[#cfe0f5] text-[#1683ff] focus:ring-[#1683ff] shadow-sm cursor-pointer"
                                                                     checked={selectedLikers.includes(like.userId)}
                                                                     onChange={(e) => {
                                                                         if (e.target.checked) {
@@ -2044,17 +2055,17 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                     })()
                                                                 )}
                                                                 onContextMenu={(e) => handleContextMenu(e, like.userId, like.name, like.avatar)}
-                                                                className="group relative inline-block cursor-pointer mb-1"
+                                                                className="group relative inline-block cursor-pointer mb-0.5"
                                                             >
                                                                 <img src={(() => {
                                                                     if (like.userId === 'me') return accounts[0]?.avatar;
                                                                     const acc = accounts.find(a => a.id === like.userId);
                                                                     if (acc) return acc.avatar;
                                                                     return like.avatar;
-                                                                })()} referrerPolicy="no-referrer" className="w-14 h-14 rounded-xl border border-slate-200 shadow-sm group-hover:scale-105 group-hover:shadow-md transition-all duration-200" alt="" />
+                                                                })()} referrerPolicy="no-referrer" className="w-14 h-14 rounded-md border border-[#d8e5f4] shadow-sm group-hover:scale-105 group-hover:shadow-md transition-all duration-200 object-cover" alt="" />
                                                                 {hasCommented(like.userId) && (
-                                                                    <div className="absolute -bottom-1.5 -right-1.5 bg-white text-blue-500 rounded-full p-1 border border-blue-100 shadow-sm" title="已回评论">
-                                                                        <MessageCircle size={12} className="fill-blue-50 stroke-blue-500" />
+                                                                    <div className="absolute -bottom-1.5 -right-1.5 bg-white text-[#1683ff] rounded-full p-1 border border-[#c9e3ff] shadow-sm" title="已回评论">
+                                                                        <MessageCircle size={12} className="fill-[#e8f4ff] stroke-[#1683ff]" />
                                                                     </div>
                                                                 )}
                                                             </button>
@@ -2077,7 +2088,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                         })()
                                                                     );
                                                                 }}
-                                                                className="text-[13px] text-slate-700 font-bold w-full text-center hover:text-blue-600 transition-colors break-words whitespace-normal leading-5"
+                                                                className="text-[13px] text-[#31506f] font-semibold w-full text-center hover:text-[#1683ff] transition-colors break-words whitespace-normal leading-5"
                                                             >
                                                                 {(() => {
                                                                     if (like.userId === 'me') {
@@ -2099,9 +2110,9 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                             </div>
                                             {aggregatedLikes.length > 10 && (
                                                 <div className="flex justify-center mt-2 mb-4">
-                                                    <button 
+                                                    <button
                                                         onClick={() => setIsLikesExpanded(!isLikesExpanded)}
-                                                        className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"
+                                                        className="text-xs text-[#1683ff] hover:text-[#006fe6] flex items-center gap-1"
                                                     >
                                                         {isLikesExpanded ? '收起' : '查看更多'}
                                                         <ChevronDown size={12} className={`transform transition-transform ${isLikesExpanded ? 'rotate-180' : ''}`} />
@@ -2111,19 +2122,19 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         </div>
                                     </div>
 
-                                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                                        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                                    <div className="rounded-lg border border-[#d8e5f4] bg-white p-4 shadow-[0_1px_2px_rgba(16,42,76,0.04)]">
+                                        <div className="flex items-center justify-between border-b border-[#e5eef8] pb-4 mb-4">
                                             <div className="flex items-center gap-2">
-                                                <MessageSquare size={16} className="text-blue-500" />
-                                                <span className="text-[15px] font-bold text-slate-800">评论区 ({totalCommentCount})</span>
+                                                <MessageSquare size={16} className="text-[#1683ff]" />
+                                                <span className="text-[15px] font-bold text-[#102a4c]">评论区 ({totalCommentCount})</span>
                                             </div>
 
                                         </div>
 
                                         <div className="flex gap-4 min-h-[520px]">
-                                            <div className="w-[230px] shrink-0 border-r border-slate-100 pr-3">
-                                                <div className="text-[13px] font-bold text-slate-500 mb-4 px-1 flex items-center gap-1.5">
-                                                    <Compass size={14} className="text-blue-500" /> 发布账号
+                                            <div className="w-[230px] shrink-0 border-r border-[#e5eef8] pr-3">
+                                                <div className="text-[13px] font-bold text-[#5f7892] mb-4 px-1 flex items-center gap-1.5">
+                                                    <Compass size={14} className="text-[#1683ff]" /> 发布账号
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     {commentAccountOptions.map(acc => {
@@ -2132,24 +2143,24 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                         return (
                                                             <div
                                                                 key={acc.id}
-                                                                className={`flex items-center gap-2.5 p-2 rounded-lg cursor-pointer transition-colors border
-                                                                    ${isSelected ? 'bg-blue-50 border-blue-200 shadow-sm' : isHovered ? 'bg-slate-100 border-slate-200' : 'bg-slate-50/50 hover:bg-slate-100 border-transparent'}`}
+                                                                className={`flex items-center gap-2.5 p-2 rounded-md cursor-pointer transition-colors border
+                                                                    ${isSelected ? 'bg-[#e7f3ff] border-[#9acbff] shadow-sm' : isHovered ? 'bg-[#f1f7ff] border-[#d8e5f4]' : 'bg-[#f8fbff] hover:bg-[#f1f7ff] border-transparent'}`}
                                                                 onClick={() => setSelectedCommentAccountId(prev => prev === acc.id ? null : acc.id)}
                                                             >
-                                                                <img src={acc.avatar} className="w-7 h-7 rounded-md border border-slate-200" alt="" />
-                                                                {renderEnterpriseName(acc.id, acc.name, `text-[13px] whitespace-nowrap ${isSelected ? 'text-blue-700 font-bold' : isHovered ? 'text-slate-800 font-semibold' : 'text-slate-700 font-medium'}`, 'text-[13px]')}
+                                                                <img src={acc.avatar} className="w-7 h-7 rounded-md border border-[#d8e5f4]" alt="" />
+                                                                {renderEnterpriseName(acc.id, acc.name, `text-[13px] whitespace-nowrap ${isSelected ? 'text-[#1683ff] font-bold' : isHovered ? 'text-[#102a4c] font-semibold' : 'text-[#31506f] font-medium'}`, 'text-[13px]')}
                                                             </div>
                                                         );
                                                     })}
                                                 </div>
                                             </div>
 
-                                            <div className="flex-1 space-y-6">
+                                            <div className="flex-1 space-y-4">
                                                 {filteredCommentThreads.length > 0 ? (
                                                     filteredCommentThreads.map((thread) => (
                                                         <div
                                                             key={thread.id}
-                                                            className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-sm transition-shadow scroll-mt-4 relative group/thread"
+                                                            className="bg-white rounded-lg border border-[#d8e5f4] p-4 hover:shadow-[0_4px_16px_rgba(16,42,76,0.08)] transition-shadow scroll-mt-4 relative group/thread"
                                                             onMouseEnter={() => setHoveredAccountId(thread.account?.id || null)}
                                                             onMouseLeave={() => setHoveredAccountId(null)}
                                                         >
@@ -2159,36 +2170,36 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                     onClick={() => openCustomerPanel(thread.rootComment.userId, thread.rootComment.name, thread.rootComment.avatar)}
                                                                         onContextMenu={(e) => handleContextMenu(e, thread.rootComment.userId, thread.rootComment.name, thread.rootComment.avatar)}
                                                                     >
-                                                                        <img src={getEnterpriseAvatar(thread.rootComment.userId, thread.rootComment.avatar)} className="w-8 h-8 rounded-full border border-slate-100 object-cover" alt="" />
+                                                                        <img src={getEnterpriseAvatar(thread.rootComment.userId, thread.rootComment.avatar)} className="w-8 h-8 rounded-full border border-[#e5eef8] object-cover" alt="" />
                                                                     </button>
                                                                     <div>
                                                                     <button
                                                                         onClick={() => openCustomerPanel(thread.rootComment.userId, thread.rootComment.name, thread.rootComment.avatar)}
-                                                                        className="text-[14px] font-bold text-[#576b95] hover:underline"
+                                                                        className="text-[14px] font-bold text-[#31506f] hover:text-[#1683ff]"
                                                                     >
-                                                                        {renderEnterpriseName(thread.rootComment.userId, thread.rootComment.name, 'text-[14px] font-bold text-[#576b95]', 'text-[14px]')}
+                                                                        {renderEnterpriseName(thread.rootComment.userId, thread.rootComment.name, 'text-[14px] font-bold text-[#31506f]', 'text-[14px]')}
                                                                     </button>
-                                                                        <div className="text-[11px] text-slate-400">{thread.rootComment.time}</div>
+                                                                        <div className="text-[11px] text-[#8ba7c3]">{thread.rootComment.time}</div>
                                                                     </div>
                                                                 </div>
                                                                 {thread.account && (
-                                                                    <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-md border border-slate-100">
-                                                                        <span className="text-[10px] text-slate-400">发布账号:</span>
-                                                                        <img src={thread.account.avatar} className="w-4 h-4 rounded-sm" alt="" />
-                                                                        {renderEnterpriseName(thread.account.id, thread.account.name, 'text-[11px] text-slate-500 font-medium', 'text-[11px]')}
+                                                                    <div className="flex items-center gap-1.5 px-2 py-1 bg-[#f8fbff] rounded-md border border-[#d8e5f4]">
+                                                                        <span className="text-[10px] text-[#8ba7c3]">发布账号:</span>
+                                                                        <img src={thread.account.avatar} className="w-4 h-4 rounded-full" alt="" />
+                                                                        {renderEnterpriseName(thread.account.id, thread.account.name, 'text-[11px] text-[#5f7892] font-medium', 'text-[11px]')}
                                                                     </div>
                                                                 )}
                                                             </div>
 
-                                                            <div className="pl-10 text-sm text-slate-800 leading-relaxed mb-3">
+                                                            <div className="pl-10 text-sm text-[#1f3654] leading-relaxed mb-3">
                                                                 {thread.rootComment.content ? <div>{thread.rootComment.content}</div> : null}
                                                                 {thread.rootComment.image && (
-                                                                    <img src={thread.rootComment.image} className="mt-2 w-28 h-28 object-cover rounded-lg border border-slate-200" alt="评论图片" />
+                                                                    <img src={thread.rootComment.image} className="mt-2 w-28 h-28 object-cover rounded-lg border border-[#d8e5f4]" alt="评论图片" />
                                                                 )}
                                                             </div>
 
                                                             {thread.replies.length > 0 && (
-                                                                <div className="ml-10 bg-slate-50 rounded-lg p-3 space-y-3 border border-slate-100">
+                                                                <div className="ml-10 bg-[#f7fbff] rounded-md p-3 space-y-3 border border-[#e5eef8]">
                                                                     {thread.replies.map(reply => (
                                                                         <div key={reply.id} className="text-sm group/reply relative">
                                                                             <div className="flex items-center gap-1.5 mb-1">
@@ -2205,12 +2216,12 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                                         </button>
                                                                                     </>
                                                                                 )}
-                                                                                <span className="text-[11px] text-slate-400 ml-auto">{reply.time}</span>
+                                                                                <span className="text-[11px] text-[#8ba7c3] ml-auto">{reply.time}</span>
                                                                             </div>
-                                                                            <div className="text-slate-700 leading-relaxed pr-10">
+                                                                            <div className="text-[#31506f] leading-relaxed pr-10">
                                                                                 {reply.content ? <div>{reply.content}</div> : null}
                                                                                 {reply.image && (
-                                                                                    <img src={reply.image} className="mt-2 w-24 h-24 object-cover rounded-lg border border-slate-200" alt="回复图片" />
+                                                                                    <img src={reply.image} className="mt-2 w-24 h-24 object-cover rounded-lg border border-[#d8e5f4]" alt="回复图片" />
                                                                                 )}
                                                                             </div>
                                                                             {!replyingTo?.commentId && (
@@ -2218,10 +2229,10 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                                     onClick={() => {
                                                                                         setReplyingTo({ accountId: thread.account?.id || '', commentId: thread.rootComment.id, userName: reply.name, replyToId: reply.userId });
                                                                                         setReplyContent('');
-                                                                                        
+
                                                                                         setIsReplyEmojiPickerOpen(false);
                                                                                     }}
-                                                                                    className="absolute bottom-0 right-0 opacity-0 group-hover/reply:opacity-100 text-[12px] text-blue-500 hover:text-blue-600 flex items-center gap-1 transition-opacity"
+                                                                                    className="absolute bottom-0 right-0 opacity-0 group-hover/reply:opacity-100 text-[12px] text-[#1683ff] hover:text-[#006fe6] flex items-center gap-1 transition-opacity"
                                                                                 >
                                                                                     回复
                                                                                 </button>
@@ -2235,10 +2246,10 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                 <div className="flex-1">
                                                                     {replyingTo?.commentId === thread.rootComment.id && (
                                                                         <div className="mt-2 flex gap-2 items-start">
-                                                                            <div className="flex-1 bg-white border border-slate-200 rounded-lg p-2 focus-within:border-blue-400 transition-colors">
+                                                                            <div className="flex-1 bg-white border border-[#9acbff] rounded-md p-2 focus-within:border-[#1683ff] transition-colors">
                                                                                 <textarea
                                                                                     autoFocus
-                                                                                    className="w-full bg-transparent border-none outline-none text-[13px] resize-none min-h-[56px] placeholder:text-slate-400"
+                                                                                    className="w-full bg-transparent border-none outline-none text-[13px] resize-none min-h-[56px] placeholder:text-[#9db4ca]"
                                                                                     placeholder={`回复 ${replyingTo?.userName}...`}
                                                                                     value={replyContent}
                                                                                     onChange={(e) => setReplyContent(e.target.value)}
@@ -2256,7 +2267,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                                         <button
                                                                                             type="button"
                                                                                             onClick={() => setIsReplyEmojiPickerOpen(prev => !prev)}
-                                                                                            className="w-8 h-8 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500"
+                                                                                            className="w-8 h-8 rounded-md border border-[#d8e5f4] bg-[#f8fbff] hover:bg-[#f1f7ff] flex items-center justify-center text-[#7d96b2]"
                                                                                             title="选择表情"
                                                                                         >
                                                                                             <Smile size={14} />
@@ -2287,10 +2298,10 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                                         onClick={() => {
                                                                                             setReplyingTo(null);
                                                                                             setReplyContent('');
-                                                                                            
+
                                                                                             setIsReplyEmojiPickerOpen(false);
                                                                                         }}
-                                                                                        className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1"
+                                                                                        className="text-xs text-[#5f7892] hover:text-[#31506f] px-2 py-1"
                                                                                     >
                                                                                         取消
                                                                                     </button>
@@ -2302,7 +2313,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                                             }
                                                                                             setIsReplyEmojiPickerOpen(false);
                                                                                         }}
-                                                                                        className="bg-blue-600 text-white px-3 py-1 rounded-md text-xs font-bold disabled:opacity-50"
+                                                                                        className="bg-[#7db8ff] text-white px-3 py-1 rounded-md text-xs font-bold disabled:opacity-50 hover:bg-[#5aa6ff]"
                                                                                     >
                                                                                         发送
                                                                                     </button>
@@ -2317,10 +2328,10 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                                         onClick={() => {
                                                                             setReplyingTo({ accountId: thread.account?.id || '', commentId: thread.rootComment.id, userName: thread.rootComment.name, replyToId: thread.rootComment.userId });
                                                                             setReplyContent('');
-                                                                            
+
                                                                             setIsReplyEmojiPickerOpen(false);
                                                                         }}
-                                                                        className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1 transition-colors"
+                                                                        className="text-xs text-[#1683ff] hover:text-[#006fe6] flex items-center gap-1 transition-colors"
                                                                     >
                                                                         <MessageCircle size={12} /> 回复
                                                                     </button>
@@ -2329,7 +2340,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                         </div>
                                                     ))
                                                 ) : (
-                                                    <div className="py-12 flex flex-col items-center justify-center text-slate-300">
+                                                    <div className="py-12 flex flex-col items-center justify-center text-[#b2c5d8]">
                                                         <MessageSquare size={32} strokeWidth={1} className="mb-2" />
                                                         <p className="text-xs">{selectedCommentAccountId ? '当前账号下暂无可展示的评论内容' : '暂无评论'}</p>
                                                     </div>
@@ -2342,11 +2353,11 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                         </div>
                     </div>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/30">
-                        <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mb-4 border border-slate-100">
-                            <Compass size={40} className="text-slate-200" />
+                    <div className="flex-1 flex flex-col items-center justify-center bg-[#eaf4ff]">
+                        <div className="w-20 h-20 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 border border-[#d8e5f4]">
+                            <Compass size={40} className="text-[#b2c5d8]" />
                         </div>
-                        <p className="text-slate-400 font-medium">请选择一条动态查看详情</p>
+                        <p className="text-[#7d96b2] font-medium">请选择一条动态查看详情</p>
                     </div>
                 )}
             </div>
@@ -2527,7 +2538,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                         className="fixed z-[100] bg-white rounded-xl shadow-2xl border border-slate-100 py-1 min-w-[120px]"
                         style={{ left: contextMenu.x, top: contextMenu.y }}
                     >
-                        <button 
+                        <button
                             onClick={() => {
                                 onSendMessage({ userId: contextMenu.userId, name: contextMenu.name, avatar: contextMenu.avatar });
                                 closeContextMenu();
@@ -2545,7 +2556,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             <AnimatePresence>
                 {isBatchReplyOpen && (
                     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
@@ -2553,7 +2564,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                         >
                             <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                                 <h3 className="font-bold text-slate-800">私聊回复 ({selectedLikers.length}人)</h3>
-                                <button 
+                                <button
                                     onClick={() => {
                                         setIsBatchReplyOpen(false);
                                         setBatchReplyText('');
@@ -2581,8 +2592,8 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-2">添加图片 (可选)</label>
                                         <div className="flex flex-wrap items-center gap-4 relative">
-                                            <input 
-                                                type="file" 
+                                            <input
+                                                type="file"
                                                 accept="image/*"
                                                 className="hidden"
                                                 ref={groupReplyImageInputRef}
@@ -2595,7 +2606,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                     }
                                                 }}
                                             />
-                                            <button 
+                                            <button
                                                 className="w-20 h-20 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center text-slate-400 hover:text-blue-500 hover:border-blue-500 hover:bg-blue-50 transition-colors cursor-pointer"
                                                 onClick={() => {
                                                     setIsBatchMaterialDropdownOpen(true);
@@ -2610,7 +2621,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                             {batchReplyImage && (
                                                 <div className="relative w-20 h-20 group">
                                                     <img src={batchReplyImage} className="w-full h-full object-cover rounded-lg border border-slate-200" alt="Selected" />
-                                                    <button 
+                                                    <button
                                                         onClick={() => setBatchReplyImage(null)}
                                                         className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
                                                     >
@@ -2622,14 +2633,14 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                             {isBatchMaterialDropdownOpen && batchMaterialTab === '图片' && (
                                                 <div className="absolute bottom-full left-0 mb-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden flex flex-col">
                                                     <div className="p-2 border-b border-slate-100 flex gap-2">
-                                                        <input 
-                                                            type="text" 
+                                                        <input
+                                                            type="text"
                                                             value={batchMaterialQuery}
                                                             onChange={e => setBatchMaterialQuery(e.target.value)}
                                                             placeholder="搜索图片素材..."
                                                             className="flex-1 text-xs px-2 py-1.5 bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-400"
                                                         />
-                                                        <button 
+                                                        <button
                                                             onClick={() => {
                                                                 setIsBatchMaterialDropdownOpen(false);
                                                                 if (groupReplyImageInputRef.current) {
@@ -2645,7 +2656,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                             const results = ['春季上新海报.png', '双十一大促.jpg', '产品介绍图.png'].filter(i => i.toLowerCase().includes(batchMaterialQuery.toLowerCase()));
                                                             if (results.length === 0) return <div className="py-4 text-center text-xs text-slate-400">暂无数据</div>;
                                                             return results.map(item => (
-                                                                <div 
+                                                                <div
                                                                     key={item}
                                                                     className="px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 rounded cursor-pointer flex items-center gap-2"
                                                                     onClick={() => {
@@ -2668,7 +2679,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-2">添加小程序 (可选)</label>
                                         <div className="flex flex-col gap-2 relative">
-                                            <button 
+                                            <button
                                                 className="w-full h-10 border border-dashed border-slate-300 rounded-lg flex items-center justify-center gap-2 text-slate-500 hover:text-indigo-500 hover:border-indigo-500 hover:bg-indigo-50 transition-colors cursor-pointer"
                                                 onClick={() => {
                                                     setIsBatchMaterialDropdownOpen(true);
@@ -2688,7 +2699,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                             {batchReplyMiniProgram}
                                                         </span>
                                                     </div>
-                                                    <button 
+                                                    <button
                                                         onClick={() => setBatchReplyMiniProgram(null)}
                                                         className="text-slate-400 hover:text-red-500 transition-colors p-1"
                                                     >
@@ -2700,8 +2711,8 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                             {isBatchMaterialDropdownOpen && batchMaterialTab === '小程序卡片' && (
                                                 <div className="absolute bottom-full left-0 mb-2 w-full bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden flex flex-col">
                                                     <div className="p-2 border-b border-slate-100 flex gap-2">
-                                                        <input 
-                                                            type="text" 
+                                                        <input
+                                                            type="text"
                                                             value={batchMaterialQuery}
                                                             onChange={e => setBatchMaterialQuery(e.target.value)}
                                                             placeholder="搜索小程序..."
@@ -2713,7 +2724,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                             const results = ['商品详情页', '活动主会场', '会员中心'].filter(i => i.toLowerCase().includes(batchMaterialQuery.toLowerCase()));
                                                             if (results.length === 0) return <div className="py-4 text-center text-xs text-slate-400">暂无数据</div>;
                                                             return results.map(item => (
-                                                                <div 
+                                                                <div
                                                                     key={item}
                                                                     className="px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 rounded cursor-pointer flex items-center gap-2"
                                                                     onClick={() => {
@@ -2734,7 +2745,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                 </div>
                             </div>
                             <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-                                <button 
+                                <button
                                     onClick={() => {
                                         setIsBatchReplyOpen(false);
                                         setBatchReplyText('');
@@ -2746,7 +2757,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                 >
                                     取消
                                 </button>
-                                <button 
+                                <button
                                     disabled={!batchReplyText.trim()}
                                     onClick={() => {
                                         // Simulate send
@@ -2754,7 +2765,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         setBatchReplyText('');
                                         setBatchReplyImage(null);
                                         setSelectedLikers([]);
-                                        
+
                                         // Show confirm dialog
                                         if (window.confirm(`已成功给 ${selectedLikers.length} 位客户发送私聊消息！\n是否立即前往查看？`)) {
                                             // Open chat tabs for all selected users
@@ -2837,211 +2848,211 @@ const contactList = [
 ];
 
 const MOCK_ACCOUNTS: EnterpriseAccount[] = [
-    { 
-        id: 'a1', 
-        name: '365选房师-淘淘', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff', 
+    {
+        id: 'a1',
+        name: '365选房师-淘淘',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Tao&background=0D8ABC&color=fff',
         city: '南京',
         lastMoment: { content: '🔥【河西中·精装现房】万科·星雨华府，业主急售！', type: 'text' }
     },
-    { 
-        id: 'a2', 
-        name: '365选房师-宁宁', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Ning&background=10B981&color=fff', 
+    {
+        id: 'a2',
+        name: '365选房师-宁宁',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=Ning&background=10B981&color=fff',
         city: '南京',
         lastMoment: { type: 'image' }
     },
-    { 
-        id: 'a3', 
-        name: '365淘房官方号', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=365&background=ff9900&color=fff', 
+    {
+        id: 'a3',
+        name: '365淘房官方号',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=365&background=ff9900&color=fff',
         city: '南京',
         lastMoment: { type: 'channels' }
     },
-    { 
-        id: 'hf1', 
-        name: '海房夏夏', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=夏&background=random&color=fff', 
+    {
+        id: 'hf1',
+        name: '海房夏夏',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=夏&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf2', 
-        name: '海房秋秋', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=秋&background=random&color=fff', 
+    {
+        id: 'hf2',
+        name: '海房秋秋',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=秋&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf3', 
-        name: '海房蕾蕾', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=蕾&background=random&color=fff', 
+    {
+        id: 'hf3',
+        name: '海房蕾蕾',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=蕾&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf4', 
-        name: '海房含含', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=含&background=random&color=fff', 
+    {
+        id: 'hf4',
+        name: '海房含含',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=含&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf5', 
-        name: '海房小助手', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=手&background=random&color=fff', 
+    {
+        id: 'hf5',
+        name: '海房小助手',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=手&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf6', 
-        name: '房博士楼哥', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=哥&background=random&color=fff', 
+    {
+        id: 'hf6',
+        name: '房博士楼哥',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=哥&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf7', 
-        name: '房博士小安', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=安&background=random&color=fff', 
+    {
+        id: 'hf7',
+        name: '房博士小安',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=安&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf8', 
-        name: '海房菲菲', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=菲&background=random&color=fff', 
+    {
+        id: 'hf8',
+        name: '海房菲菲',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=菲&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf9', 
-        name: '海房妙妙', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=妙&background=random&color=fff', 
+    {
+        id: 'hf9',
+        name: '海房妙妙',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=妙&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf10', 
-        name: '海房小赞', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=赞&background=random&color=fff', 
+    {
+        id: 'hf10',
+        name: '海房小赞',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=赞&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf11', 
-        name: 'AI找房-澄澄', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=澄&background=random&color=fff', 
+    {
+        id: 'hf11',
+        name: 'AI找房-澄澄',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=澄&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf12', 
-        name: '海房苏苏', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=苏&background=random&color=fff', 
+    {
+        id: 'hf12',
+        name: '海房苏苏',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=苏&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf13', 
-        name: '海房雅雅', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=雅&background=random&color=fff', 
+    {
+        id: 'hf13',
+        name: '海房雅雅',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=雅&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf14', 
-        name: 'AI找房-小希', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=娅&background=random&color=fff', 
+    {
+        id: 'hf14',
+        name: 'AI找房-小希',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=娅&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf15', 
-        name: 'AI找房-月月', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=希&background=random&color=fff', 
+    {
+        id: 'hf15',
+        name: 'AI找房-月月',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=希&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf16', 
-        name: '海房琪琪', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=月&background=random&color=fff', 
+    {
+        id: 'hf16',
+        name: '海房琪琪',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=月&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf17', 
-        name: '海房柴柴', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=琪&background=random&color=fff', 
+    {
+        id: 'hf17',
+        name: '海房柴柴',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=琪&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf18', 
-        name: '海房可乐', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=柴&background=random&color=fff', 
+    {
+        id: 'hf18',
+        name: '海房可乐',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=柴&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf19', 
-        name: '海房冰冰', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=乐&background=random&color=fff', 
+    {
+        id: 'hf19',
+        name: '海房冰冰',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=乐&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf20', 
-        name: '选房分析师霏霏', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=冰&background=random&color=fff', 
+    {
+        id: 'hf20',
+        name: '选房分析师霏霏',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=冰&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf21', 
-        name: '选房分析师家家', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=霏&background=random&color=fff', 
+    {
+        id: 'hf21',
+        name: '选房分析师家家',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=霏&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf22', 
-        name: 'AI找房', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=家&background=random&color=fff', 
+    {
+        id: 'hf22',
+        name: 'AI找房',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=家&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf23', 
-        name: 'AI找房-柒柒', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=房&background=random&color=fff', 
+    {
+        id: 'hf23',
+        name: 'AI找房-柒柒',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=房&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf24', 
-        name: '海房时一', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=柒&background=random&color=fff', 
+    {
+        id: 'hf24',
+        name: '海房时一',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=柒&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf25', 
-        name: '海房露露', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=一&background=random&color=fff', 
+    {
+        id: 'hf25',
+        name: '海房露露',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=一&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf26', 
-        name: '海房在在', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=露&background=random&color=fff', 
+    {
+        id: 'hf26',
+        name: '海房在在',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=露&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf27', 
-        name: '房博士妍姐', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=在&background=random&color=fff', 
+    {
+        id: 'hf27',
+        name: '房博士妍姐',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=在&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf28', 
-        name: '选房分析师合合', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=姐&background=random&color=fff', 
+    {
+        id: 'hf28',
+        name: '选房分析师合合',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=姐&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf29', 
-        name: '房博士奋斗', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=合&background=random&color=fff', 
+    {
+        id: 'hf29',
+        name: '房博士奋斗',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=合&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf30', 
-        name: 'AI找房-雪碧', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=斗&background=random&color=fff', 
+    {
+        id: 'hf30',
+        name: 'AI找房-雪碧',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=斗&background=random&color=fff',
         city: '合肥'
     },
-    { 
-        id: 'hf31', 
-        name: '选房分析师娅娅', 
-        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=碧&background=random&color=fff', 
+    {
+        id: 'hf31',
+        name: '选房分析师娅娅',
+        avatar: 'https://images.weserv.nl/?url=https://ui-avatars.com/api/?name=碧&background=random&color=fff',
         city: '合肥'
     },
 ];
@@ -3284,7 +3295,7 @@ function Workspace() {
     desc: '',
     tag: null
   });
-  
+
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     x: number;
@@ -3301,14 +3312,17 @@ function Workspace() {
   ];
 
   const groupList = [
-    { id: 1, name: 'AI产品研发组', category: 'internal', lastMsg: '下周一开始进行第一轮内测', time: '10:30', unread: 2 },
-    { id: 2, name: '华东区销售精英群', category: 'internal', lastMsg: '恭喜张伟刚刚签下一单！', time: '09:45', unread: 0 },
-    { id: 3, name: '合肥滨湖置业交流群', category: 'external', lastMsg: '请问现在的房贷利率是多少？', time: '11:20', unread: 5 },
-    { id: 4, name: '高新板块房源共享', category: 'external', lastMsg: '新出一套120平精装，急售', time: '昨天', unread: 0 },
-    { id: 5, name: '私域运营专项组', category: 'project', lastMsg: '活动方案已经发到群里了，大家看下', time: '10:15', unread: 1 },
+    { id: 1, name: '05.09再回首选房沟通群', category: 'delivery_private', city: '合肥', agent: '杨玉银', lastMsg: '杨玉银13696510313：@再回首 您...', time: '5-10', unread: 1, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=96&h=96&q=80', service: '交付群', source: '私聊撮合建群' },
+    { id: 2, name: '05.11 @选房沟通群', category: 'delivery_private', city: '合肥', agent: '郭华峰', lastMsg: '新房二手房学区房是月18949202320', time: '9:42', unread: 1, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=96&h=96&q=80', service: '交付群', source: '私聊撮合建群' },
+    { id: 3, name: '04.17郭华峰选房沟通群', category: 'delivery_targeted', city: '合肥', agent: '郭华峰', lastMsg: '郭华峰：收到', time: '5-10', unread: 1, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=96&h=96&q=80', service: '交付群', source: '定向房源建群' },
+    { id: 4, name: '04.21Tige选房沟通群', category: 'delivery_targeted', city: '南京', agent: '汪晨', lastMsg: '淘达房产刘玉青13275865548：其...', time: '5-10', unread: 1, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=96&h=96&q=80', service: '交付群', source: '定向房源建群' },
+    { id: 5, name: '04.27咖啡不苦选房沟通群', category: 'delivery_private', city: '南京', agent: '孙晓', lastMsg: '孙晓：我上面给你发的有户型图', time: '5-10', unread: 1, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=96&h=96&q=80', service: '交付群', source: '私聊撮合建群' },
+    { id: 6, name: '05.09@往云深选房沟通群', category: 'delivery_private', city: '合肥', agent: '中皖译达', lastMsg: '中皖译达 李辉15856504943：[小程...', time: '5-10', unread: 1, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=96&h=96&q=80', service: '交付群', source: '私聊撮合建群' },
+    { id: 7, name: '05.09随风所动选房沟通群', category: 'delivery_targeted', city: '合肥', agent: '中皖译达', lastMsg: '中皖译达 李辉15856504943：[小程...', time: '5-10', unread: 1, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=96&h=96&q=80', service: '交付群', source: '定向房源建群' },
+    { id: 8, name: '03.24红运如意选房沟通群', category: 'delivery_private', city: '合肥', agent: '天道酬勤', lastMsg: '天道酬勤：[运营消息]', time: '5-10', unread: 1, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=96&h=96&q=80', service: '交付群', source: '私聊撮合建群' },
+    { id: 9, name: '05.09万事如意选房沟通群', category: 'delivery_private', city: '南京', agent: '翟姐', lastMsg: '翟姐：好的前面给您分享的就是二环...', time: '5-10', unread: 0, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=96&h=96&q=80', service: '交付群', source: '私聊撮合建群' },
+    { id: 10, name: '365南京二手房线索运营群', category: 'operation', city: '南京', agent: '运营', lastMsg: '运营消息：今日重点跟进高意向客户', time: '5-09', unread: 0, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=96&h=96&q=80', service: '运营群', source: '运营群' },
   ];
-
-  const [activeCategory, setActiveCategory] = useState('all');
 
   const [customGroups, setCustomGroups] = useState([
     { id: 'cg-1', name: '高潜客户', workflows: ['【勿选】微客3.0'], outputs: ['用户需要资料', '咨询学区政策，需要人工介入'] }
@@ -3320,6 +3334,10 @@ function Workspace() {
   const [viewingLogicGroupId, setViewingLogicGroupId] = useState<string | null>(null);
   const [isGroupPanelOpen, setIsGroupPanelOpen] = useState(true);
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [groupSearchKeyword, setGroupSearchKeyword] = useState('');
+  const [selectedGroupCity, setSelectedGroupCity] = useState('合肥');
+  const [groupListMode, setGroupListMode] = useState<'unread' | 'latest'>('unread');
+  const [activeGroupCategory, setActiveGroupCategory] = useState<'all' | 'delivery' | 'delivery_private' | 'delivery_targeted' | 'operation'>('delivery');
   const [chatCustomerProfiles, setChatCustomerProfiles] = useState<Record<string, ChatCustomerProfile>>({
     '杜小明精品大平层17...': {
       name: '杜小明精品大平层17...',
@@ -3608,6 +3626,18 @@ function Workspace() {
   const sessionPanelTitle = activeChatFilter === 'lead_all'
     ? '线索管理'
     : '全部会话';
+  const groupAgentOptions = Array.from(new Set(groupList.filter(group => group.category !== 'operation').map(group => group.agent)));
+  const visibleGroupList = groupList.filter(group => {
+    const matchesCategory =
+      activeGroupCategory === 'all' ||
+      (activeGroupCategory === 'delivery' && group.category.startsWith('delivery')) ||
+      group.category === activeGroupCategory;
+    const matchesCity = selectedGroupCity === '全国' || group.city === selectedGroupCity;
+    const matchesAgent = !selectedAgent || group.agent === selectedAgent;
+    const matchesKeyword = !groupSearchKeyword.trim() || group.name.includes(groupSearchKeyword.trim()) || group.lastMsg.includes(groupSearchKeyword.trim());
+    const matchesMode = groupListMode === 'latest' || group.unread > 0;
+    return matchesCategory && matchesCity && matchesAgent && matchesKeyword && matchesMode;
+  });
 
   const updateActiveChatProfile = (updates: Partial<ChatCustomerProfile>) => {
     if (activeTab.type !== 'chat') return;
@@ -3731,66 +3761,66 @@ function Workspace() {
                 )}
               </div>
             </div>
-            
+
             {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6 bg-zinc-50/30 dark:bg-zinc-900/10">
               <div className="text-center text-xs text-zinc-400 my-2">2026-03-04 09:56:19 转AI接待</div>
-              
-              <ChatMessage 
-                role="ai" 
-                time="2026-03-04 09:56:46" 
-                name="AI找房" 
-                content="您好！我是您的选房师，扎根合肥13年了。全市房源我都很熟悉，很高兴能为您服务。" 
+
+              <ChatMessage
+                role="ai"
+                time="2026-03-04 09:56:46"
+                name="AI找房"
+                content="您好！我是您的选房师，扎根合肥13年了。全市房源我都很熟悉，很高兴能为您服务。"
               />
-              <ChatMessage 
-                role="ai" 
-                time="2026-03-04 09:57:10" 
-                name="AI找房" 
-                content="合肥楼市小阳春回暖明显，最近高新和柏堰湖板块关注度很高。您是看120平左右的三居室吗？这类优质房源卖得快，我可以为您筛选对比下。" 
+              <ChatMessage
+                role="ai"
+                time="2026-03-04 09:57:10"
+                name="AI找房"
+                content="合肥楼市小阳春回暖明显，最近高新和柏堰湖板块关注度很高。您是看120平左右的三居室吗？这类优质房源卖得快，我可以为您筛选对比下。"
               />
-              <ChatMessage 
-                role="user" 
-                time="2026-03-04 10:03:11" 
-                name="鹏 | AI找房" 
-                content="筛选下" 
+              <ChatMessage
+                role="user"
+                time="2026-03-04 10:03:11"
+                name="鹏 | AI找房"
+                content="筛选下"
               />
-              <ChatMessage 
-                role="user" 
-                time="2026-03-04 10:05:28" 
-                name="鹏 | AI找房" 
-                content="200万以内" 
+              <ChatMessage
+                role="user"
+                time="2026-03-04 10:05:28"
+                name="鹏 | AI找房"
+                content="200万以内"
               />
-              <ChatMessage 
-                role="ai" 
-                time="2026-03-04 10:05:07" 
-                name="AI找房" 
-                content="好的，没问题。这两个板块目前有不少高性价比的急售房源。为了帮您精准匹配，咱们总价预算大概是控制在200万左右，还是300万以上呢？" 
+              <ChatMessage
+                role="ai"
+                time="2026-03-04 10:05:07"
+                name="AI找房"
+                content="好的，没问题。这两个板块目前有不少高性价比的急售房源。为了帮您精准匹配，咱们总价预算大概是控制在200万左右，还是300万以上呢？"
               />
-              
+
               <div className="text-center text-xs text-zinc-400 my-2">2026-03-04 10:06:22 AI转运营</div>
-              
-              <ChatMessage 
-                role="ai" 
-                time="2026-03-04 10:06:22" 
-                name="运营-查妍碧" 
-                isHumanOp 
-                content="咱们想看多大面积的，青龙岗附近有新房可考虑看看？" 
+
+              <ChatMessage
+                role="ai"
+                time="2026-03-04 10:06:22"
+                name="运营-查妍碧"
+                isHumanOp
+                content="咱们想看多大面积的，青龙岗附近有新房可考虑看看？"
               />
-              <ChatMessage 
-                role="ai" 
-                time="2026-03-04 10:06:20" 
-                name="运营-查妍碧" 
-                isHumanOp 
-                content="好的，您的需求已了解。我这就为您筛选近期调价的优质房源，重点对比下高性价比的户型，整理好后发您，请稍候。" 
+              <ChatMessage
+                role="ai"
+                time="2026-03-04 10:06:20"
+                name="运营-查妍碧"
+                isHumanOp
+                content="好的，您的需求已了解。我这就为您筛选近期调价的优质房源，重点对比下高性价比的户型，整理好后发您，请稍候。"
               />
-              <ChatMessage 
-                role="user" 
-                time="2026-03-04 10:07:54" 
-                name="鹏 | AI找房" 
-                content="120左右 不考虑 主要考虑柏堰湖区域" 
+              <ChatMessage
+                role="user"
+                time="2026-03-04 10:07:54"
+                name="鹏 | AI找房"
+                content="120左右 不考虑 主要考虑柏堰湖区域"
               />
             </div>
-            
+
             {/* Input Area */}
             <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0">
               <div className="flex items-center gap-2 mb-2 text-zinc-500">
@@ -3812,8 +3842,8 @@ function Workspace() {
               </div>
               <div className="flex items-end gap-2">
                 <div className="flex-1 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-2 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
-                  <textarea 
-                    placeholder="输入消息..." 
+                  <textarea
+                    placeholder="输入消息..."
                     rows={2}
                     className="w-full bg-transparent border-none focus:outline-none resize-none text-sm max-h-32"
                     onFocus={() => {
@@ -3834,7 +3864,7 @@ function Workspace() {
           <div className="w-[280px] border-l border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-white dark:bg-zinc-950 overflow-y-auto">
             <div className="flex flex-wrap gap-x-4 gap-y-2 p-3 border-b border-zinc-200 dark:border-zinc-800 text-xs bg-zinc-50 dark:bg-zinc-900/50">
               {privateRightPanelTabs.map(tab => (
-                <span 
+                <span
                   key={tab}
                   onClick={() => setActiveRightPanelTab(tab)}
                   className={`cursor-pointer px-2 py-1 rounded ${activeRightPanelTab === tab ? 'bg-white border border-blue-200 text-blue-600 dark:bg-zinc-800 dark:border-blue-800 dark:text-blue-400' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 bg-zinc-100 dark:bg-zinc-800/50'}`}
@@ -3843,7 +3873,7 @@ function Workspace() {
                 </span>
               ))}
             </div>
-            
+
             {activeRightPanelTab === '客户档案' && (
               <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-zinc-900/50 flex flex-col">
                 <div className="p-3 flex justify-between items-center text-xs text-zinc-500">
@@ -3852,7 +3882,7 @@ function Workspace() {
                     <RefreshCw size={12} /> 刷新档案
                   </button>
                 </div>
-                
+
                 <div className="p-3 flex flex-col gap-3">
                   {privateArchiveFields.map((field, i) => (
                     <div key={i} className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm border border-zinc-100 dark:border-zinc-800">
@@ -3893,7 +3923,7 @@ function Workspace() {
                         </div>
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={() => setIsCustomerMoreMenuOpen(!isCustomerMoreMenuOpen)}
                       className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 shrink-0"
                     >
@@ -3902,7 +3932,7 @@ function Workspace() {
                   </div>
                   {isCustomerMoreMenuOpen && (
                     <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-                      <button 
+                      <button
                         onClick={() => {
                           setIsCustomerMoreMenuOpen(false);
                           setIsBlacklistModalOpen?.(true);
@@ -4106,7 +4136,7 @@ function Workspace() {
         </div>
       );
     }
-    
+
     if (activeTab.title === '[AI] 合肥100w学区房') {
       return (
         <div className="w-full h-full bg-white dark:bg-zinc-950 flex flex-col relative overflow-hidden">
@@ -4149,7 +4179,7 @@ function Workspace() {
               </table>
             </div>
           </div>
-          
+
           {/* Profile Drawer */}
           <AnimatePresence>
             {selectedUser && (
@@ -4180,7 +4210,7 @@ function Workspace() {
                         <div className="font-bold text-lg">{selectedUser}</div>
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-col">
                       {[
                         { label: '意向价格', value: '200万以内', tag: '固定', time: '2026-03-04 10:18:35' },
@@ -4251,7 +4281,7 @@ function Workspace() {
               </table>
             </div>
           </div>
-          
+
           {/* Profile Drawer */}
           <AnimatePresence>
             {selectedUser && (
@@ -4285,7 +4315,7 @@ function Workspace() {
                         <div className="font-bold text-lg">{selectedUser}</div>
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-col gap-6 mt-6">
                       {/* 群聊总结 */}
                       <div className="bg-slate-50 dark:bg-zinc-800/50 p-4 rounded-xl">
@@ -4346,7 +4376,7 @@ function Workspace() {
         </div>
       );
     }
-    
+
     if (activeTab.title.includes('每日私聊推送_学区房名单')) {
       return (
         <div className="w-full h-full bg-white dark:bg-zinc-950 flex flex-col overflow-y-auto">
@@ -4368,7 +4398,7 @@ function Workspace() {
                 </div>
               </div>
           </div>
-          
+
           <div className="p-6 space-y-8 max-w-5xl">
             {/* Basic Info */}
             <section>
@@ -4376,17 +4406,17 @@ function Workspace() {
               <div className="grid grid-cols-2 gap-y-4 gap-x-12 text-sm">
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">TASK_ID:</span><span className="text-zinc-900 dark:text-zinc-100">23448</span></div>
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">推送状态:</span><span className="text-zinc-900 dark:text-zinc-100">已推送</span></div>
-                
+
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">名称:</span><span className="text-zinc-900 dark:text-zinc-100">3.5 沉默用户二推 (mcp)</span></div>
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">主题:</span><span className="text-zinc-900 dark:text-zinc-100">新房</span></div>
-                
+
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">推送时间:</span><span className="text-zinc-900 dark:text-zinc-100">即时推送 2026-03-12 10:43:26</span></div>
-                
+
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">推送间隔:</span><span className="text-zinc-900 dark:text-zinc-100">10-20</span></div>
 
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">通道:</span><span className="text-zinc-900 dark:text-zinc-100">工作流私聊-光年</span></div>
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">免打扰时段:</span><span className="text-zinc-900 dark:text-zinc-100">22:00:00-08:00:00</span></div>
-                
+
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">优先级:</span><span className="text-zinc-900 dark:text-zinc-100">0</span></div>
               </div>
             </section>
@@ -4416,7 +4446,7 @@ function Workspace() {
                 </div>
               </div>
             </section>
-            
+
             {/* Push Content */}
             <section>
               <h3 className="text-lg font-bold text-blue-600 mb-4">推送内容</h3>
@@ -4475,7 +4505,7 @@ function Workspace() {
                 </div>
               </div>
           </div>
-          
+
           <div className="p-6 space-y-8 max-w-5xl">
             {/* Basic Info */}
             <section>
@@ -4483,17 +4513,17 @@ function Workspace() {
               <div className="grid grid-cols-2 gap-y-4 gap-x-12 text-sm">
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">TASK_ID:</span><span className="text-zinc-900 dark:text-zinc-100">24581</span></div>
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">推送状态:</span><span className="text-zinc-900 dark:text-zinc-100">已推送</span></div>
-                
+
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">名称:</span><span className="text-zinc-900 dark:text-zinc-100">0331-全群-映象星潮</span></div>
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">主题:</span><span className="text-zinc-900 dark:text-zinc-100">新房</span></div>
-                
+
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">推送时间:</span><span className="text-zinc-900 dark:text-zinc-100">即时推送 2026-03-31 08:43:37</span></div>
-                
+
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">推送间隔:</span><span className="text-zinc-900 dark:text-zinc-100">0-0</span></div>
 
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">通道:</span><span className="text-zinc-900 dark:text-zinc-100">企微群聊-光年本地 (南京新房)</span></div>
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">免打扰时段:</span><span className="text-zinc-900 dark:text-zinc-100">22:00:00-08:00:00</span></div>
-                
+
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">优先级:</span><span className="text-zinc-900 dark:text-zinc-100">1</span></div>
               </div>
             </section>
@@ -4516,12 +4546,12 @@ function Workspace() {
                 </div>
               </div>
             </section>
-            
+
             {/* Push Content */}
             <section>
               <h3 className="text-lg font-bold text-blue-600 mb-4">推送内容</h3>
               <div className="space-y-6 text-sm">
-                
+
                 {/* Message 1 */}
                 <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
                    <div className="grid grid-cols-2 gap-4">
@@ -4575,151 +4605,155 @@ function Workspace() {
     const group = groupList.find(g => g.name === activeTab.title);
     if (group) {
       return (
-        <div className="flex h-full w-full bg-white dark:bg-zinc-950">
+        <div className="flex h-full w-full bg-[#eaf4ff]">
           <div className="flex-1 flex flex-col min-w-0">
-             {/* Group Header */}
-            <div className="h-14 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-lg">{group.name}</span>
-                <span className="text-zinc-500 text-xs bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded flex items-center gap-1">
-                  <Users size={10} /> {group.category === 'internal' ? '24' : '108'}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500">
-                  <MoreHorizontal size={20} />
-                </button>
-              </div>
-            </div>
-            
-            {/* Group Messages */}
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6 bg-zinc-50/30 dark:bg-zinc-900/10">
-              <div className="text-center text-xs text-zinc-400 my-2">2026-03-05 10:00:00</div>
-              
-              <ChatMessage 
-                role="user" 
-                time="10:05" 
-                name="张伟" 
-                content="这个项目的最新进展如何了？" 
-              />
-              <ChatMessage 
-                role="user" 
-                time="10:10" 
-                name="李娜" 
-                content="刚才客户反馈说对于第二版的方案比较满意，但是希望在色彩上再调整一下。" 
-              />
-              <ChatMessage 
-                role="ai" 
-                time="10:11" 
-                name="AI助手" 
-                content="收到，已记录反馈。建议在色彩调整上参考品牌VI手册的第24页，使用主色调进行微调，以保持品牌一致性。" 
-              />
-              <ChatMessage 
-                role="user" 
-                time="10:15" 
-                name="王强" 
-                content={group.lastMsg} 
-              />
-            </div>
-            
-            {/* Input Area */}
-            <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-              <div className="flex items-center gap-2 mb-2">
-                <button className="p-1.5 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded">
-                  <Bot size={18} />
-                </button>
-                <button className="p-1.5 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded">
-                  <UserPlus size={18} />
-                </button>
-              </div>
-              <div className="flex items-end gap-2">
-                <div className="flex-1 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-2 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
-                  <textarea 
-                    placeholder="输入消息..." 
-                    rows={1}
-                    className="w-full bg-transparent border-none focus:outline-none resize-none text-sm max-h-32"
-                  />
+            <div className="h-16 flex items-center justify-between px-5 shrink-0 bg-[#eaf4ff]">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-[17px] text-[#102a4c] truncate">{group.name}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#e7f3ff] text-[#1683ff] border border-[#c9e3ff]">{group.service}</span>
                 </div>
-                <button className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm transition-colors">
-                  <Send size={18} />
-                </button>
+                <div className="mt-1 text-xs text-[#5f7892] truncate">
+                  {group.city} | 群主：选房分析师霏霏 | {group.source} | 服务客户：再回首 | 经纪人：{group.agent}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-5 bg-[#eaf4ff]">
+              <div className="text-center text-xs text-[#9db4ca]">2026-05-09 15:47:16</div>
+              <div className="flex items-start gap-3 max-w-[70%]">
+                <img src={group.avatar} className="w-9 h-9 rounded-full border border-white object-cover" alt="" />
+                <div>
+                  <div className="text-xs text-[#7d96b2] mb-1">杨玉银13696510313　2026-05-09 15:47:16</div>
+                  <div className="w-28 h-28 rounded-md bg-white border border-[#d8e5f4] p-2 shadow-sm">
+                    <img src="https://images.weserv.nl/?url=https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=220&h=220&q=80" className="w-full h-full object-cover rounded" alt="" />
+                  </div>
+                </div>
+              </div>
+              <ChatMessage role="user" time="2026-05-09 15:47:41" name="杨玉银13696510313" content="您先看下120平户型图" />
+              <div className="flex items-start gap-3 max-w-[70%]">
+                <img src={group.avatar} className="w-9 h-9 rounded-full border border-white object-cover" alt="" />
+                <div>
+                  <div className="text-xs text-[#7d96b2] mb-1">杨玉银13696510313　2026-05-09 15:52:41</div>
+                  <div className="w-28 h-28 rounded-md bg-white border border-[#d8e5f4] p-2 shadow-sm">
+                    <img src="https://images.weserv.nl/?url=https://images.unsplash.com/photo-1600566752355-35792bedcfea?auto=format&fit=crop&w=220&h=220&q=80" className="w-full h-full object-cover rounded" alt="" />
+                  </div>
+                </div>
+              </div>
+              <ChatMessage role="ai" time="2026-05-09 15:57:58" name="再回首" isHumanOp content="哪个小区？" />
+              <ChatMessage role="user" time="2026-05-09 15:58:42" name="杨玉银13696510313" content="中骏世界城和皖投云启华章" />
+              <ChatMessage role="user" time="2026-05-10 09:53:13" name="杨玉银13696510313" content="@再回首 您好！昨天给您推荐的新房今天周末可考虑出来看房呢" />
+            </div>
+
+            <div className="p-4 bg-[#eaf4ff] shrink-0">
+              <div className="rounded-lg bg-white border border-[#e5eef8] h-40 flex flex-col justify-end px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[#8ba7c3]">
+                    <button className="p-1 hover:text-[#1683ff]"><ImageIcon size={17} /></button>
+                    <button className="p-1 hover:text-[#1683ff]"><FolderOpen size={17} /></button>
+                    <button className="p-1 hover:text-[#1683ff]"><Smile size={17} /></button>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button className="h-8 px-3 rounded-full border border-[#d8e5f4] text-xs text-[#7d96b2] hover:border-[#9acbff] hover:text-[#1683ff]">选择发送消息的客服账号</button>
+                    <button className="w-9 h-9 rounded-full bg-[#1683ff] text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+                      <Send size={18} />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          
-          {/* Right Panel: Group Info */}
-          <div className="w-[280px] border-l border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-white dark:bg-zinc-950">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
-               <h3 className="font-medium text-zinc-900 dark:text-zinc-100 mb-4">群公告</h3>
-               <div className="text-sm text-zinc-600 dark:text-zinc-400 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 p-3 rounded-lg">
-                 本周五下午3点在会议室召开项目复盘会，请大家准时参加。
-               </div>
+
+          <div className="w-[330px] border-l border-[#dbe8f7] bg-[#f6fbff] flex flex-col shrink-0">
+            <div className="grid grid-cols-3 gap-2 p-3 bg-white border-b border-[#dbe8f7] text-sm">
+              {['群档案', '群详情', '客户档案'].map((tab, index) => (
+                <button key={tab} className={`h-9 rounded-sm transition-colors ${index === 0 ? 'bg-[#e7f3ff] text-[#1683ff] border border-[#9acbff]' : 'bg-[#f4f8fc] text-[#31506f] hover:bg-[#e7f3ff]'}`}>
+                  {tab}
+                </button>
+              ))}
+              {['快捷话术', '聊天记录'].map(tab => (
+                <button key={tab} className="h-9 rounded-sm bg-[#f4f8fc] text-[#31506f] hover:bg-[#e7f3ff]">
+                  {tab}
+                </button>
+              ))}
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <h3 className="font-medium text-zinc-900 dark:text-zinc-100 mb-4 flex items-center justify-between">
-                <span>群成员</span>
-                <span className="text-xs text-zinc-500 font-normal">查看全部</span>
-              </h3>
-              <div className="grid grid-cols-4 gap-4">
-                 {[1,2,3,4,5,6,7,8].map(i => (
-                   <div key={i} className="flex flex-col items-center gap-1">
-                     <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400">
-                       <User size={20} />
-                     </div>
-                     <span className="text-[10px] text-zinc-500 truncate w-full text-center">成员{i}</span>
-                   </div>
-                 ))}
-                 <div className="flex flex-col items-center gap-1 cursor-pointer">
-                   <div className="w-10 h-10 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                     <Plus size={20} />
-                   </div>
-                   <span className="text-[10px] text-zinc-500">邀请</span>
-                 </div>
+            <div className="px-3 py-2 text-xs text-[#7d96b2] flex justify-between">
+              <span>更新时间：2026-05-10 09:53:56</span>
+              <button className="text-[#1683ff] flex items-center gap-1"><RefreshCw size={12} />刷新档案</button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-3">
+              {[
+                { title: '群聊总结', icon: null, text: '用户明确寻找一梯一户、室内120平以上的房源，预算200万左右，坚决拒收回迁房。对已推的金隅大成都133平房源反馈户型不佳。目前经纪人已推送中骏世界城与皖投云启华章户型图，并正发起周末看房邀约。' },
+                { title: '运营跟进建议', icon: <MessageSquare size={15} className="text-orange-500" />, text: '需及时核实用户对新房源户型的满意度，防止沟通断档；督促经纪人于24小时内落实带看时标，并针对客户对户型规划的特点，筛选边套或高赠送等优惠排口径备选。' },
+                { title: '分销中介跟进建议', icon: <User size={15} className="text-[#1683ff]" />, text: '严选室内120平以上且具备私密入户感的房源，避免高公摊户型；带看时重点演示中骏及皖投的电梯入户优势，利用200万预算下一梯一户的稀缺性引导客户通过横厅尺度对比消除不满。' }
+              ].map(item => (
+                <div key={item.title} className="bg-white rounded-md border border-[#e5eef8] p-4">
+                  <div className="flex items-center gap-2 mb-2 font-semibold text-[#102a4c]">
+                    {item.icon}
+                    <span>{item.title}</span>
+                  </div>
+                  <div className="text-sm leading-6 text-[#31506f]">{item.text}</div>
+                </div>
+              ))}
+
+              <div className="bg-white rounded-md border border-[#e5eef8] p-4">
+                <div className="font-semibold text-[#102a4c] mb-3">客户意向</div>
+                {[
+                  ['决策人', '本人'],
+                  ['学区意向', '未提及'],
+                  ['当前阶段', '带看邀约中'],
+                  ['意向价格', '200万左右']
+                ].map(([label, value]) => (
+                  <div key={label} className="bg-[#f7fbff] rounded-md px-3 py-2 mb-2 last:mb-0">
+                    <div className="text-xs text-[#9db4ca] mb-1">{label}</div>
+                    <div className="text-sm text-[#31506f]">{value}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       );
     }
-    
+
     return <div className="p-6">Feature Not Implemented</div>;
   };
 
   return (
-    <div className="flex h-screen w-full bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 overflow-hidden text-sm relative">
+    <div className="flex h-screen w-full bg-[#eaf4ff] text-zinc-900 dark:text-zinc-100 overflow-hidden text-sm relative">
       {/* Thin Left Rail */}
-      <div className="w-16 border-r border-zinc-200 dark:border-zinc-800 flex flex-col items-center py-4 gap-4 bg-zinc-50 dark:bg-zinc-900 z-10 shrink-0">
-         <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/30 mb-2">AI</div>
-         
-         <div 
+      <div className="w-16 border-r border-[#dbe8f7] bg-[#f6fbff] flex flex-col items-center py-4 gap-4 z-10 shrink-0">
+         <div className="w-10 h-10 rounded-xl bg-[#1683ff] items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20 mb-2 hidden">AI</div>
+
+         <div
            onClick={() => setActiveModule('chat')}
            className={`w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-colors ${
-             activeModule === 'chat' 
-               ? 'bg-white dark:bg-zinc-800 text-indigo-600 shadow-sm border border-zinc-200 dark:border-zinc-700' 
-               : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+             activeModule === 'chat'
+               ? 'bg-[#e7f3ff] text-[#1683ff] shadow-sm border border-[#c9e3ff]'
+               : 'text-[#1683ff] hover:bg-[#e7f3ff]'
            }`}
          >
            <MessageSquare size={20} />
          </div>
 
-         <div 
+         <div
            onClick={() => setActiveModule('groups')}
            className={`w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-colors ${
-             activeModule === 'groups' 
-               ? 'bg-white dark:bg-zinc-800 text-indigo-600 shadow-sm border border-zinc-200 dark:border-zinc-700' 
-               : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+             activeModule === 'groups'
+               ? 'bg-[#e7f3ff] text-[#1683ff] shadow-sm border border-[#c9e3ff]'
+               : 'text-[#1683ff] hover:bg-[#e7f3ff]'
            }`}
            title="群聊"
          >
            <Users size={20} />
          </div>
 
-         <div 
+         <div
            onClick={() => setActiveModule('moments')}
            className={`w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-colors ${
-             activeModule === 'moments' 
-               ? 'bg-white dark:bg-zinc-800 text-indigo-600 shadow-sm border border-zinc-200 dark:border-zinc-700' 
-               : 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+             activeModule === 'moments'
+               ? 'bg-[#e7f3ff] text-[#1683ff] shadow-sm border border-[#c9e3ff]'
+               : 'text-[#1683ff] hover:bg-[#e7f3ff]'
            }`}
            title="朋友圈"
          >
@@ -4727,9 +4761,9 @@ function Workspace() {
          </div>
 
          <div className="mt-auto mb-4">
-            <button 
+            <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isSidebarOpen ? 'bg-indigo-100 text-indigo-600' : 'text-zinc-400 hover:bg-zinc-100'}`}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isSidebarOpen ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#7d96b2] hover:bg-[#e7f3ff] hover:text-[#1683ff]'}`}
             >
               <Bot size={20} />
             </button>
@@ -4738,11 +4772,11 @@ function Workspace() {
 
       {/* Group List Panel */}
       {isGroupPanelOpen && (
-        <div className="w-[180px] border-r border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-zinc-50/30 dark:bg-zinc-900/10">
-          <div className="p-4 flex items-center gap-2 font-medium text-zinc-900 dark:text-zinc-100">
-            <button 
+        <div className="w-[180px] border-r border-[#dbe8f7] bg-[#f3f9ff] flex flex-col shrink-0">
+          <div className="p-4 flex items-center gap-2 font-semibold text-[#102a4c]">
+            <button
               onClick={() => setIsGroupPanelOpen(false)}
-              className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors p-1 -ml-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800"
+              className="text-[#7d96b2] hover:text-[#1683ff] hover:bg-[#e7f3ff] transition-colors p-1 -ml-1 rounded"
               title="收起分组"
             >
               <ListFilter size={18} />
@@ -4752,7 +4786,7 @@ function Workspace() {
           <div className="flex-1 overflow-y-auto py-2">
             {activeModule === 'chat' ? (
               <>
-                <div onClick={() => setActiveChatFilter('all')} className={`flex items-center gap-2 px-4 py-2 cursor-pointer ${activeChatFilter === 'all' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}>
+                <div onClick={() => setActiveChatFilter('all')} className={`mx-3 flex items-center gap-2 rounded-md px-3 py-2.5 cursor-pointer transition-colors ${activeChatFilter === 'all' ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#31506f] hover:bg-[#eaf4ff]'}`}>
                   <div className="w-4 h-4 grid grid-cols-2 gap-0.5">
                     <div className="bg-current rounded-[2px]"></div>
                     <div className="bg-current rounded-[2px]"></div>
@@ -4763,14 +4797,14 @@ function Workspace() {
                 </div>
 
                 <div className="mt-2">
-                  <div className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
-                    <Clock size={16} className="text-zinc-400" />
+                  <div className="mx-3 flex items-center gap-2 rounded-md px-3 py-2.5 text-[#31506f] cursor-pointer hover:bg-[#eaf4ff] transition-colors">
+                    <Clock size={16} className="text-[#7d96b2]" />
                     <span className="flex-1">当前接待</span>
-                    <ChevronDown size={14} className="text-zinc-400 rotate-180" />
+                    <ChevronDown size={14} className="text-[#7d96b2] rotate-180" />
                   </div>
                   <div className="flex flex-col py-1">
                     {['待分配', '运营', 'AI', '业务专家', '线索承接'].map(item => (
-                      <div key={item} className="px-10 py-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 cursor-pointer text-sm">
+                      <div key={item} className="mx-3 pl-9 pr-3 py-1.5 rounded-md text-[#5f7892] hover:bg-[#eaf4ff] hover:text-[#1683ff] cursor-pointer text-sm transition-colors">
                         {item}
                       </div>
                     ))}
@@ -4778,37 +4812,37 @@ function Workspace() {
                 </div>
 
                 <div className="mt-1">
-                  <div onClick={() => setIsLeadGroupExpanded(!isLeadGroupExpanded)} className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
-                    <History size={16} className="text-zinc-400" />
+                  <div onClick={() => setIsLeadGroupExpanded(!isLeadGroupExpanded)} className="mx-3 flex items-center gap-2 rounded-md px-3 py-2.5 text-[#31506f] cursor-pointer hover:bg-[#eaf4ff] transition-colors">
+                    <History size={16} className="text-[#7d96b2]" />
                     <span className="flex-1">线索待派发</span>
-                    <ChevronDown size={14} className={`text-zinc-400 transition-transform ${isLeadGroupExpanded ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={14} className={`text-[#7d96b2] transition-transform ${isLeadGroupExpanded ? 'rotate-180' : ''}`} />
                   </div>
                   {isLeadGroupExpanded && (
                     <div className="flex flex-col py-1">
-                      <div onClick={() => setActiveChatFilter('lead_all')} className={`px-10 py-1.5 cursor-pointer text-sm flex items-center justify-between ${activeChatFilter === 'lead_all' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-900/10' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}>
+                      <div onClick={() => setActiveChatFilter('lead_all')} className={`mx-3 pl-9 pr-3 py-1.5 rounded-md cursor-pointer text-sm flex items-center justify-between transition-colors ${activeChatFilter === 'lead_all' ? 'text-[#1683ff] bg-[#e7f3ff]' : 'text-[#5f7892] hover:bg-[#eaf4ff] hover:text-[#1683ff]'}`}>
                         <span>全部线索</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">{leadUsers.length}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white text-[#7d96b2] border border-[#d8e5f4]">{leadUsers.length}</span>
                       </div>
                     </div>
                   )}
                 </div>
 
                 <div className="mt-1">
-                  <div className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
-                    <RefreshCw size={16} className="text-zinc-400" />
+                  <div className="mx-3 flex items-center gap-2 rounded-md px-3 py-2.5 text-[#31506f] cursor-pointer hover:bg-[#eaf4ff] transition-colors">
+                    <RefreshCw size={16} className="text-[#7d96b2]" />
                     <span className="flex-1">撮合流程中</span>
                   </div>
                 </div>
 
                 <div className="mt-1">
-                  <div className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
-                    <Clock size={16} className="text-zinc-400" />
+                  <div className="mx-3 flex items-center gap-2 rounded-md px-3 py-2.5 text-[#31506f] cursor-pointer hover:bg-[#eaf4ff] transition-colors">
+                    <Clock size={16} className="text-[#7d96b2]" />
                     <span className="flex-1">待跟进需求</span>
-                    <ChevronDown size={14} className="text-zinc-400 rotate-180" />
+                    <ChevronDown size={14} className="text-[#7d96b2] rotate-180" />
                   </div>
                   <div className="flex flex-col py-1">
                     {['群/朋友圈需求', '找房需求', '转派后挖掘'].map(item => (
-                      <div key={item} className="px-10 py-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 cursor-pointer text-sm">
+                      <div key={item} className="mx-3 pl-9 pr-3 py-1.5 rounded-md text-[#5f7892] hover:bg-[#eaf4ff] hover:text-[#1683ff] cursor-pointer text-sm transition-colors">
                         {item}
                       </div>
                     ))}
@@ -4817,12 +4851,12 @@ function Workspace() {
 
                 {/* 自定义分组 */}
                 <div className="mt-1">
-                  <div className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50 group/header">
+                  <div className="mx-3 flex items-center gap-2 rounded-md px-3 py-2.5 text-[#31506f] cursor-pointer hover:bg-[#eaf4ff] transition-colors group/header">
                     <FolderPlus size={16} className="text-orange-500" />
                     <span className="flex-1">自定义分组</span>
-                    <button 
+                    <button
                       onClick={(e) => { e.stopPropagation(); setIsCreateGroupModalOpen(true); setIsOutputDropdownOpen(false); }}
-                      className="p-1 rounded opacity-0 group-hover/header:opacity-100 text-zinc-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-all"
+                      className="p-1 rounded opacity-0 group-hover/header:opacity-100 text-[#7d96b2] hover:text-orange-600 hover:bg-orange-50 transition-all"
                       title="新建自定义分组"
                     >
                       <Plus size={14} />
@@ -4830,17 +4864,17 @@ function Workspace() {
                   </div>
                   <div className="flex flex-col py-1">
                     {customGroups.map(group => (
-                      <div key={group.id} className="group/item flex items-center justify-between px-10 py-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer text-sm transition-colors relative">
+                      <div key={group.id} className="group/item mx-3 flex items-center justify-between pl-9 pr-3 py-1.5 rounded-md text-[#5f7892] hover:bg-[#eaf4ff] hover:text-orange-600 cursor-pointer text-sm transition-colors relative">
                         <span className="truncate flex-1">{group.name}</span>
                         <div className="hidden group-hover/item:flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity absolute right-4">
-                          <button 
+                          <button
                             onClick={(e) => { e.stopPropagation(); setViewingLogicGroupId(group.id); }}
                             className="p-1 rounded text-zinc-400 hover:text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors"
                             title="查看逻辑"
                           >
                             <Eye size={12} />
                           </button>
-                          <button 
+                          <button
                             onClick={(e) => { e.stopPropagation(); setDeletingGroupId(group.id); }}
                             className="p-1 rounded text-zinc-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                             title="删除"
@@ -4860,60 +4894,63 @@ function Workspace() {
               </>
             ) : activeModule === 'moments' ? (
               <>
-                <div onClick={() => setActiveMomentFilter('all')} className={`flex items-center gap-2 px-4 py-2 cursor-pointer ${activeMomentFilter === 'all' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}>
-                  <ListFilter size={16} className={activeMomentFilter === 'all' ? 'text-current' : 'text-zinc-400'} />
+                <div onClick={() => setActiveMomentFilter('all')} className={`mx-3 flex items-center gap-2 rounded-md px-3 py-2.5 cursor-pointer transition-colors ${activeMomentFilter === 'all' ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#31506f] hover:bg-[#eaf4ff]'}`}>
+                  <ListFilter size={16} className={activeMomentFilter === 'all' ? 'text-current' : 'text-[#7d96b2]'} />
                   <span className="font-medium flex-1">全部动态</span>
                 </div>
 
                 <div className="mt-1">
-                  <div onClick={() => setActiveMomentFilter('pending')} className={`flex items-center gap-2 px-4 py-2 cursor-pointer ${activeMomentFilter === 'pending' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}>
-                    <MessageCircle size={16} className={activeMomentFilter === 'pending' ? 'text-current' : 'text-zinc-400'} />
+                  <div onClick={() => setActiveMomentFilter('pending')} className={`mx-3 flex items-center gap-2 rounded-md px-3 py-2.5 cursor-pointer transition-colors ${activeMomentFilter === 'pending' ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#31506f] hover:bg-[#eaf4ff]'}`}>
+                    <MessageCircle size={16} className={activeMomentFilter === 'pending' ? 'text-current' : 'text-[#7d96b2]'} />
                     <span className="flex-1">待处理互动</span>
                   </div>
                 </div>
               </>
             ) : (
               <>
-                <div className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
-                  <LayoutGrid size={16} className="text-zinc-400" />
+                <div onClick={() => setActiveGroupCategory('all')} className={`mx-3 flex items-center gap-2 rounded-md px-3 py-2.5 cursor-pointer transition-colors ${activeGroupCategory === 'all' ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#31506f] hover:bg-[#eaf4ff]'}`}>
+                  <LayoutGrid size={16} className={activeGroupCategory === 'all' ? 'text-current' : 'text-[#7d96b2]'} />
                   <span className="flex-1">全部</span>
                 </div>
 
                 <div className="mt-1">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 cursor-pointer">
+                  <div onClick={() => setActiveGroupCategory('delivery')} className={`mx-3 flex items-center gap-2 rounded-md px-3 py-2.5 cursor-pointer transition-colors ${activeGroupCategory === 'delivery' || activeGroupCategory === 'delivery_private' || activeGroupCategory === 'delivery_targeted' ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#31506f] hover:bg-[#eaf4ff]'}`}>
                     <UserPlus size={16} className="text-current" />
                     <span className="flex-1 font-medium">交付群</span>
                     <ChevronDown size={14} className="text-current rotate-180" />
                   </div>
                   <div className="flex flex-col py-1">
-                    {['私聊撮合建群', '定向房源建群'].map(item => (
-                      <div key={item} className="px-10 py-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 cursor-pointer text-sm">
-                        {item}
+                    {[
+                      { label: '私聊撮合建群', value: 'delivery_private' as const },
+                      { label: '定向房源建群', value: 'delivery_targeted' as const }
+                    ].map(item => (
+                      <div key={item.value} onClick={() => setActiveGroupCategory(item.value)} className={`mx-3 pl-9 pr-3 py-1.5 rounded-md cursor-pointer text-sm transition-colors ${activeGroupCategory === item.value ? 'text-[#1683ff] bg-[#e7f3ff]' : 'text-[#5f7892] hover:bg-[#eaf4ff] hover:text-[#1683ff]'}`}>
+                        {item.label}
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div className="mt-1">
-                  <div className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
-                    <Megaphone size={16} className="text-zinc-400" />
+                  <div onClick={() => setActiveGroupCategory('operation')} className={`mx-3 flex items-center gap-2 rounded-md px-3 py-2.5 cursor-pointer transition-colors ${activeGroupCategory === 'operation' ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#31506f] hover:bg-[#eaf4ff]'}`}>
+                    <Megaphone size={16} className={activeGroupCategory === 'operation' ? 'text-current' : 'text-[#7d96b2]'} />
                     <span className="flex-1">运营群</span>
                   </div>
                 </div>
 
                 <div className="mt-1">
-                  <div className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
-                    <Tag size={16} className="text-zinc-400" />
+                  <div className="mx-3 flex items-center gap-2 rounded-md px-3 py-2.5 text-[#31506f] cursor-pointer hover:bg-[#eaf4ff] transition-colors">
+                    <Tag size={16} className="text-[#7d96b2]" />
                     <span className="flex-1">群标签</span>
-                    <ChevronDown size={14} className="text-zinc-400" />
+                    <ChevronDown size={14} className="text-[#7d96b2]" />
                   </div>
                 </div>
 
                 <div className="mt-1">
-                  <div className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
-                    <Clock size={16} className="text-zinc-400" />
+                  <div className="mx-3 flex items-center gap-2 rounded-md px-3 py-2.5 text-[#31506f] cursor-pointer hover:bg-[#eaf4ff] transition-colors">
+                    <Clock size={16} className="text-[#7d96b2]" />
                     <span className="flex-1">待跟进需求</span>
-                    <Settings size={14} className="text-zinc-400 hover:text-zinc-600 cursor-pointer" />
+                    <Settings size={14} className="text-[#7d96b2] hover:text-[#1683ff] cursor-pointer" />
                   </div>
                 </div>
               </>
@@ -4924,72 +4961,71 @@ function Workspace() {
 
       {/* Left Panel: Session or Contact List */}
       {activeModule !== 'moments' && (
-      <div className={`${activeModule === 'chat' ? 'w-[320px]' : 'w-[280px]'} border-r border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-zinc-50/50 dark:bg-zinc-900/20`}>
+      <div className={`${activeModule === 'chat' ? 'w-[340px]' : 'w-[320px]'} border-r border-[#dbe8f7] flex flex-col shrink-0 bg-white`}>
         {activeModule === 'chat' ? (
           <>
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-col gap-3">
+            <div className="p-4 border-b border-[#dbe8f7] flex flex-col gap-3 bg-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {!isGroupPanelOpen && (
-                    <button 
+                    <button
                       onClick={() => setIsGroupPanelOpen(true)}
-                      className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors p-1 -ml-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                      className="text-[#7d96b2] hover:text-[#1683ff] transition-colors p-1 -ml-1 rounded hover:bg-[#e7f3ff]"
                       title="展开分组"
                     >
                       <PanelLeftOpen size={18} />
                     </button>
                   )}
-                  <span className="font-bold text-base text-zinc-900 dark:text-zinc-100">{sessionPanelTitle}</span>
+                  <span className="font-bold text-base text-[#102a4c]">{sessionPanelTitle}</span>
                 </div>
               </div>
               <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="搜索客户名称" 
-                  className="w-full pl-3 pr-8 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md text-xs focus:outline-none focus:border-indigo-500"
+                <input
+                  type="text"
+                  placeholder="搜索客户名称"
+                  className="w-full h-9 pl-3 pr-9 bg-white border border-[#cfd8e3] rounded text-xs text-[#31506f] placeholder:text-[#9db4ca] focus:outline-none focus:border-[#1683ff] focus:ring-2 focus:ring-[#1683ff]/10"
                 />
-                <Search size={14} className="absolute right-2.5 top-2 text-zinc-400" />
+                <Search size={15} className="absolute right-2.5 top-2.5 text-[#1683ff]" />
               </div>
               <div className="flex gap-2">
-                <div className="flex-1 flex items-center justify-between px-2 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md text-xs cursor-pointer">
-                  <span className="text-zinc-500">城市</span>
-                  <span className="flex items-center gap-1">全国 <ChevronDown size={12}/></span>
+                <div className="flex-1 h-8 flex items-center justify-between px-3 bg-white border border-[#cfd8e3] rounded text-xs cursor-pointer text-[#31506f]">
+                  <span>全国</span>
+                  <ChevronDown size={12} className="text-[#7d96b2]" />
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <div className="flex-1 flex items-center justify-between px-2 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md text-xs cursor-pointer">
-                  <span className="text-zinc-500">客服名称</span>
-                  <span className="flex items-center gap-1">请选择 <ChevronDown size={12}/></span>
+                <div className="flex-1 h-8 flex items-center justify-between px-3 bg-white border border-[#cfd8e3] rounded text-xs cursor-pointer text-[#31506f]">
+                  <span>张三</span>
+                  <ChevronDown size={12} className="text-[#7d96b2]" />
                 </div>
               </div>
               <div className="flex items-center justify-between text-xs mt-1">
-                <div className="flex gap-3 text-zinc-500">
-                  <span className="cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100">只看我约</span>
-                  <span className="cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100">未读</span>
+                <div className="flex gap-2 text-[#5f7892]">
+                  <span className="cursor-pointer px-3 py-1 rounded-full bg-[#e7f3ff] text-[#1683ff]">只看我的</span>
+                  <span className="cursor-pointer px-3 py-1 rounded-full bg-[#f4f8fc] hover:bg-[#e7f3ff] hover:text-[#1683ff]">未读</span>
                 </div>
-                <div className="flex items-center gap-1 cursor-pointer text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">
-                  <Filter size={12} /> 最新消息
+                <div className="flex items-center gap-1 cursor-pointer text-[#31506f] hover:text-[#1683ff]">
+                  <Filter size={12} /> 客户消息
                 </div>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto bg-white p-3">
               {visibleSessionList.map((session, i) => (
                 <div key={`${session.customer788Id}-${i}`} onClick={() => {
                   const matchedTab = tabs.find(tab => tab.title === session.tabTitle);
                   if (matchedTab) {
                     setActiveTabId(matchedTab.id);
                   }
-                }} className={`flex gap-3 p-3 border-b border-zinc-100 dark:border-zinc-800/50 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50 ${session.tabTitle === activeTab.title ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : ''}`}>
-                  <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700 shrink-0 overflow-hidden">
+                }} className={`flex gap-3 p-3 rounded-md cursor-pointer hover:bg-[#f4f9ff] transition-colors ${session.tabTitle === activeTab.title ? 'bg-[#e7f3ff]' : ''}`}>
+                  <div className="relative w-10 h-10 rounded-full bg-[#e7f3ff] shrink-0 overflow-hidden border border-[#d8e5f4]">
                     <img src={`https://picsum.photos/seed/${session.name}/40/40`} alt="avatar" className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" />
+                    {session.unread && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#ff5b5b] border border-white"></span>}
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col gap-1">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate">{session.name}</span>
-                      <span className="text-xs text-zinc-400 shrink-0">{session.time}</span>
+                      <span className="font-semibold text-[#31506f] truncate">{session.name}</span>
+                      <span className="text-xs text-[#9db4ca] shrink-0">{session.time}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-zinc-500 truncate flex-1">{session.msg}</span>
+                      <span className="text-xs text-[#7d96b2] truncate flex-1">{session.msg}</span>
                       {session.tag && (
                         <span className={`text-[10px] px-1 rounded border shrink-0 ${session.tag === 'AI' ? 'text-pink-500 border-pink-200 bg-pink-50 dark:bg-pink-950/30 dark:border-pink-900' : 'text-blue-500 border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900'}`}>
                           {session.tag}
@@ -4997,7 +5033,7 @@ function Workspace() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-[10px] text-zinc-400">
-                      <span>{session.customer788Id}</span>
+                      <span className="truncate">{session.customer788Id}</span>
                       {session.abnormalTag && (
                         <span className="px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30">
                           {session.abnormalTag}
@@ -5016,110 +5052,141 @@ function Workspace() {
           </>
         ) : (
           <>
-            <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 flex flex-col gap-3">
+            <div className="p-4 border-b border-[#dbe8f7] flex flex-col gap-3 bg-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {!isGroupPanelOpen && (
-                    <button 
+                    <button
                       onClick={() => setIsGroupPanelOpen(true)}
-                      className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors p-1 -ml-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                      className="text-[#7d96b2] hover:text-[#1683ff] transition-colors p-1 -ml-1 rounded hover:bg-[#e7f3ff]"
                       title="展开分组"
                     >
                       <PanelLeftOpen size={18} />
                     </button>
                   )}
-                  <span className="font-bold text-base text-zinc-900 dark:text-zinc-100">交付群会话</span>
+                  <span className="font-bold text-base text-[#102a4c]">交付群会话</span>
                 </div>
                 <div className="flex gap-2">
-                   <button className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded text-zinc-500">
+                   <button className="p-1.5 hover:bg-[#e7f3ff] rounded text-[#7d96b2] hover:text-[#1683ff]">
                      <Plus size={16} />
                    </button>
                 </div>
               </div>
               <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="搜索群名称" 
-                  className="w-full pl-3 pr-8 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md text-xs focus:outline-none focus:border-indigo-500"
+                <input
+                  type="text"
+                  placeholder="搜索群名称"
+                  value={groupSearchKeyword}
+                  onChange={(e) => setGroupSearchKeyword(e.target.value)}
+                  className="w-full h-9 pl-3 pr-9 bg-white border border-[#cfd8e3] rounded text-xs text-[#31506f] placeholder:text-[#9db4ca] focus:outline-none focus:border-[#1683ff] focus:ring-2 focus:ring-[#1683ff]/10"
                 />
-                <Search size={14} className="absolute right-2.5 top-2 text-zinc-400" />
+                <Search size={15} className="absolute right-2.5 top-2.5 text-[#1683ff]" />
               </div>
               <div className="flex gap-2">
-                <div className="flex-1 flex items-center justify-between px-2 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md text-xs cursor-pointer">
-                  <span className="text-zinc-500">城市</span>
-                  <span className="flex items-center gap-1">合肥 <ChevronDown size={12}/></span>
-                </div>
+                {['全国', '合肥', '南京'].map(city => (
+                  <button
+                    key={city}
+                    onClick={() => setSelectedGroupCity(city)}
+                    className={`h-8 flex-1 rounded border text-xs transition-colors ${selectedGroupCity === city ? 'border-[#9acbff] bg-[#e7f3ff] text-[#1683ff]' : 'border-[#cfd8e3] bg-white text-[#31506f] hover:border-[#9acbff]'}`}
+                  >
+                    {city}
+                  </button>
+                ))}
               </div>
-              <div className="relative group/dropdown">
-                <div className="flex items-center justify-between px-2 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md text-xs cursor-pointer">
-                  <span className="text-zinc-500">分销中介</span>
-                  <span className="flex items-center gap-1 text-zinc-400">{selectedAgent || '请选择'} <ChevronDown size={12}/></span>
-                </div>
-                {/* 下拉面板 */}
-                <div className="absolute left-0 top-full mt-1 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg z-20 hidden group-hover/dropdown:block">
-                  <div className="p-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <div className="relative">
-                      <input 
-                        type="text" 
-                        placeholder="搜索姓名" 
-                        className="w-full pl-7 pr-2 py-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded text-xs focus:outline-none focus:border-indigo-500"
-                      />
-                      <Search size={12} className="absolute left-2.5 top-1.5 text-zinc-400" />
+              <div className="flex gap-2">
+                <div className="relative group/dropdown flex-1">
+                  <div className="h-8 flex items-center justify-between px-3 bg-white border border-[#cfd8e3] rounded text-xs cursor-pointer text-[#31506f] hover:border-[#9acbff]">
+                    <span className={selectedAgent ? '' : 'text-[#9db4ca]'}>{selectedAgent || '分销中介'}</span>
+                    <ChevronDown size={12} className="text-[#7d96b2]" />
+                  </div>
+                  <div className="absolute left-0 top-full mt-1 w-full bg-white border border-[#d8e5f4] rounded-md shadow-[0_8px_24px_rgba(16,42,76,0.12)] z-20 hidden group-hover/dropdown:block">
+                    <div className="p-2 border-b border-[#edf3fa]">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="搜索姓名"
+                          className="w-full h-8 pl-7 pr-2 bg-[#f7fbff] border border-[#d8e5f4] rounded text-xs text-[#31506f] placeholder:text-[#9db4ca] focus:outline-none focus:border-[#1683ff]"
+                        />
+                        <Search size={12} className="absolute left-2.5 top-2.5 text-[#7d96b2]" />
+                      </div>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto py-1">
+                      <div
+                        onClick={() => setSelectedAgent(null)}
+                        className={`px-3 py-2 text-xs cursor-pointer flex items-center justify-between ${!selectedAgent ? 'text-[#1683ff] bg-[#e7f3ff]' : 'text-[#31506f] hover:bg-[#f4f9ff]'}`}
+                      >
+                        <span>全部中介</span>
+                        {!selectedAgent && <Check size={12} />}
+                      </div>
+                      {groupAgentOptions.map(name => (
+                        <div
+                          key={name}
+                          onClick={() => setSelectedAgent(name === selectedAgent ? null : name)}
+                          className={`px-3 py-2 text-xs cursor-pointer flex items-center justify-between ${
+                            name === selectedAgent
+                              ? 'text-[#1683ff] bg-[#e7f3ff]'
+                              : 'text-[#31506f] hover:bg-[#f4f9ff]'
+                          }`}
+                        >
+                          <span>{name}</span>
+                          {name === selectedAgent && <Check size={12} />}
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="max-h-40 overflow-y-auto py-1">
-                    {['张三', '李四', '王五', '赵六', '孙七', '周八'].map(name => (
-                      <div 
-                        key={name} 
-                        onClick={() => setSelectedAgent(name === selectedAgent ? null : name)}
-                        className={`px-3 py-1.5 text-xs cursor-pointer flex items-center justify-between ${
-                          name === selectedAgent 
-                            ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' 
-                            : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                        }`}
-                      >
-                        <span>{name}</span>
-                        {name === selectedAgent && <Check size={12} className="text-indigo-600" />}
-                      </div>
-                    ))}
-                  </div>
                 </div>
+                <button
+                  onClick={() => setGroupListMode(groupListMode === 'unread' ? 'latest' : 'unread')}
+                  className={`h-8 px-3 rounded border text-xs transition-colors ${groupListMode === 'unread' ? 'border-[#9acbff] bg-[#e7f3ff] text-[#1683ff]' : 'border-[#cfd8e3] bg-white text-[#31506f] hover:border-[#9acbff]'}`}
+                >
+                  {groupListMode === 'unread' ? '未读' : '最新消息'}
+                </button>
               </div>
               <div className="flex items-center justify-between text-xs mt-1">
-                <div className="flex gap-3 text-zinc-500">
-                  <span className="cursor-pointer bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-full text-zinc-900 dark:text-zinc-100">未读</span>
+                <div className="text-[#7d96b2]">共 {visibleGroupList.length} 个群</div>
+                <div className="flex items-center gap-1 cursor-pointer text-[#31506f] hover:text-[#1683ff]">
+                  <Filter size={12} /> 最新消息
                 </div>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              {groupList
-                .filter(g => activeCategory === 'all' || g.category === activeCategory)
-                .map((group, i) => (
-                <div 
-                  key={i} 
+            <div className="flex-1 overflow-y-auto bg-white p-3">
+              {visibleGroupList.map((group, i) => (
+                <div
+                  key={i}
                   onClick={() => openTab(group.name)}
                   onContextMenu={(e) => handleContextMenu(e, group.name)}
-                  className="flex gap-3 p-3 border-b border-zinc-100 dark:border-zinc-800/50 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50"
+                  className={`flex gap-3 p-3 rounded-md cursor-pointer hover:bg-[#f4f9ff] transition-colors ${group.name === activeTab.title ? 'bg-[#e7f3ff]' : ''}`}
                 >
-                  <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 font-medium shrink-0">
-                    <Users size={20} />
+                  <div className="relative w-10 h-10 rounded-full bg-[#e7f3ff] shrink-0 overflow-hidden border border-[#d8e5f4]">
+                    <img src={group.avatar} alt="" className="w-full h-full object-cover" />
+                    {group.unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#ff5b5b] border border-white"></span>}
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium text-zinc-900 dark:text-zinc-100">{group.name}</span>
-                      <span className="text-xs text-zinc-400">{group.time}</span>
+                      <span className="font-semibold text-[#31506f] truncate">{group.name}</span>
+                      <span className="text-xs text-[#9db4ca] shrink-0">{group.time}</span>
                     </div>
                     <div className="flex justify-between items-center gap-2">
-                      <div className="text-xs text-zinc-500 truncate flex-1">{group.lastMsg}</div>
+                      <div className="text-xs text-[#7d96b2] truncate flex-1">{group.lastMsg}</div>
                       {group.unread > 0 && (
                         <span className="min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[10px] rounded-full px-1">
                           {group.unread}
                         </span>
                       )}
                     </div>
+                    <div className="flex items-center gap-1.5 text-[10px] text-[#9db4ca]">
+                      <span className="px-1.5 py-0.5 rounded bg-[#f4f8fc]">{group.city}</span>
+                      <span className="truncate">{group.agent}</span>
+                    </div>
                   </div>
                 </div>
               ))}
+              {visibleGroupList.length === 0 && (
+                <div className="h-40 flex flex-col items-center justify-center text-[#9db4ca] text-xs">
+                  <Users size={28} strokeWidth={1.5} className="mb-2" />
+                  暂无符合条件的交付群
+                </div>
+              )}
             </div>
           </>
         )}
@@ -5131,19 +5198,19 @@ function Workspace() {
         {/* Tabs */}
         <div className="flex items-center gap-1 px-2 pt-2 pb-0 border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto shrink-0 bg-zinc-50 dark:bg-zinc-900/30">
           {tabs.map((tab) => (
-            <div 
+            <div
               key={tab.id}
               onClick={() => setActiveTabId(tab.id)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-t-lg text-xs cursor-pointer whitespace-nowrap border border-b-0 ${
-                activeTabId === tab.id 
-                  ? 'bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-indigo-600 dark:text-indigo-400 font-medium z-10 relative top-[1px]' 
+                activeTabId === tab.id
+                  ? 'bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-indigo-600 dark:text-indigo-400 font-medium z-10 relative top-[1px]'
                   : 'bg-zinc-100 dark:bg-zinc-900 border-transparent text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800'
               }`}
             >
               <span className="truncate max-w-[120px]">{tab.title}</span>
-              <X 
-                size={12} 
-                className="text-zinc-400 hover:text-red-500 shrink-0" 
+              <X
+                size={12}
+                className="text-zinc-400 hover:text-red-500 shrink-0"
                 onClick={(e) => {
                   e.stopPropagation();
                   setTabs(tabs.filter(t => t.id !== tab.id));
@@ -5156,7 +5223,7 @@ function Workspace() {
         {/* Content Area */}
         <div className="flex-1 overflow-hidden relative">
            {activeModule === 'moments' ? (
-             <MomentsView 
+             <MomentsView
                moments={MOCK_MOMENTS}
                accounts={MOCK_ACCOUNTS}
                selectedMomentId={selectedMomentId}
@@ -5201,7 +5268,7 @@ function Workspace() {
       {/* Copilot Sidebar */}
       <AnimatePresence>
         {isSidebarOpen && (
-          <motion.div 
+          <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
@@ -5209,13 +5276,13 @@ function Workspace() {
             style={{ width: sidebarWidth }}
             className="absolute right-0 top-0 bottom-0 border-l border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl flex flex-col z-40 shadow-2xl"
           >
-            <div 
+            <div
               onMouseDown={handleMouseDown}
               className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 z-50 transition-colors"
             />
-            <Sidebar 
-              onClose={() => setIsSidebarOpen(false)} 
-              onOpenTab={openTab} 
+            <Sidebar
+              onClose={() => setIsSidebarOpen(false)}
+              onOpenTab={openTab}
               pendingAction={pendingSidebarAction}
               isBlacklistModalOpen={isBlacklistModalOpen}
               setIsBlacklistModalOpen={setIsBlacklistModalOpen}
@@ -5231,15 +5298,15 @@ function Workspace() {
       {/* Context Menu */}
       {contextMenu.visible && (
         <>
-          <div 
-            className="fixed inset-0 z-40" 
+          <div
+            className="fixed inset-0 z-40"
             onClick={() => setContextMenu(prev => ({ ...prev, visible: false }))}
           />
-          <div 
+          <div
             className="fixed z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg py-1 min-w-[160px]"
             style={{ top: contextMenu.y, left: contextMenu.x }}
           >
-            <button 
+            <button
               className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
               onClick={() => {
                 setContextMenu(prev => ({ ...prev, visible: false }));
@@ -5248,7 +5315,7 @@ function Workspace() {
               <span className="w-4 h-4 flex items-center justify-center"><ArrowUp size={14}/></span>
               置顶
             </button>
-            <button 
+            <button
               className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
               onClick={() => {
                 setContextMenu(prev => ({ ...prev, visible: false }));
@@ -5258,7 +5325,7 @@ function Workspace() {
               标为未读
             </button>
             <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1"></div>
-            <button 
+            <button
               className="w-full text-left px-4 py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 flex items-center gap-2"
               onClick={() => {
                 if (contextMenu.groupName) {
@@ -5284,7 +5351,7 @@ function Workspace() {
       <AnimatePresence>
         {deletingGroupId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -5300,13 +5367,13 @@ function Workspace() {
                 删除后将无法恢复，且全局不可见。请确认是否继续？
               </p>
               <div className="flex justify-end gap-3">
-                <button 
+                <button
                   onClick={() => setDeletingGroupId(null)}
                   className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors border border-zinc-200 dark:border-zinc-700"
                 >
                   取消
                 </button>
-                <button 
+                <button
                   onClick={() => handleDeleteCustomGroup(deletingGroupId)}
                   className="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm"
                 >
@@ -5322,7 +5389,7 @@ function Workspace() {
       <AnimatePresence>
         {viewingLogicGroupId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setViewingLogicGroupId(null)}>
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -5369,7 +5436,7 @@ function Workspace() {
                 })()}
               </div>
               <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 flex justify-end">
-                 <button 
+                 <button
                   onClick={() => setViewingLogicGroupId(null)}
                   className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors border border-zinc-200 dark:border-zinc-700"
                 >
@@ -5385,7 +5452,7 @@ function Workspace() {
       <AnimatePresence>
         {isCreateGroupModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -5400,14 +5467,14 @@ function Workspace() {
                   <X size={18} />
                 </button>
               </div>
-              
+
               <div className="p-6 overflow-y-visible flex-1 space-y-6">
                 {/* Group Name */}
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                     <span className="text-red-500 mr-1">*</span>自定义分组名称
                   </label>
-                  <input 
+                  <input
                     type="text"
                     placeholder="最多输入6个汉字，不可重复"
                     maxLength={6}
@@ -5423,7 +5490,7 @@ function Workspace() {
                     <span className="text-red-500 mr-1">*</span>选择工作流名称
                   </label>
                   <div className="relative">
-                    <select 
+                    <select
                       className="w-full appearance-none bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       value={groupForm.workflows[0] || ''}
                       onChange={(e) => setGroupForm({...groupForm, workflows: [e.target.value]})}
@@ -5443,7 +5510,7 @@ function Workspace() {
                     <span className="text-red-500 mr-1">*</span>选择工作流输出字段 (可多选)
                   </label>
                   <div className="relative">
-                    <div 
+                    <div
                       onClick={() => setIsOutputDropdownOpen(!isOutputDropdownOpen)}
                       className="w-full min-h-[42px] bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2 text-sm text-zinc-900 dark:text-zinc-100 cursor-pointer flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     >
@@ -5454,7 +5521,7 @@ function Workspace() {
                           groupForm.outputs.map(output => (
                             <span key={output} className="inline-flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded text-xs">
                               {output}
-                              <button 
+                              <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setGroupForm({...groupForm, outputs: groupForm.outputs.filter(o => o !== output)});
@@ -5469,16 +5536,16 @@ function Workspace() {
                       </div>
                       <ChevronDown size={16} className={`text-zinc-400 shrink-0 transition-transform ${isOutputDropdownOpen ? 'rotate-180' : ''}`} />
                     </div>
-                    
+
                     {isOutputDropdownOpen && (
                       <div className="absolute z-10 w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                         {availableOutputs.map(output => {
                           const isSelected = groupForm.outputs.includes(output);
                           return (
-                            <div 
+                            <div
                               key={output}
                               onClick={() => {
-                                const newOutputs = isSelected 
+                                const newOutputs = isSelected
                                   ? groupForm.outputs.filter(o => o !== output)
                                   : [...groupForm.outputs, output];
                                 setGroupForm({...groupForm, outputs: newOutputs});
@@ -5501,13 +5568,13 @@ function Workspace() {
               </div>
 
               <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-3 bg-zinc-50/50 dark:bg-zinc-800/50">
-                <button 
+                <button
                   onClick={() => setIsCreateGroupModalOpen(false)}
                   className="px-5 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors border border-zinc-200 dark:border-zinc-700"
                 >
                   取消
                 </button>
-                <button 
+                <button
                   onClick={handleCreateCustomGroup}
                   className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!groupForm.name.trim() || groupForm.workflows.length === 0 || groupForm.outputs.length === 0}
@@ -5524,7 +5591,7 @@ function Workspace() {
       <AnimatePresence>
         {isBlacklistModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -5538,14 +5605,14 @@ function Workspace() {
                   <X size={18} />
                 </button>
               </div>
-              
+
               <div className="p-8 pb-12 overflow-visible">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
                     <span className="text-red-500 mr-1">*</span>添加原因：
                   </div>
                   <div className="flex-1 relative">
-                    <div 
+                    <div
                       onClick={() => setIsReasonDropdownOpen(!isReasonDropdownOpen)}
                       className={`w-full bg-white dark:bg-zinc-800 border ${isReasonDropdownOpen ? 'border-blue-500' : 'border-zinc-200 dark:border-zinc-700'} rounded px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 cursor-pointer flex items-center justify-between transition-colors`}
                     >
@@ -5557,7 +5624,7 @@ function Workspace() {
                     {isReasonDropdownOpen && (
                       <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded shadow-lg z-[60] py-1">
                         {['中介同行', '无购房需求', '频繁转派用户', '同事'].map(reason => (
-                          <div 
+                          <div
                             key={reason}
                             onClick={() => {
                               setBlacklistReason(reason);
@@ -5575,13 +5642,13 @@ function Workspace() {
               </div>
 
               <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-3">
-                <button 
+                <button
                   onClick={() => setIsBlacklistModalOpen(false)}
                   className="px-4 py-1.5 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors border border-zinc-200 dark:border-zinc-700"
                 >
                   取消
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     if (!blacklistReason) return;
                     updateActiveChatProfile({
@@ -5609,7 +5676,7 @@ function Workspace() {
       <AnimatePresence>
         {isReceptionConfirmModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -5624,20 +5691,20 @@ function Workspace() {
                   <X size={18} />
                 </button>
               </div>
-              
+
               <div className="p-6 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 当前会话正处于「线索承接」状态，确认要介入回复吗？<br/>
                 <span className="text-zinc-500 mt-2 block">介入可能导致消息回复错乱，打断当前的沟通节奏。</span>
               </div>
 
               <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-b-lg">
-                <button 
+                <button
                   onClick={() => setIsReceptionConfirmModalOpen(false)}
                   className="px-4 py-1.5 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors border border-zinc-200 dark:border-zinc-700"
                 >
                   取消
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     setIsReceptionConfirmModalOpen(false);
                     updateActiveChatProfile({ hasConfirmedReception: true });
@@ -5803,7 +5870,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
   const [mode, setMode] = useState<'圈选模式' | '执行模式'>('圈选模式');
   const [inputValue, setInputValue] = useState('');
-  
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
   const [currentScenario, setCurrentScenario] = useState<1 | 2 | null>(null);
@@ -5812,7 +5879,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
   const [activeBubbleId, setActiveBubbleId] = useState<string | null>(null);
   const [inputLocked, setInputLocked] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const demoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inputValueRef = useRef('');
@@ -5876,8 +5943,8 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
       { type: 'CLICK_CARD_CONFIRM', delay: 1500 },
       { type: 'SEND_MESSAGE_DIRECT', payload: '确认配置', delay: 500 },
       { type: 'ADD_AI_MESSAGE_STREAM', payload: '请确认最终任务信息：', delay: 500 },
-      { type: 'ADD_CARD', payload: { 
-        type: 'task_summary', 
+      { type: 'ADD_CARD', payload: {
+        type: 'task_summary',
         taskName: '每日私聊推送_学区房名单',
         channel: '企微私聊',
         pushTime: '每日 11:30',
@@ -6103,7 +6170,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
 
   const handleSendMessage = (text: string, images?: string[]) => {
     if ((!text.trim() && (!images || images.length === 0)) || inputLocked) return;
-    
+
     // 使用全局 logEvent 避免闭包引用问题
     window.logEvent('send_message', { length: text.length, hasImages: !!images });
 
@@ -6146,8 +6213,8 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
       { id: 'a7', role: 'ai', card: { type: 'config', senders: ['C端客服'], blacklists: [], confirmed: true } },
       { id: 'u6', role: 'user', content: '确认配置' },
       { id: 'a7_summary_msg', role: 'ai', content: '请确认最终任务信息：' },
-      { id: 'a7_summary', role: 'ai', card: { 
-        type: 'task_summary', 
+      { id: 'a7_summary', role: 'ai', card: {
+        type: 'task_summary',
         taskName: '每日私聊推送_学区房名单',
         channel: '企微私聊',
         pushTime: '每日 11:30',
@@ -6240,14 +6307,14 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
       <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 shrink-0 flex flex-col gap-2">
         <div className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Demo Scenarios</div>
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={() => isPlaying && currentScenario === 1 ? stopDemo() : startDemo(1)}
             className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded text-xs font-medium transition-colors ${isPlaying && currentScenario === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/50'}`}
           >
             {isPlaying && currentScenario === 1 ? <Square size={12} /> : <Play size={12} />}
             场景1: 圈选
           </button>
-          <button 
+          <button
             onClick={() => isPlaying && currentScenario === 2 ? stopDemo() : startDemo(2)}
             className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded text-xs font-medium transition-colors ${isPlaying && currentScenario === 2 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'}`}
           >
@@ -6260,7 +6327,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {messages.map((msg) => (
-          <motion.div 
+          <motion.div
             key={msg.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -6297,7 +6364,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
                     <span>{msg.progress}%</span>
                   </div>
                   <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                    <motion.div 
+                    <motion.div
                       className="h-full bg-indigo-500"
                       initial={{ width: 0 }}
                       animate={{ width: `${msg.progress}%` }}
@@ -6307,7 +6374,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
                 </div>
               )}
               {msg.actionButton && (
-                <button 
+                <button
                   onClick={() => {
                     onOpenTab(msg.actionButton!.tabName);
                     onClose();
@@ -6325,11 +6392,11 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
 
       {/* Input Area */}
       <div className="p-4 pt-0 shrink-0">
-        <SmartInput 
-          mode={mode} 
-          setMode={setMode} 
-          value={inputValue} 
-          onChange={setInputValue} 
+        <SmartInput
+          mode={mode}
+          setMode={setMode}
+          value={inputValue}
+          onChange={setInputValue}
           onSubmit={handleSendMessage}
           bubbles={bubbles}
           onBubbleClick={(tabName) => {
@@ -6411,7 +6478,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
                 <ChevronRight size={16} className="rotate-180" />
                 返回
               </button>
-              
+
               {slideOverList.length > 1 && slideOverIndex !== -1 && (
                 <div className="flex items-center gap-2">
                   <button
@@ -6448,7 +6515,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
                     </span>
                   )}
                 </div>
-                
+
                 {(slideOverUser?.startsWith('群聊') || slideOverUser?.startsWith('群内客户-')) && (
                   <div className="flex p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-lg">
                     <button
@@ -6466,7 +6533,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
                   </div>
                 )}
               </div>
-              
+
               <div className="flex flex-col mt-6">
                 {(slideOverUser?.startsWith('群聊') && !slideOverUser.includes('客户')) ? [
                   { label: '群名称', value: displayGroupName, tag: '基础', time: '2026-03-04 10:18:35' },
