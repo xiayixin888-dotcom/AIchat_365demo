@@ -3384,6 +3384,7 @@ function Workspace() {
   const [activeTabId, setActiveTabId] = useState('chat-7881301319959329');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [activeRightPanelTab, setActiveRightPanelTab] = useState('客户档案');
+  const [isFriendRelationOpen, setIsFriendRelationOpen] = useState(false);
   const [activeModule, setActiveModule] = useState<'chat' | 'groups' | 'moments'>('chat');
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(MOCK_MOMENTS[0].id);
   const [activeMomentFilter, setActiveMomentFilter] = useState<'all' | 'pending' | 'interacted' | 'replied'>('all');
@@ -3598,8 +3599,13 @@ function Workspace() {
     { label: 'base_id', value: '576506933939630438' },
     { label: 'unionid', value: 'obS_rtQh4CcTdM8QJi5...' },
     { label: '788ID', value: '7881301319959329' },
-    { label: 'ch', value: 'ch**v8' },
-    { label: '添加好友时间', value: '2026-05-06 10:42:07' }
+    { label: 'ch', value: 'ch**v8' }
+  ];
+
+  const privateFriendRelationRecords = [
+    { type: 'add', title: '添加好友', time: '2026-05-06 10:42:07' },
+    { type: 'delete', title: '删除好友', time: '2026-04-20 09:11:32' },
+    { type: 'add', title: '添加好友', time: '2026-04-16 13:48:05' }
   ];
 
   const privatePortraitMaterialTags = [
@@ -4075,8 +4081,7 @@ function Workspace() {
                       { label: 'base_id', value: activeChatProfile?.baseId || privatePortraitBasicInfo[1].value },
                       { label: 'unionid', value: activeChatProfile?.unionid || privatePortraitBasicInfo[2].value },
                       { label: '788ID', value: activeChatProfile?.id788 || privatePortraitBasicInfo[3].value },
-                      { label: 'ch', value: activeChatProfile?.ch || privatePortraitBasicInfo[4].value },
-                      { label: '添加好友时间', value: activeChatProfile?.friendAddedAt || privatePortraitBasicInfo[5].value }
+                      { label: 'ch', value: activeChatProfile?.ch || privatePortraitBasicInfo[4].value }
                     ].map((item, i) => (
                       <div key={i} className="flex items-start justify-between gap-3 text-xs">
                         <span className="text-zinc-500 shrink-0">{item.label}</span>
@@ -4086,6 +4091,50 @@ function Workspace() {
                         </div>
                       </div>
                     ))}
+                    <div className="relative">
+                      <div className="flex items-start justify-between gap-3 text-xs">
+                        <span className="text-zinc-500 shrink-0">添加时间</span>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-zinc-900 dark:text-zinc-100 truncate">{activeChatProfile?.friendAddedAt || privateFriendRelationRecords[0].time}</span>
+                          {privateFriendRelationRecords.length > 1 && (
+                            <button
+                              onClick={() => setIsFriendRelationOpen(prev => !prev)}
+                              className={`h-5 w-5 rounded-md flex items-center justify-center transition-colors ${isFriendRelationOpen ? 'bg-blue-50 text-blue-600' : 'text-blue-500 hover:bg-blue-50'}`}
+                              title="查看好友关系记录"
+                            >
+                              <MoreHorizontal size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {isFriendRelationOpen && (
+                        <div className="mt-2 rounded-lg border border-blue-100 bg-white dark:bg-zinc-950 shadow-[0_8px_24px_rgba(37,99,235,0.12)] p-3">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">好友关系记录</span>
+                            <button
+                              onClick={() => setIsFriendRelationOpen(false)}
+                              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                          <div className="space-y-3">
+                            {privateFriendRelationRecords.map((record, index) => (
+                              <div key={`${record.type}-${record.time}`} className="flex gap-2 text-xs">
+                                <div className="flex flex-col items-center pt-1">
+                                  <span className={`w-1.5 h-1.5 rounded-full ${record.type === 'add' ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
+                                  {index < privateFriendRelationRecords.length - 1 && <span className="w-px flex-1 min-h-[28px] bg-zinc-200 mt-1" />}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className={`font-semibold ${record.type === 'add' ? 'text-emerald-600' : 'text-zinc-700 dark:text-zinc-300'}`}>{record.title}</div>
+                                  <div className="mt-0.5 text-zinc-400">{record.time}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
