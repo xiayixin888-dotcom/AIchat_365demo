@@ -85,10 +85,11 @@
     <script id="app-source" type="text/plain">
 
 
+
 // Consolidated Imports
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ArrowUp, AtSign, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, ChevronLeft, Circle, Clock, Copy, FileText, Filter, History, Image as ImageIcon, ListFilter, Loader2, Mail, MessageSquare, MoreHorizontal, Play, Plus, RefreshCw, Search, Send, Slash, Smile, Square, User, UserPlus, Users, X, Zap, LineChart, UserCircle, FolderPlus, Eye, Trash2, PanelLeftOpen, AlertCircle, Megaphone, Tag, Settings, LayoutGrid, Command, Image, FolderOpen, Flame, Heart, MessageCircle, Share2, ExternalLink, Compass, Link as LinkIcon } from 'lucide-react';
+import { Archive, ArrowUp, AtSign, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, ChevronLeft, Circle, Clock, Copy, FileText, Filter, History, Image as ImageIcon, ListFilter, Loader2, Mail, MessageSquare, MoreHorizontal, Pencil, Pin, Play, Plus, RefreshCw, Search, Send, Slash, Smile, Square, User, UserPlus, Users, X, Zap, LineChart, UserCircle, FolderPlus, Eye, Trash2, PanelLeftOpen, AlertCircle, Megaphone, Tag, Settings, LayoutGrid, Command, Image, FolderOpen, Flame, Heart, MessageCircle, Share2, ExternalLink, Compass, Link as LinkIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
 // --- Analytics Hook (埋点统计工具) ---
@@ -1188,6 +1189,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     const [expandedContents, setExpandedContents] = useState<Record<string, boolean>>({});
     const [contentOverflowMap, setContentOverflowMap] = useState<Record<string, boolean>>({});
     const [processedMomentGroups, setProcessedMomentGroups] = useState<Record<string, boolean>>({});
+    const [copiedMomentGroupId, setCopiedMomentGroupId] = useState<string | null>(null);
     const contentRefs = React.useRef<Record<string, HTMLParagraphElement | null>>({});
 
     // Custom hook to manage mock state updates for moments
@@ -1230,6 +1232,26 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                 <span className={`shrink-0 text-[#fb923c] ${badgeClassName}`}>@365淘房</span>
             </span>
         );
+    };
+
+    const copyMomentGroupId = async (groupId: string) => {
+        try {
+            await navigator.clipboard.writeText(groupId);
+        } catch {
+            const textarea = document.createElement('textarea');
+            textarea.value = groupId;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+        setCopiedMomentGroupId(groupId);
+        window.setTimeout(() => {
+            setCopiedMomentGroupId(current => current === groupId ? null : current);
+        }, 1400);
     };
 
     const handleContextMenu = (e: React.MouseEvent, userId: string, name: string, avatar?: string) => {
@@ -1478,6 +1500,8 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     };
 
     const uncommentedLikers = aggregatedLikes.filter(l => !hasCommented(l.userId)).map(l => l.userId);
+    const defaultLikesPreviewCount = 7;
+    const displayedLikes = isLikesExpanded ? aggregatedLikes : aggregatedLikes.slice(0, defaultLikesPreviewCount);
 
     const commentThreads = React.useMemo(() => {
         const threads: { id: string, momentId: string, rootComment: MomentComment, replies: MomentComment[], account?: EnterpriseAccount }[] = [];
@@ -1604,6 +1628,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             unionid: 'obS_rtQh4CcTdM8QJi0...',
             id788: selectedCustomer.userId,
             ch: 'ch**00',
+            friendAddedAt: '2026-05-06 10:42:07',
             abnormalTag: null,
             isBlacklisted: false,
             blacklistReason: '',
@@ -1624,6 +1649,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         { label: 'base_id', value: selectedCustomerProfile.baseId || '172952193421911697', copyable: true },
         { label: 'unionid', value: selectedCustomerProfile.unionid || 'obS_rt2d_NDALZvQRS...', copyable: true },
         { label: '788ID', value: selectedCustomerProfile.id788 || selectedCustomer?.userId || '7881299921083644', copyable: true },
+        { label: '添加好友时间', value: selectedCustomerProfile.friendAddedAt || '2026-05-06 10:42:07', copyable: false },
         { label: '语义手机号(2)', value: '139****8666', copyable: false }
     ] : [];
     const customerPortraitTagGroups = [
@@ -1768,9 +1794,31 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                 : 'hover:shadow-[0_6px_18px_rgba(16,42,76,0.08)] hover:border-[#bcd5ef]'}`}
                                     >
                                         <div className="flex items-start justify-between gap-3 mb-2">
-                                            <div className="text-[11px] font-medium text-[#8ba7c3]">ID：{group.groupId}</div>
+                                            <div className="relative min-w-0 group/publisher">
+                                                <div className="flex items-baseline gap-1 min-w-0 max-w-[340px] whitespace-nowrap overflow-hidden">
+                                                    {visiblePublisherAccounts.map((account) => (
+                                                        <span key={account.id} className="inline-flex items-baseline gap-0.5 min-w-0 overflow-hidden">
+                                                            <span className="truncate min-w-0 text-[14px] leading-5 font-bold text-[#576b95]">
+                                                                {getEnterpriseDisplayName(account.id, account.name)}
+                                                            </span>
+                                                            {isEnterpriseUserId(account.id) && (
+                                                                <span className="shrink-0 text-[12px] leading-5 text-[#fb923c]">@365淘房</span>
+                                                            )}
+                                                        </span>
+                                                    ))}
+                                                    <span className="shrink-0 whitespace-nowrap text-[11px] leading-5 text-[#8ba7c3]">{publisherSuffix}</span>
+                                                </div>
+                                                <div className="absolute left-0 top-[calc(100%+8px)] hidden group-hover/publisher:block z-20 w-64 bg-white border border-[#d8e5f4] rounded-lg shadow-[0_10px_30px_rgba(16,42,76,0.16)] p-2 max-h-[300px] overflow-y-auto">
+                                                    <div className="text-[11px] text-[#8ba7c3] px-2 py-1 sticky top-0 bg-white/90 backdrop-blur-sm z-10">发布账号列表</div>
+                                                    {group.publisherAccounts.map(account => (
+                                                        <div key={account.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-[#f1f7ff]">
+                                                            <img src={account.avatar} className="w-6 h-6 rounded-md border border-[#d8e5f4] shrink-0" alt="" />
+                                                            {renderEnterpriseName(account.id, account.name, 'text-xs font-semibold text-[#1683ff] min-w-0 truncate', 'text-[12px]')}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
                                             <div className="flex items-center gap-2 shrink-0">
-                                                <div className="text-xs text-[#8ba7c3]">{formatMomentFullTime(group.latestTime)}</div>
                                                 {filter === 'pending' && (
                                                     <button
                                                         onClick={(e) => {
@@ -1783,31 +1831,6 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                         标记已处理
                                                     </button>
                                                 )}
-                                            </div>
-                                        </div>
-
-                                        <div className="mb-3">
-                                            <div className="relative min-w-0 group/publisher">
-                                                <div className="flex items-center gap-0.5 min-w-0 max-w-[300px] text-[12px] whitespace-nowrap overflow-hidden">
-                                                    <span className="truncate min-w-0 font-semibold text-[#1683ff] inline-flex items-center gap-0.5 overflow-hidden">
-                                                        {visiblePublisherAccounts.map((account, index) => (
-                                                            <React.Fragment key={account.id}>
-                                                                {index > 0 && <span className="text-slate-400">、</span>}
-                                                                {renderEnterpriseName(account.id, account.name, 'truncate min-w-0', 'text-[12px]')}
-                                                            </React.Fragment>
-                                                        ))}
-                                                    </span>
-                                                    <span className="shrink-0 whitespace-nowrap text-[#6e86a0]">{publisherSuffix}</span>
-                                                </div>
-                                                <div className="absolute left-0 top-[calc(100%+8px)] hidden group-hover/publisher:block z-20 w-64 bg-white border border-[#d8e5f4] rounded-lg shadow-[0_10px_30px_rgba(16,42,76,0.16)] p-2 max-h-[300px] overflow-y-auto">
-                                                    <div className="text-[11px] text-[#8ba7c3] px-2 py-1 sticky top-0 bg-white/90 backdrop-blur-sm z-10">发布账号列表</div>
-                                                    {group.publisherAccounts.map(account => (
-                                                        <div key={account.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-[#f1f7ff]">
-                                                            <img src={account.avatar} className="w-6 h-6 rounded-md border border-[#d8e5f4] shrink-0" alt="" />
-                                                            {renderEnterpriseName(account.id, account.name, 'text-xs font-semibold text-[#1683ff] min-w-0 truncate', 'text-[12px]')}
-                                                        </div>
-                                                    ))}
-                                                </div>
                                             </div>
                                         </div>
 
@@ -1868,6 +1891,27 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         )}
 
                                         <div className="mt-3 flex flex-col gap-2" onClick={e => e.stopPropagation()}>
+                                            <div className="flex items-center gap-2 text-[12px] text-[#8ba7c3]">
+                                                <span>{formatMomentFullTime(group.latestTime)}</span>
+                                                <details
+                                                    className="relative"
+                                                    onMouseEnter={(e) => { e.currentTarget.open = true; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.open = false; }}
+                                                >
+                                                    <summary
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            copyMomentGroupId(group.groupId);
+                                                        }}
+                                                        className="list-none cursor-pointer select-none inline-flex items-center rounded px-1.5 py-0.5 text-[#9ab0c7] hover:text-[#1683ff] hover:bg-[#eef6ff] transition-colors"
+                                                    >
+                                                        {copiedMomentGroupId === group.groupId ? '已复制' : 'ID'}
+                                                    </summary>
+                                                    <div className="absolute left-0 top-[calc(100%+6px)] z-30 w-max max-w-[260px] rounded-md border border-[#d8e5f4] bg-white px-2.5 py-2 shadow-[0_8px_24px_rgba(16,42,76,0.14)]">
+                                                        <div className="font-mono text-[11px] text-[#31506f] break-all">{group.groupId}</div>
+                                                    </div>
+                                                </details>
+                                            </div>
                                             <div className="flex items-center justify-between gap-2">
                                                 <div className="flex items-center gap-3 text-[12px] text-[#5f7892]">
                                                 <span className="inline-flex items-center gap-1">
@@ -2103,10 +2147,10 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="min-h-[220px] max-h-[300px] overflow-y-auto pr-1">
+                                        <div className={`${isLikesExpanded ? 'min-h-[220px] max-h-[300px] overflow-y-auto' : 'min-h-[120px] max-h-[136px] overflow-hidden'} pr-1`}>
                                             <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-x-7 gap-y-5 p-2">
                                                 {aggregatedLikes.length > 0 ? (
-                                                    (isLikesExpanded ? aggregatedLikes : aggregatedLikes.slice(0, 10)).map((like) => (
+                                                    displayedLikes.map((like) => (
                                                         <div key={like.userId} className="flex flex-col items-center gap-2 relative">
                                                             <div className="absolute top-1 right-1 z-10 bg-white/90 backdrop-blur-sm rounded-md flex items-center justify-center w-6 h-6 shadow-sm border border-[#d8e5f4]">
                                                                 <input
@@ -2193,7 +2237,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                     </div>
                                                 )}
                                             </div>
-                                            {aggregatedLikes.length > 10 && (
+                                            {aggregatedLikes.length > defaultLikesPreviewCount && (
                                                 <div className="flex justify-center mt-2 mb-4">
                                                     <button
                                                         onClick={() => setIsLikesExpanded(!isLikesExpanded)}
@@ -2903,6 +2947,7 @@ interface ChatCustomerProfile {
   unionid: string;
   id788: string;
   ch: string;
+  friendAddedAt?: string;
   abnormalTag: string | null;
   isBlacklisted: boolean;
   blacklistReason: string;
@@ -2910,30 +2955,7 @@ interface ChatCustomerProfile {
   hasConfirmedReception?: boolean;
 }
 
-interface PrivateFollowUpNote {
-  id: string;
-  operator: string;
-  action: string;
-  time: string;
-  text: string;
-}
-
-interface DeliveryGroupOperationLog {
-  id: string;
-  houseCode: string;
-  operator: string;
-  time: string;
-}
-
 const abnormalUserOptions = ['长周期观望', '超低预算', '已成交', '非决策人看房'];
-type PrivateSessionFilterField = 'customerName' | 'followupNote' | 'id788' | 'phone';
-
-const privateSessionFilterOptions: { label: string; value: PrivateSessionFilterField; placeholder: string }[] = [
-  { label: '客户名称', value: 'customerName', placeholder: '搜索客户名称' },
-  { label: '跟进备注', value: 'followupNote', placeholder: '搜索跟进备注' },
-  { label: '788ID', value: 'id788', placeholder: '多个788ID用,分隔' },
-  { label: '手机号', value: 'phone', placeholder: '搜索手机号' },
-];
 
 const sessionList = [
   { name: '雾里看花', time: '5-06', msg: '稍等，我找了解这套房的经纪人和...', tag: '', unread: false, customer788Id: '7881301319959329', abnormalTag: null, isBlacklisted: false, tabTitle: '雾里看花' },
@@ -3447,6 +3469,7 @@ function Workspace() {
   const [activeTabId, setActiveTabId] = useState('chat-7881301319959329');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [activeRightPanelTab, setActiveRightPanelTab] = useState('客户档案');
+  const [isFriendRelationOpen, setIsFriendRelationOpen] = useState(false);
   const [activeModule, setActiveModule] = useState<'chat' | 'groups' | 'moments'>('chat');
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(MOCK_MOMENTS[0].id);
   const [activeMomentFilter, setActiveMomentFilter] = useState<'all' | 'pending' | 'interacted' | 'replied'>('all');
@@ -3457,14 +3480,9 @@ function Workspace() {
   const [isReasonDropdownOpen, setIsReasonDropdownOpen] = useState(false);
   const [isAbnormalTagDropdownOpen, setIsAbnormalTagDropdownOpen] = useState(false);
   const [pendingAbnormalTag, setPendingAbnormalTag] = useState<string | null | undefined>(undefined);
-  const [activeChatFilter, setActiveChatFilter] = useState<'all' | 'session_abnormal' | 'lead_all' | 'lead_abnormal' | 'community_need' | 'moments_need' | 'transfer_mining'>('all');
-  const [privateSessionFilterField, setPrivateSessionFilterField] = useState<PrivateSessionFilterField>('customerName');
-  const [privateSessionFilterKeyword, setPrivateSessionFilterKeyword] = useState('');
-  const [isPrivateSessionFilterOpen, setIsPrivateSessionFilterOpen] = useState(false);
+  const [activeChatFilter, setActiveChatFilter] = useState<'all' | 'session_abnormal' | 'lead_all' | 'lead_abnormal'>('all');
   const [isLeadGroupExpanded, setIsLeadGroupExpanded] = useState(true);
   const [generatedLead788Ids, setGeneratedLead788Ids] = useState<string[]>([]);
-  const [communityNeed788Ids, setCommunityNeed788Ids] = useState<string[]>([]);
-  const [momentsNeed788Ids, setMomentsNeed788Ids] = useState<string[]>([]);
   const [leadPromptModal, setLeadPromptModal] = useState<{
     open: boolean;
     type: 'abnormal' | 'blacklist';
@@ -3524,46 +3542,6 @@ function Workspace() {
   const [groupSearchKeyword, setGroupSearchKeyword] = useState('');
   const [selectedGroupCity, setSelectedGroupCity] = useState('合肥');
   const [groupListMode, setGroupListMode] = useState<'unread' | 'latest'>('unread');
-  const [privateFollowUpNotes, setPrivateFollowUpNotes] = useState<PrivateFollowUpNote[]>([
-    {
-      id: 'note-1',
-      operator: '运营-夏艺心',
-      action: '跟进了客户',
-      time: '2026-04-16 13:48:05',
-      text: '客户明确总价控制在200万以内，首付约60万，优先看柏堰湖、高新区附近三居，后续推荐需突出总价和学区信息。'
-    },
-    {
-      id: 'note-2',
-      operator: '运营-查妍碧',
-      action: '跟进了客户',
-      time: '2026-04-12 19:22:18',
-      text: '客户对120平左右户型接受度较高，倾向南北通透、楼层不要太低，暂不考虑回迁房和老破小。'
-    },
-    {
-      id: 'note-3',
-      operator: '运营-查妍碧',
-      action: '跟进了客户',
-      time: '2026-04-11 18:45:00',
-      text: '建议下一轮沟通发送3套房源对比，重点展示首付压力、通勤时间、学校距离和近期成交价。'
-    },
-    {
-      id: 'note-4',
-      operator: '运营-曼艺心',
-      action: '跟进了客户',
-      time: '2026-04-11 18:39:20',
-      text: '客户预算敏感但有明确改善意向，可用“同预算可买到的学区三居”切入，避免直接推高总价房源。'
-    }
-  ]);
-  const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
-  const [followUpModalMode, setFollowUpModalMode] = useState<'list' | 'add' | 'edit'>('list');
-  const [editingFollowUpId, setEditingFollowUpId] = useState<string | null>(null);
-  const [followUpDraft, setFollowUpDraft] = useState('');
-  const [followUpSearchKeyword, setFollowUpSearchKeyword] = useState('');
-  const [isDeliveryGroupModalOpen, setIsDeliveryGroupModalOpen] = useState(false);
-  const [deliveryHouseCode, setDeliveryHouseCode] = useState('');
-  const [deliveryHouseCodeError, setDeliveryHouseCodeError] = useState('');
-  const [deliveryGroupNotice, setDeliveryGroupNotice] = useState('');
-  const [deliveryGroupLogs, setDeliveryGroupLogs] = useState<DeliveryGroupOperationLog[]>([]);
   const [activeGroupCategory, setActiveGroupCategory] = useState<'all' | 'delivery' | 'delivery_private' | 'delivery_targeted' | 'operation'>('delivery');
   const [chatCustomerProfiles, setChatCustomerProfiles] = useState<Record<string, ChatCustomerProfile>>({
     '杜小明精品大平层17...': {
@@ -3709,6 +3687,12 @@ function Workspace() {
     { label: 'ch', value: 'ch**v8' }
   ];
 
+  const privateFriendRelationRecords = [
+    { type: 'add', title: '添加好友', time: '2026-05-06 10:42:07' },
+    { type: 'delete', title: '删除好友', time: '2026-04-20 09:11:32' },
+    { type: 'add', title: '添加好友', time: '2026-04-16 13:48:05' }
+  ];
+
   const privatePortraitMaterialTags = [
     { text: '100万-150万', tone: 'blue' },
     { text: '男女不限-新房意向', tone: 'indigo' },
@@ -3726,6 +3710,17 @@ function Workspace() {
     { text: '新房_业务偏好_新房', tone: 'cyan' }
   ];
 
+  const privateFollowUpNotes = [
+    {
+      time: '2026-04-11 18:45:00',
+      text: '已初步确认客户对120平左右三居更感兴趣，优先推荐柏堰湖周边高性价比房源。'
+    },
+    {
+      time: '2026-04-11 18:39:20',
+      text: '客户表达预算控制较强，后续沟通以总价和首付压力作为重点切入。'
+    }
+  ];
+
   const getDefaultChatCustomerProfile = (name = '客户'): ChatCustomerProfile => ({
     name,
     source: '微信',
@@ -3736,6 +3731,7 @@ function Workspace() {
     unionid: 'obS_rtQh4CcTdM8QJi0...',
     id788: '7881301319959300',
     ch: 'ch**00',
+    friendAddedAt: '2026-05-06 10:42:07',
     abnormalTag: null,
     isBlacklisted: false,
     blacklistReason: '',
@@ -3814,16 +3810,14 @@ function Workspace() {
     : null;
 
   const sessionUsers = sessionList.map(session => {
-    const profile = chatCustomerProfiles[session.tabTitle] || Object.values(chatCustomerProfiles).find(item => item.id788 === session.customer788Id) || null;
+    const profile = chatCustomerProfiles[session.tabTitle] || null;
     return {
       ...session,
       customer788Id: session.customer788Id,
       abnormalTag: profile?.abnormalTag ?? session.abnormalTag,
       isBlacklisted: profile?.isBlacklisted ?? session.isBlacklisted,
       blacklistReason: profile?.blacklistReason || '',
-      profileName: session.name,
-      phone: profile?.phone || '',
-      followupNoteText: privateFollowUpNotes.map(note => note.text).join(' ')
+      profileName: session.name
     };
   });
 
@@ -3838,51 +3832,11 @@ function Workspace() {
   };
 
   const leadUsers = uniqueBy788Id(sessionUsers.filter(item => generatedLead788Ids.includes(item.customer788Id)));
-  const communityNeedUsers = uniqueBy788Id(sessionUsers.filter(item => communityNeed788Ids.includes(item.customer788Id)));
-  const momentsNeedUsers = uniqueBy788Id(sessionUsers.filter(item => momentsNeed788Ids.includes(item.customer788Id)));
-  const transferMiningUsers = uniqueBy788Id(sessionUsers.filter(item => item.abnormalTag || item.isBlacklisted));
-  const privateSessionFilterOption = privateSessionFilterOptions.find(option => option.value === privateSessionFilterField) || privateSessionFilterOptions[0];
-  const privateSessionSearchValues = privateSessionFilterKeyword
-    .split(/[,\n]/)
-    .map(value => value.trim().toLowerCase())
-    .filter(Boolean);
-  const privateSessionDisplayValues = privateSessionFilterKeyword
-    .split(/[,\n]/)
-    .map(value => value.trim())
-    .filter(Boolean);
-  const removePrivateSessionSearchValue = (targetIndex: number) => {
-    setPrivateSessionFilterKeyword(privateSessionDisplayValues.filter((_, index) => index !== targetIndex).join(','));
-  };
-  const baseVisibleSessionList = activeChatFilter === 'lead_all'
+  const visibleSessionList = activeChatFilter === 'lead_all'
     ? leadUsers
-    : activeChatFilter === 'community_need'
-      ? communityNeedUsers
-      : activeChatFilter === 'moments_need'
-        ? momentsNeedUsers
-        : activeChatFilter === 'transfer_mining'
-          ? transferMiningUsers
-          : sessionUsers;
-  const visibleSessionList = privateSessionSearchValues.length === 0
-    ? baseVisibleSessionList
-    : baseVisibleSessionList.filter(session => {
-      if (privateSessionFilterField === 'id788') {
-        return privateSessionSearchValues.some(value => session.customer788Id.toLowerCase().includes(value));
-      }
-      const targetText = privateSessionFilterField === 'customerName'
-        ? `${session.name} ${session.profileName}`
-        : privateSessionFilterField === 'followupNote'
-          ? session.followupNoteText
-          : session.phone;
-      return targetText.toLowerCase().includes(privateSessionSearchValues.join(' '));
-    });
+    : sessionUsers;
   const sessionPanelTitle = activeChatFilter === 'lead_all'
     ? '线索管理'
-    : activeChatFilter === 'community_need'
-      ? '社群需求'
-      : activeChatFilter === 'moments_need'
-        ? '朋友圈需求'
-        : activeChatFilter === 'transfer_mining'
-          ? '转派后挖掘'
     : '全部会话';
   const groupAgentOptions = Array.from(new Set(groupList.filter(group => group.category !== 'operation').map(group => group.agent)));
   const visibleGroupList = groupList.filter(group => {
@@ -3993,129 +3947,9 @@ function Workspace() {
     setMiniProgramContextMenu(prev => ({ ...prev, visible: false }));
   };
 
-  const openPrivateChatFromNeed = (customer788Id: string, source: 'community' | 'moments') => {
-    const user = sessionList.find(session => session.customer788Id === customer788Id) || sessionList[0];
-    const target788Id = user ? user.customer788Id : customer788Id;
-    const tabId = `chat-${target788Id}`;
-    const existingTab = tabs.find(tab => tab.id === tabId);
-    if (!existingTab) {
-      setTabs(prev => [...prev, { id: tabId, title: user ? user.name : '新会话', type: 'chat' }]);
-    }
-    if (source === 'community') {
-      setCommunityNeed788Ids(prev => prev.includes(target788Id) ? prev : [...prev, target788Id]);
-    } else {
-      setMomentsNeed788Ids(prev => prev.includes(target788Id) ? prev : [...prev, target788Id]);
-    }
-    setActiveTabId(tabId);
-    setActiveModule('chat');
-  };
-
-  const openFollowUpListModal = () => {
-    setFollowUpModalMode('list');
-    setEditingFollowUpId(null);
-    setFollowUpDraft('');
-    setFollowUpSearchKeyword('');
-    setIsFollowUpModalOpen(true);
-  };
-
-  const openAddFollowUpModal = () => {
-    setFollowUpModalMode('add');
-    setEditingFollowUpId(null);
-    setFollowUpDraft('');
-    setIsFollowUpModalOpen(true);
-  };
-
-  const openEditFollowUpModal = (note: PrivateFollowUpNote) => {
-    setFollowUpModalMode('edit');
-    setEditingFollowUpId(note.id);
-    setFollowUpDraft(note.text);
-    setIsFollowUpModalOpen(true);
-  };
-
-  const saveFollowUpNote = () => {
-    const text = followUpDraft.trim();
-    if (!text) return;
-    if (followUpModalMode === 'edit' && editingFollowUpId) {
-      setPrivateFollowUpNotes(prev => prev.map(note => note.id === editingFollowUpId ? { ...note, text } : note));
-      setFollowUpModalMode('list');
-      setEditingFollowUpId(null);
-      setFollowUpDraft('');
-      return;
-    }
-    const now = new Date();
-    const pad = (value: number) => String(value).padStart(2, '0');
-    const time = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    setPrivateFollowUpNotes(prev => [
-      {
-        id: `note-${Date.now()}`,
-        operator: '运营-当前账号',
-        action: '跟进了客户',
-        time,
-        text
-      },
-      ...prev
-    ]);
-    setIsFollowUpModalOpen(false);
-    setFollowUpModalMode('list');
-    setFollowUpDraft('');
-  };
-
-  const deleteFollowUpNote = (noteId: string) => {
-    setPrivateFollowUpNotes(prev => prev.filter(note => note.id !== noteId));
-    if (editingFollowUpId === noteId) {
-      setFollowUpModalMode('list');
-      setEditingFollowUpId(null);
-      setFollowUpDraft('');
-    }
-  };
-
-  const visibleFollowUpNotes = followUpSearchKeyword.trim()
-    ? privateFollowUpNotes.filter(note => note.text.includes(followUpSearchKeyword.trim()))
-    : privateFollowUpNotes;
-
-  const openDeliveryGroupModal = () => {
-    setDeliveryHouseCode('');
-    setDeliveryHouseCodeError('');
-    setIsDeliveryGroupModalOpen(true);
-  };
-
-  const closeDeliveryGroupModal = () => {
-    setIsDeliveryGroupModalOpen(false);
-    setDeliveryHouseCode('');
-    setDeliveryHouseCodeError('');
-  };
-
-  const submitDeliveryGroup = () => {
-    const code = deliveryHouseCode.trim();
-    if (!code) {
-      setDeliveryHouseCodeError('请输入房源编号');
-      return;
-    }
-    if (!/^\d+$/.test(code)) {
-      setDeliveryHouseCodeError('房源编号仅支持纯数字');
-      return;
-    }
-    const now = new Date();
-    const pad = (value: number) => String(value).padStart(2, '0');
-    const time = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    setDeliveryGroupLogs(prev => [
-      {
-        id: `delivery-${Date.now()}`,
-        houseCode: code,
-        operator: '运营-艺心',
-        time
-      },
-      ...prev
-    ]);
-    setDeliveryGroupNotice('已通知【“新版-合肥朋友圈建群”工作流】');
-    closeDeliveryGroupModal();
-    window.setTimeout(() => setDeliveryGroupNotice(''), 3000);
-  };
-
   const closeContextMenu = () => {
     setContextMenu(prev => ({ ...prev, visible: false }));
     setMiniProgramContextMenu(prev => ({ ...prev, visible: false }));
-    setIsPrivateSessionFilterOpen(false);
   };
 
   const openTab = (title: string) => {
@@ -4148,15 +3982,9 @@ function Workspace() {
                 <span className="text-xs text-zinc-500 ml-2">合肥 | AI找房</span>
               </div>
               <div className="flex flex-col items-end gap-1">
-	                <div className="flex items-center gap-2">
-	                  <button
-	                    onClick={openDeliveryGroupModal}
-	                    className="px-3 py-1.5 border border-blue-200 bg-blue-50 text-blue-600 rounded text-xs hover:bg-blue-100 transition-colors whitespace-nowrap"
-	                  >
-	                    创建交付群
-	                  </button>
-	                  <button onClick={handleValidLeadClick} className="px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded text-xs text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">
-	                    有效会话线索
+                <div className="flex items-center gap-2">
+                  <button onClick={handleValidLeadClick} className="px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded text-xs text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">
+                    有效会话线索
                   </button>
                   <button className="px-3 py-1.5 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded text-xs hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
                     切换AI
@@ -4348,6 +4176,50 @@ function Workspace() {
                         </div>
                       </div>
                     ))}
+                    <div className="relative">
+                      <div className="flex items-start justify-between gap-3 text-xs">
+                        <span className="text-zinc-500 shrink-0">添加时间</span>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-zinc-900 dark:text-zinc-100 truncate">{activeChatProfile?.friendAddedAt || privateFriendRelationRecords[0].time}</span>
+                          {privateFriendRelationRecords.length > 1 && (
+                            <button
+                              onClick={() => setIsFriendRelationOpen(prev => !prev)}
+                              className={`h-5 w-5 rounded-md flex items-center justify-center transition-colors ${isFriendRelationOpen ? 'bg-blue-50 text-blue-600' : 'text-blue-500 hover:bg-blue-50'}`}
+                              title="查看好友关系记录"
+                            >
+                              <MoreHorizontal size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {isFriendRelationOpen && (
+                        <div className="mt-2 rounded-lg border border-blue-100 bg-white dark:bg-zinc-950 shadow-[0_8px_24px_rgba(37,99,235,0.12)] p-3">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">好友关系记录</span>
+                            <button
+                              onClick={() => setIsFriendRelationOpen(false)}
+                              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                          <div className="space-y-3">
+                            {privateFriendRelationRecords.map((record, index) => (
+                              <div key={`${record.type}-${record.time}`} className="flex gap-2 text-xs">
+                                <div className="flex flex-col items-center pt-1">
+                                  <span className={`w-1.5 h-1.5 rounded-full ${record.type === 'add' ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
+                                  {index < privateFriendRelationRecords.length - 1 && <span className="w-px flex-1 min-h-[28px] bg-zinc-200 mt-1" />}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className={`font-semibold ${record.type === 'add' ? 'text-emerald-600' : 'text-zinc-700 dark:text-zinc-300'}`}>{record.title}</div>
+                                  <div className="mt-0.5 text-zinc-400">{record.time}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -4442,35 +4314,25 @@ function Workspace() {
                   </div>
                 </div>
 
-	                <div className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm border border-zinc-100 dark:border-zinc-800">
-	                  <div className="flex items-center justify-between mb-4">
-	                    <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">跟进备注</h3>
-	                    <div className="flex items-center gap-3 text-[10px] text-zinc-500">
-	                      <button onClick={openAddFollowUpModal} className="flex items-center gap-1 hover:text-blue-600">
-	                        <Plus size={12} className="bg-blue-500 text-white rounded-full p-0.5" /> 添加
-	                      </button>
-	                      <button onClick={openFollowUpListModal} className="hover:text-blue-600">查看全部</button>
-	                    </div>
-	                  </div>
-	                  <div className="flex flex-col gap-3">
-	                    {privateFollowUpNotes.slice(0, 3).map((item) => (
-	                      <div key={item.id} className="relative border-l-2 border-blue-100 dark:border-blue-900/40 pl-3">
-	                        <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_0_3px_rgba(59,130,246,0.12)]"></span>
-	                        <div className="flex items-center justify-between gap-2 mb-1">
-	                          <span className="text-[10px] text-zinc-400">{item.time}</span>
-	                          <button onClick={() => openEditFollowUpModal(item)} className="text-[10px] text-blue-500 hover:text-blue-600 shrink-0">修改</button>
-	                        </div>
-	                        <div className="text-[11px] text-zinc-500 mb-1">
-	                          {item.operator} <span className="text-blue-500">{item.action}</span>
-	                        </div>
-	                        <div className="text-xs text-zinc-600 dark:text-zinc-400 leading-5 line-clamp-2">{item.text}</div>
-	                      </div>
-	                    ))}
-	                    {privateFollowUpNotes.length === 0 && (
-	                      <div className="py-6 text-center text-xs text-zinc-400">暂无跟进备注</div>
-	                    )}
-	                  </div>
-	                </div>
+                <div className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm border border-zinc-100 dark:border-zinc-800">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">跟进备注</h3>
+                    <div className="flex items-center gap-3 text-[10px] text-zinc-500">
+                      <button className="flex items-center gap-1 hover:text-blue-600">
+                        <Plus size={12} className="bg-blue-500 text-white rounded-full p-0.5" /> 添加
+                      </button>
+                      <button className="hover:text-blue-600">查看全部</button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {privateFollowUpNotes.map((item, i) => (
+                      <div key={i} className="border-l-2 border-zinc-200 dark:border-zinc-700 pl-3">
+                        <div className="text-[10px] text-zinc-400 mb-1">{item.time}</div>
+                        <div className="text-xs text-zinc-600 dark:text-zinc-400 leading-5">{item.text}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -5048,14 +4910,8 @@ function Workspace() {
                     <button className="p-1 hover:text-[#1683ff]"><FolderOpen size={17} /></button>
                     <button className="p-1 hover:text-[#1683ff]"><Smile size={17} /></button>
                   </div>
-	                  <div className="flex items-center gap-3">
-	                    <button
-	                      onClick={() => openPrivateChatFromNeed('7881301319959329', 'community')}
-	                      className="h-8 px-3 rounded-full border border-[#9acbff] bg-[#f4f9ff] text-xs text-[#1683ff] hover:bg-[#e7f3ff]"
-	                    >
-	                      发送私聊消息
-	                    </button>
-	                    <button className="h-8 px-3 rounded-full border border-[#d8e5f4] text-xs text-[#7d96b2] hover:border-[#9acbff] hover:text-[#1683ff]">选择发送消息的客服账号</button>
+                  <div className="flex items-center gap-3">
+                    <button className="h-8 px-3 rounded-full border border-[#d8e5f4] text-xs text-[#7d96b2] hover:border-[#9acbff] hover:text-[#1683ff]">选择发送消息的客服账号</button>
                     <button className="w-9 h-9 rounded-full bg-[#1683ff] text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
                       <Send size={18} />
                     </button>
@@ -5218,13 +5074,14 @@ function Workspace() {
                     <span className="flex-1">线索待派发</span>
                     <ChevronDown size={14} className={`text-[#7d96b2] transition-transform ${isLeadGroupExpanded ? 'rotate-180' : ''}`} />
                   </div>
-	                  {isLeadGroupExpanded && (
-	                    <div className="flex flex-col py-1">
-	                      <div onClick={() => setActiveChatFilter('lead_all')} className={`mx-3 pl-9 pr-3 py-1.5 rounded-md cursor-pointer text-sm transition-colors ${activeChatFilter === 'lead_all' ? 'text-[#1683ff] bg-[#e7f3ff]' : 'text-[#5f7892] hover:bg-[#eaf4ff] hover:text-[#1683ff]'}`}>
-	                        全部线索
-	                      </div>
-	                    </div>
-	                  )}
+                  {isLeadGroupExpanded && (
+                    <div className="flex flex-col py-1">
+                      <div onClick={() => setActiveChatFilter('lead_all')} className={`mx-3 pl-9 pr-3 py-1.5 rounded-md cursor-pointer text-sm flex items-center justify-between transition-colors ${activeChatFilter === 'lead_all' ? 'text-[#1683ff] bg-[#e7f3ff]' : 'text-[#5f7892] hover:bg-[#eaf4ff] hover:text-[#1683ff]'}`}>
+                        <span>全部线索</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white text-[#7d96b2] border border-[#d8e5f4]">{leadUsers.length}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-1">
@@ -5240,21 +5097,13 @@ function Workspace() {
                     <span className="flex-1">待跟进需求</span>
                     <ChevronDown size={14} className="text-[#7d96b2] rotate-180" />
                   </div>
-		                  <div className="flex flex-col py-1">
-		                    {[
-		                      { label: '社群需求', filter: 'community_need' as const },
-		                      { label: '朋友圈需求', filter: 'moments_need' as const },
-		                      { label: '转派后挖掘', filter: 'transfer_mining' as const },
-		                    ].map(item => (
-		                      <div
-		                        key={item.filter}
-		                        onClick={() => setActiveChatFilter(item.filter)}
-		                        className={`mx-3 pl-9 pr-3 py-1.5 rounded-md cursor-pointer text-sm transition-colors ${activeChatFilter === item.filter ? 'text-[#1683ff] bg-[#e7f3ff]' : 'text-[#5f7892] hover:bg-[#eaf4ff] hover:text-[#1683ff]'}`}
-		                      >
-		                        {item.label}
-		                      </div>
-		                    ))}
-	                  </div>
+                  <div className="flex flex-col py-1">
+                    {['群/朋友圈需求', '找房需求', '转派后挖掘'].map(item => (
+                      <div key={item} className="mx-3 pl-9 pr-3 py-1.5 rounded-md text-[#5f7892] hover:bg-[#eaf4ff] hover:text-[#1683ff] cursor-pointer text-sm transition-colors">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* 自定义分组 */}
@@ -5388,91 +5237,12 @@ function Workspace() {
                 </div>
               </div>
               <div className="relative">
-              <div className="flex h-9">
-                <div className="relative w-[128px] shrink-0">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsPrivateSessionFilterOpen(prev => !prev);
-                    }}
-                    className={`w-full h-9 px-3 bg-white border text-xs flex items-center justify-between rounded-l text-left transition-colors ${isPrivateSessionFilterOpen ? 'border-[#1683ff] text-[#1683ff] shadow-[0_0_0_2px_rgba(22,131,255,0.08)]' : 'border-[#cfd8e3] text-[#31506f]'}`}
-                  >
-                    <span className="truncate">{privateSessionFilterOption.label}</span>
-                    <ChevronDown size={12} className={`text-[#7d96b2] transition-transform ${isPrivateSessionFilterOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {isPrivateSessionFilterOpen && (
-                    <div
-                      className="absolute left-0 top-[calc(100%+4px)] z-30 w-full bg-white border border-[#dbe8f7] rounded-sm shadow-lg py-1"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {privateSessionFilterOptions.map(option => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => {
-                            setPrivateSessionFilterField(option.value);
-                            setPrivateSessionFilterKeyword('');
-                            setIsPrivateSessionFilterOpen(false);
-                          }}
-                          className={`w-full h-9 px-3 text-left text-xs transition-colors ${privateSessionFilterField === option.value ? 'bg-[#e7f3ff] text-[#1683ff] font-semibold' : 'text-[#31506f] hover:bg-[#f4f9ff]'}`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="relative flex-1 min-w-0">
-                  {privateSessionFilterField === 'id788' ? (
-                    <textarea
-                      rows={1}
-                      value={privateSessionFilterKeyword}
-                      onChange={(e) => setPrivateSessionFilterKeyword(e.target.value)}
-                      placeholder={privateSessionFilterOption.placeholder}
-                      className="w-full h-9 pl-3 pr-9 py-2 bg-white border border-l-0 border-[#cfd8e3] rounded-r text-xs leading-5 text-[#31506f] placeholder:text-[#9db4ca] resize-none overflow-hidden focus:outline-none focus:border-[#1683ff] focus:ring-2 focus:ring-[#1683ff]/10"
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      value={privateSessionFilterKeyword}
-                      onChange={(e) => setPrivateSessionFilterKeyword(e.target.value)}
-                      placeholder={privateSessionFilterOption.placeholder}
-                      className="w-full h-9 pl-3 pr-9 bg-white border border-l-0 border-[#cfd8e3] rounded-r text-xs text-[#31506f] placeholder:text-[#9db4ca] focus:outline-none focus:border-[#1683ff] focus:ring-2 focus:ring-[#1683ff]/10"
-                    />
-                  )}
-                  <Search size={15} className="absolute right-2.5 top-2.5 text-[#1683ff]" />
-                </div>
-              </div>
-              {privateSessionFilterField === 'id788' && privateSessionDisplayValues.length > 0 && (
-                <div className="mt-2 rounded-sm border border-[#dbe8f7] bg-white shadow-sm">
-                  <div className="flex items-center justify-between px-3 py-2 border-b border-[#eef4fb] text-[11px] text-[#5f7892]">
-                    <span>已输入 {privateSessionDisplayValues.length} 个788ID</span>
-                    <button
-                      type="button"
-                      onClick={() => setPrivateSessionFilterKeyword('')}
-                      className="text-[#1683ff] hover:text-[#006fe6]"
-                    >
-                      清空
-                    </button>
-                  </div>
-                  <div className="max-h-24 overflow-y-auto p-2 flex flex-wrap gap-1.5">
-                    {privateSessionDisplayValues.map((value, index) => (
-                      <span key={`${value}-${index}`} className="inline-flex items-center gap-1 max-w-full rounded border border-[#cfe4ff] bg-[#f4f9ff] px-2 py-1 text-[11px] leading-none text-[#31506f]">
-                        <span className="truncate">{value}</span>
-                        <button
-                          type="button"
-                          onClick={() => removePrivateSessionSearchValue(index)}
-                          className="text-[#7d96b2] hover:text-[#1683ff]"
-                          title="移除"
-                        >
-                          <X size={11} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+                <input
+                  type="text"
+                  placeholder="搜索客户名称"
+                  className="w-full h-9 pl-3 pr-9 bg-white border border-[#cfd8e3] rounded text-xs text-[#31506f] placeholder:text-[#9db4ca] focus:outline-none focus:border-[#1683ff] focus:ring-2 focus:ring-[#1683ff]/10"
+                />
+                <Search size={15} className="absolute right-2.5 top-2.5 text-[#1683ff]" />
               </div>
               <div className="flex gap-2">
                 <div className="flex-1 h-8 flex items-center justify-between px-3 bg-white border border-[#cfd8e3] rounded text-xs cursor-pointer text-[#31506f]">
@@ -5505,26 +5275,39 @@ function Workspace() {
                     setTabs(prev => [...prev, { id: tabId, title: session.name, type: 'chat' }]);
                     setActiveTabId(tabId);
                   }
-	                }} className={`flex gap-3 p-3 rounded-md cursor-pointer hover:bg-[#f4f9ff] transition-colors ${`chat-${session.customer788Id}` === activeTab.id ? 'bg-[#f3f6f8]' : ''}`}>
-	                  <div className="relative w-10 h-10 rounded-full bg-[#e7f3ff] shrink-0 overflow-hidden border border-[#d8e5f4]">
-	                    <img src={`https://picsum.photos/seed/${session.name}/40/40`} alt="avatar" className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" />
-	                    {session.unread && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#ff5b5b] border border-white"></span>}
-	                  </div>
-	                  <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
-	                    <div className="flex justify-between items-center">
-	                      <span className="font-semibold text-[#31506f] truncate">{session.name}</span>
-	                      <span className="text-xs text-[#9db4ca] shrink-0">{session.time}</span>
-	                    </div>
-	                    <div className="flex items-center gap-2">
-	                      <span className="text-xs text-[#7d96b2] truncate flex-1">{session.msg}</span>
-	                      {session.tag && (
-	                        <span className={`text-[10px] leading-4 px-1 rounded border shrink-0 ${session.tag === 'AI' ? 'text-pink-500 border-pink-200 bg-pink-50 dark:bg-pink-950/30 dark:border-pink-900' : 'text-blue-500 border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900'}`}>
-	                          {session.tag}
-	                        </span>
-	                      )}
-	                    </div>
-	                  </div>
-	                </div>
+                }} className={`flex gap-3 p-3 rounded-md cursor-pointer hover:bg-[#f4f9ff] transition-colors ${`chat-${session.customer788Id}` === activeTab.id ? 'bg-[#e7f3ff]' : ''}`}>
+                  <div className="relative w-10 h-10 rounded-full bg-[#e7f3ff] shrink-0 overflow-hidden border border-[#d8e5f4]">
+                    <img src={`https://picsum.photos/seed/${session.name}/40/40`} alt="avatar" className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" />
+                    {session.unread && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#ff5b5b] border border-white"></span>}
+                  </div>
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-[#31506f] truncate">{session.name}</span>
+                      <span className="text-xs text-[#9db4ca] shrink-0">{session.time}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-[#7d96b2] truncate flex-1">{session.msg}</span>
+                      {session.tag && (
+                        <span className={`text-[10px] px-1 rounded border shrink-0 ${session.tag === 'AI' ? 'text-pink-500 border-pink-200 bg-pink-50 dark:bg-pink-950/30 dark:border-pink-900' : 'text-blue-500 border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900'}`}>
+                          {session.tag}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] text-zinc-400">
+                      <span className="truncate">{session.customer788Id}</span>
+                      {session.abnormalTag && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30">
+                          {session.abnormalTag}
+                        </span>
+                      )}
+                      {session.isBlacklisted && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 border border-red-100 dark:border-red-900/30">
+                          黑名单
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </>
@@ -5671,6 +5454,18 @@ function Workspace() {
       </div>
       )}
 
+      {activeModule === 'moments' && !isGroupPanelOpen && (
+        <div className="hidden 2xl:flex w-10 border-r border-[#dbe8f7] bg-[#f3f9ff] shrink-0 items-start justify-center pt-4">
+          <button
+            onClick={() => setIsGroupPanelOpen(true)}
+            className="text-[#7d96b2] hover:text-[#1683ff] hover:bg-[#e7f3ff] transition-colors p-2 rounded-lg"
+            title="展开动态筛选"
+          >
+            <PanelLeftOpen size={18} />
+          </button>
+        </div>
+      )}
+
       {/* Middle Panel: Tabs and Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950 relative">
         {/* Tabs */}
@@ -5706,11 +5501,19 @@ function Workspace() {
                accounts={MOCK_ACCOUNTS}
                selectedMomentId={selectedMomentId}
                onSelectMoment={setSelectedMomentId}
-	               onOpenProfile={() => {}}
-	               onSendMessage={(target) => {
-	                const userId = typeof target === 'string' ? target : target.userId;
-	                 openPrivateChatFromNeed(userId, 'moments');
-	               }}
+               onOpenProfile={() => {}}
+               onSendMessage={(target) => {
+                const userId = typeof target === 'string' ? target : target.userId;
+                 // Open a new tab for the user if it doesn't exist, and switch to it
+                 const user = sessionList.find(s => s.customer788Id === userId) || sessionList[0];
+                 const tabId = user ? `chat-${user.customer788Id}` : `chat-${userId}`;
+                 const existingTab = tabs.find(t => t.id === tabId);
+                 if (!existingTab) {
+                   setTabs([...tabs, { id: tabId, title: user ? user.name : '新会话', type: 'chat' }]);
+                 }
+                 setActiveTabId(tabId);
+                 setActiveModule('chat');
+               }}
                filter={activeMomentFilter}
                tabs={tabs}
                setTabs={setTabs}
@@ -5816,8 +5619,8 @@ function Workspace() {
         </>
       )}
 
-	      {miniProgramContextMenu.visible && (
-	        <>
+      {miniProgramContextMenu.visible && (
+        <>
           <div
             className="fixed inset-0 z-40"
             onClick={() => setMiniProgramContextMenu(prev => ({ ...prev, visible: false }))}
@@ -5847,238 +5650,11 @@ function Workspace() {
               创建撮合群
             </button>
           </div>
-	        </>
-	      )}
+        </>
+      )}
 
-	      <AnimatePresence>
-	        {deliveryGroupNotice && (
-	          <motion.div
-	            initial={{ opacity: 0, y: -12 }}
-	            animate={{ opacity: 1, y: 0 }}
-	            exit={{ opacity: 0, y: -12 }}
-	            className="fixed top-16 left-1/2 -translate-x-1/2 z-[90] rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700 shadow-lg"
-	          >
-	            {deliveryGroupNotice}
-	          </motion.div>
-	        )}
-	      </AnimatePresence>
-
-	      <AnimatePresence>
-	        {isDeliveryGroupModalOpen && (
-	          <div className="fixed inset-0 z-[75] flex items-center justify-center bg-black/45 backdrop-blur-[1px]" onClick={(e) => e.stopPropagation()}>
-	            <motion.div
-	              initial={{ opacity: 0, scale: 0.96 }}
-	              animate={{ opacity: 1, scale: 1 }}
-	              exit={{ opacity: 0, scale: 0.96 }}
-	              className="w-[520px] max-h-[78vh] bg-white rounded-lg shadow-2xl border border-zinc-200 flex flex-col overflow-hidden"
-	            >
-	              <div className="h-12 px-6 border-b border-zinc-100 flex items-center justify-between">
-	                <h3 className="font-semibold text-lg text-zinc-900">创建交付群</h3>
-	                <button onClick={closeDeliveryGroupModal} className="text-zinc-400 hover:text-zinc-600">
-	                  <X size={18} />
-	                </button>
-	              </div>
-	              <div className="px-6 py-5 flex-1 overflow-y-auto">
-	                <label className="block text-sm text-zinc-600 mb-2">
-	                  房源编号 <span className="text-red-500">*</span>
-	                </label>
-	                <input
-	                  autoFocus
-	                  value={deliveryHouseCode}
-	                  onChange={(e) => {
-	                    const value = e.target.value;
-	                    setDeliveryHouseCode(value);
-	                    if (!value.trim()) {
-	                      setDeliveryHouseCodeError('');
-	                    } else if (!/^\d+$/.test(value.trim())) {
-	                      setDeliveryHouseCodeError('房源编号仅支持纯数字');
-	                    } else {
-	                      setDeliveryHouseCodeError('');
-	                    }
-	                  }}
-	                  onKeyDown={(e) => {
-	                    if (e.key === 'Enter') {
-	                      submitDeliveryGroup();
-	                    }
-	                  }}
-	                  placeholder="请输入纯数字房源编号"
-	                  className={`w-full h-10 rounded border px-3 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 ${deliveryHouseCodeError ? 'border-red-300 focus:border-red-400' : 'border-zinc-300 focus:border-blue-500'}`}
-	                />
-	                {deliveryHouseCodeError && (
-	                  <div className="mt-2 text-xs text-red-500">{deliveryHouseCodeError}</div>
-	                )}
-	                <div className="mt-3 text-xs leading-5 text-zinc-500">
-	                  保存后将通知【“新版-合肥朋友圈建群”工作流】，由工作流自动创建交付群。
-	                </div>
-		                <div className="mt-5 rounded-md border border-zinc-100 bg-zinc-50">
-		                  <div className="px-3 py-2 border-b border-zinc-100 text-xs font-medium text-zinc-600">操作记录</div>
-		                  <div className="max-h-36 overflow-y-auto">
-		                    {deliveryGroupLogs.length > 0 ? (
-		                      deliveryGroupLogs.map(log => (
-		                        <div key={log.id} className="px-3 py-2 border-b border-zinc-100 last:border-b-0 text-xs text-zinc-600">
-		                          <div className="flex items-center justify-between gap-3">
-		                            <span className="font-medium text-zinc-700">房源编号：{log.houseCode}</span>
-		                            <span className="text-zinc-400 shrink-0">{log.time}</span>
-		                          </div>
-		                          <div className="mt-1 text-right text-zinc-400">{log.operator}</div>
-		                        </div>
-		                      ))
-	                    ) : (
-	                      <div className="px-3 py-6 text-center text-xs text-zinc-400">暂无操作记录</div>
-	                    )}
-	                  </div>
-	                </div>
-	              </div>
-	              <div className="h-16 border-t border-zinc-100 flex items-center justify-center gap-3">
-	                <button onClick={closeDeliveryGroupModal} className="h-8 px-4 rounded border border-zinc-200 text-sm text-zinc-600 hover:bg-zinc-50">
-	                  取消
-	                </button>
-	                <button onClick={submitDeliveryGroup} className="h-8 px-4 rounded bg-blue-600 text-sm text-white hover:bg-blue-700">
-	                  确认
-	                </button>
-	              </div>
-	            </motion.div>
-	          </div>
-	        )}
-	      </AnimatePresence>
-
-	      <AnimatePresence>
-	        {isFollowUpModalOpen && (
-	          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 backdrop-blur-[1px]" onClick={(e) => e.stopPropagation()}>
-		            <motion.div
-		              initial={{ opacity: 0, scale: 0.96 }}
-		              animate={{ opacity: 1, scale: 1 }}
-		              exit={{ opacity: 0, scale: 0.96 }}
-		              className={`${followUpModalMode === 'add' ? 'w-[500px]' : 'w-[740px]'} max-h-[78vh] bg-white rounded-lg shadow-2xl border border-zinc-200 flex flex-col overflow-hidden`}
-		            >
-		              <div className="h-12 px-6 border-b border-zinc-100 flex items-center justify-between">
-		                <h3 className="font-semibold text-lg text-zinc-900">
-		                  {followUpModalMode === 'add' ? '添加跟进备注' : followUpModalMode === 'edit' ? '修改跟进备注' : '跟进备注记录'}
-		                </h3>
-	                <button
-	                  onClick={() => {
-	                    setIsFollowUpModalOpen(false);
-	                    setFollowUpModalMode('list');
-	                    setEditingFollowUpId(null);
-	                    setFollowUpDraft('');
-	                  }}
-	                  className="text-zinc-400 hover:text-zinc-600"
-	                >
-	                  <X size={18} />
-	                </button>
-	              </div>
-
-		              <div className="flex-1 overflow-y-auto px-6 py-5">
-		                {(followUpModalMode === 'add' || followUpModalMode === 'edit') && (
-		                  <div>
-		                    <textarea
-		                      autoFocus
-		                      value={followUpDraft}
-		                      onChange={(e) => setFollowUpDraft(e.target.value)}
-		                      placeholder="请输入备注信息"
-		                      className="w-full h-36 resize-none rounded border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 leading-6 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
-		                    />
-		                  </div>
-		                )}
-
-		                {followUpModalMode === 'list' && (
-		                  <div className="mb-5 flex items-center gap-3">
-		                    <label className="text-sm text-zinc-600 shrink-0">跟进内容：</label>
-		                    <input
-		                      type="text"
-		                      value={followUpSearchKeyword}
-		                      onChange={(e) => setFollowUpSearchKeyword(e.target.value)}
-		                      className="h-8 w-48 rounded border border-zinc-300 px-3 text-sm text-zinc-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
-		                    />
-		                  </div>
-		                )}
-
-		                {followUpModalMode === 'list' && (
-		                <div className="relative pl-6">
-		                  <div className="absolute left-[7px] top-2 bottom-2 w-px bg-zinc-200"></div>
-		                  <div className="space-y-5">
-		                    {visibleFollowUpNotes.map(note => (
-		                      <div key={note.id} className="relative">
-	                        <span className="absolute -left-[22px] top-1 w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.12)]"></span>
-	                        <div className="flex items-start justify-between gap-4">
-	                          <div className="min-w-0">
-	                            <div className="text-sm text-zinc-700">
-	                              <span className="font-medium">{note.operator}</span>
-	                              <span className="mx-1 text-blue-600">{note.action}</span>
-	                            </div>
-	                            <div className="mt-2 text-sm leading-6 text-zinc-600 whitespace-pre-wrap">{note.text}</div>
-	                          </div>
-	                          <div className="shrink-0 flex flex-col items-end gap-2">
-	                            <span className="text-xs text-zinc-400">{note.time}</span>
-	                            <div className="flex items-center gap-2 text-xs">
-	                              <button onClick={() => openEditFollowUpModal(note)} className="text-blue-500 hover:text-blue-600">修改</button>
-	                              <button
-	                                onClick={() => {
-	                                  if (window.confirm('确认删除这条跟进备注吗？')) {
-	                                    deleteFollowUpNote(note.id);
-	                                  }
-	                                }}
-	                                className="text-zinc-400 hover:text-red-500"
-	                              >
-	                                删除
-	                              </button>
-	                            </div>
-	                          </div>
-	                        </div>
-	                      </div>
-	                    ))}
-		                    {visibleFollowUpNotes.length === 0 && (
-		                      <div className="py-12 text-center text-sm text-zinc-400">暂无跟进备注</div>
-		                    )}
-		                  </div>
-		                </div>
-		                )}
-		              </div>
-
-		              <div className={`h-16 border-t border-zinc-100 flex items-center ${followUpModalMode === 'list' ? 'justify-center' : 'justify-center gap-3'}`}>
-		                {followUpModalMode === 'list' ? (
-		                  <button
-		                    onClick={() => {
-		                      setIsFollowUpModalOpen(false);
-		                      setFollowUpModalMode('list');
-		                      setEditingFollowUpId(null);
-		                      setFollowUpDraft('');
-		                      setFollowUpSearchKeyword('');
-		                    }}
-		                    className="h-8 px-4 rounded border border-zinc-200 text-sm text-zinc-600 hover:bg-zinc-50"
-		                  >
-		                    关闭
-		                  </button>
-		                ) : (
-		                  <>
-		                    <button
-		                      onClick={() => {
-		                        setIsFollowUpModalOpen(false);
-		                        setFollowUpModalMode('list');
-		                        setEditingFollowUpId(null);
-		                        setFollowUpDraft('');
-		                      }}
-		                      className="h-8 px-4 rounded border border-zinc-200 text-sm text-zinc-600 hover:bg-zinc-50"
-		                    >
-		                      取消
-		                    </button>
-		                    <button
-		                      disabled={!followUpDraft.trim()}
-		                      onClick={saveFollowUpNote}
-		                      className="h-8 px-4 rounded bg-blue-600 text-sm text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-		                    >
-		                      保存
-		                    </button>
-		                  </>
-		                )}
-		              </div>
-	            </motion.div>
-	          </div>
-	        )}
-	      </AnimatePresence>
-
-	      {/* --- Modals --- */}
-	      <AnimatePresence>
+      {/* --- Modals --- */}
+      <AnimatePresence>
         {isMatchGroupModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={(e) => e.stopPropagation()}>
             <motion.div
@@ -6712,6 +6288,18 @@ interface SidebarProps {
   setIsReasonDropdownOpen?: (open: boolean) => void;
 }
 
+interface AssistantHistoryItem {
+  id: string;
+  title: string;
+  date: string;
+  sortTime: number;
+  crowdPackCount: number;
+  groupPackCount: number;
+  pushTaskCount: number;
+  isPinned: boolean;
+  isArchived: boolean;
+}
+
 function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setIsBlacklistModalOpen, blacklistReason, setBlacklistReason, isReasonDropdownOpen, setIsReasonDropdownOpen }: SidebarProps) {
   const [messages, setMessages] = useState<Message[]>([
     { id: 'init', role: 'ai', content: '你好！我是你的 AI 私域助手。你可以让我帮你圈选人群，或者创建推送任务。' },
@@ -6740,6 +6328,17 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
   const [activeBubbleId, setActiveBubbleId] = useState<string | null>(null);
   const [inputLocked, setInputLocked] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [historyView, setHistoryView] = useState<'active' | 'archived'>('active');
+  const [openHistoryMenuId, setOpenHistoryMenuId] = useState<string | null>(null);
+  const [renamingHistoryItem, setRenamingHistoryItem] = useState<AssistantHistoryItem | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [archiveConfirmItem, setArchiveConfirmItem] = useState<AssistantHistoryItem | null>(null);
+  const [historyItems, setHistoryItems] = useState<AssistantHistoryItem[]>([
+    { id: 'hefei-school-push', title: '圈选合肥学区房用户并推送活动', date: '今天 10:30', sortTime: 3, crowdPackCount: 1, groupPackCount: 1, pushTaskCount: 2, isPinned: true, isArchived: false },
+    { id: 'moments-copy', title: '生成朋友圈文案', date: '昨天 15:20', sortTime: 2, crowdPackCount: 0, groupPackCount: 0, pushTaskCount: 0, isPinned: false, isArchived: false },
+    { id: 'churn-analysis', title: '分析近期客户流失原因', date: '3月1日 09:15', sortTime: 1, crowdPackCount: 1, groupPackCount: 0, pushTaskCount: 0, isPinned: false, isArchived: false },
+    { id: 'old-group-push', title: '南京新房群聊推送复盘', date: '2月18日 16:40', sortTime: 0, crowdPackCount: 0, groupPackCount: 1, pushTaskCount: 1, isPinned: false, isArchived: true }
+  ]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const demoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -6986,7 +6585,8 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
           setDemoStep(s => s + 1);
           break;
         case 'UPDATE_BUBBLE':
-          setBubbles(prev => prev.map(b => b.id === action.payload.id ? action.payload : b));
+          setBubbles(prev => prev.map(b => b.id === (step.payload as Bubble).id ? step.payload as Bubble : b));
+          setDemoStep(s => s + 1);
           break;
         case 'TOGGLE_BUBBLE':
           setActiveBubbleId(step.payload as string);
@@ -7053,6 +6653,65 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
     setActiveBubbleId(null);
     setInputLocked(false);
     stopDemo();
+  };
+
+  const sortedHistoryItems = historyItems
+    .filter(item => historyView === 'archived' ? item.isArchived : !item.isArchived)
+    .sort((a, b) => Number(b.isPinned) - Number(a.isPinned) || b.sortTime - a.sortTime);
+
+  const updateHistoryItem = (id: string, patch: Partial<AssistantHistoryItem>) => {
+    setHistoryItems(prev => prev.map(item => item.id === id ? { ...item, ...patch } : item));
+  };
+
+  const openHistoryPanel = () => {
+    setHistoryView('active');
+    setOpenHistoryMenuId(null);
+    setShowHistory(true);
+  };
+
+  const handleOpenHistoryItem = (item: AssistantHistoryItem) => {
+    setOpenHistoryMenuId(null);
+    if (item.id === 'hefei-school-push') {
+      loadHistoryDemo();
+      return;
+    }
+    setShowHistory(false);
+  };
+
+  const toggleHistoryPin = (item: AssistantHistoryItem) => {
+    if (item.isArchived) return;
+    updateHistoryItem(item.id, { isPinned: !item.isPinned });
+    setOpenHistoryMenuId(null);
+  };
+
+  const openRenameHistory = (item: AssistantHistoryItem) => {
+    setRenamingHistoryItem(item);
+    setRenameValue(item.title);
+    setOpenHistoryMenuId(null);
+  };
+
+  const confirmRenameHistory = () => {
+    const nextTitle = renameValue.trim();
+    if (!renamingHistoryItem || !nextTitle) return;
+    updateHistoryItem(renamingHistoryItem.id, { title: nextTitle.slice(0, 30) });
+    setRenamingHistoryItem(null);
+    setRenameValue('');
+  };
+
+  const requestArchiveHistory = (item: AssistantHistoryItem) => {
+    setArchiveConfirmItem(item);
+    setOpenHistoryMenuId(null);
+  };
+
+  const confirmArchiveHistory = () => {
+    if (!archiveConfirmItem) return;
+    updateHistoryItem(archiveConfirmItem.id, { isArchived: true, isPinned: false });
+    setArchiveConfirmItem(null);
+  };
+
+  const restoreArchivedHistory = (item: AssistantHistoryItem) => {
+    updateHistoryItem(item.id, { isArchived: false, isPinned: false });
+    setOpenHistoryMenuId(null);
   };
 
   const loadHistoryDemo = () => {
@@ -7154,7 +6813,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
           <button onClick={handleNewChat} className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500" title="新建对话">
             <Plus size={16} />
           </button>
-          <button onClick={() => setShowHistory(true)} className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500" title="历史对话">
+          <button onClick={openHistoryPanel} className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500" title="历史对话">
             <History size={16} />
           </button>
           <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
@@ -7281,41 +6940,219 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
             exit={{ opacity: 0, y: -10 }}
             className="absolute top-12 left-0 right-0 bottom-0 bg-white dark:bg-zinc-900 z-30 flex flex-col"
           >
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 font-medium text-sm text-zinc-800 dark:text-zinc-200 flex justify-between items-center">
-              历史对话
-              <button onClick={() => setShowHistory(false)} className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
-                <X size={16} />
-              </button>
+            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                {historyView === 'archived' && (
+                  <button
+                    onClick={() => {
+                      setHistoryView('active');
+                      setOpenHistoryMenuId(null);
+                    }}
+                    className="p-1 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+                    title="返回历史对话"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                )}
+                <span className="font-medium text-sm text-zinc-800 dark:text-zinc-200">
+                  {historyView === 'archived' ? '归档对话' : '历史对话'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                {historyView === 'active' && (
+                  <button
+                    onClick={() => {
+                      setHistoryView('archived');
+                      setOpenHistoryMenuId(null);
+                    }}
+                    className="px-2 py-1 rounded-md text-xs text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors inline-flex items-center gap-1"
+                    title="查看归档对话"
+                  >
+                    <Archive size={14} />
+                    归档
+                  </button>
+                )}
+                <button onClick={() => setShowHistory(false)} className="p-1 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
-              {[
-                { title: '圈选合肥学区房用户并推送活动', date: '今天 10:30', crowdPackCount: 1, groupPackCount: 1, pushTaskCount: 2, onClick: loadHistoryDemo },
-                { title: '生成朋友圈文案', date: '昨天 15:20', crowdPackCount: 0, groupPackCount: 0, pushTaskCount: 0, onClick: () => setShowHistory(false) },
-                { title: '分析近期客户流失原因', date: '3月1日 09:15', crowdPackCount: 1, groupPackCount: 0, pushTaskCount: 0, onClick: () => setShowHistory(false) }
-              ].map((item, i) => (
-                <div key={i} className="p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-lg cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800/50 last:border-0" onClick={item.onClick}>
-                  <div className="flex justify-between items-start mb-1">
-                    <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{item.title}</div>
-                    <div className="text-xs text-zinc-500">{item.date}</div>
-                  </div>
-                  <div className="flex gap-2">
-                    {item.crowdPackCount > 0 && (
-                        <span className="text-xs text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded">人群包({item.crowdPackCount})</span>
-                    )}
-                    {item.groupPackCount > 0 && (
-                        <span className="text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">群聊包({item.groupPackCount})</span>
-                    )}
-                    {item.pushTaskCount > 0 && (
-                        <span className="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">推送任务({item.pushTaskCount})</span>
-                    )}
-                    {item.crowdPackCount === 0 && item.groupPackCount === 0 && item.pushTaskCount === 0 && (
-                         <span className="text-xs text-zinc-400">无关联数据</span>
-                    )}
-                  </div>
+              {sortedHistoryItems.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-sm text-zinc-400">
+                  {historyView === 'archived' ? '暂无归档对话' : '暂无历史对话'}
                 </div>
-              ))}
+              ) : (
+                sortedHistoryItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="group relative p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-lg cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800/50 last:border-0"
+                    onClick={() => handleOpenHistoryItem(item)}
+                  >
+                    <div className="flex justify-between items-start gap-3 mb-1">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">{item.title}</span>
+                          {!item.isArchived && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleHistoryPin(item);
+                              }}
+                              className={`shrink-0 p-0.5 rounded transition-colors ${item.isPinned ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'text-zinc-300 opacity-0 group-hover:opacity-100 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30'}`}
+                              title={item.isPinned ? '取消置顶' : '置顶'}
+                            >
+                              <Pin size={13} className={item.isPinned ? 'fill-current' : ''} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <div className="text-xs text-zinc-500">{item.date}</div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenHistoryMenuId(openHistoryMenuId === item.id ? null : item.id);
+                          }}
+                          className="p-1 rounded-md text-zinc-400 opacity-0 group-hover:opacity-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all"
+                          title="更多"
+                        >
+                          <MoreHorizontal size={15} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-wrap pr-8">
+                      {item.crowdPackCount > 0 && (
+                        <span className="text-xs text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded">人群包({item.crowdPackCount})</span>
+                      )}
+                      {item.groupPackCount > 0 && (
+                        <span className="text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">群聊包({item.groupPackCount})</span>
+                      )}
+                      {item.pushTaskCount > 0 && (
+                        <span className="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">推送任务({item.pushTaskCount})</span>
+                      )}
+                      {item.crowdPackCount === 0 && item.groupPackCount === 0 && item.pushTaskCount === 0 && (
+                        <span className="text-xs text-zinc-400">无关联数据</span>
+                      )}
+                    </div>
+                    {openHistoryMenuId === item.id && (
+                      <div
+                        className="absolute right-3 top-9 z-40 w-32 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg p-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {!item.isArchived && (
+                          <button
+                            onClick={() => toggleHistoryPin(item)}
+                            className="w-full px-2 py-1.5 rounded-md text-xs text-left text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
+                          >
+                            <Pin size={13} />
+                            {item.isPinned ? '取消置顶' : '置顶'}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openRenameHistory(item)}
+                          className="w-full px-2 py-1.5 rounded-md text-xs text-left text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
+                        >
+                          <Pencil size={13} />
+                          重命名
+                        </button>
+                        {item.isArchived ? (
+                          <button
+                            onClick={() => restoreArchivedHistory(item)}
+                            className="w-full px-2 py-1.5 rounded-md text-xs text-left text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center gap-2"
+                          >
+                            <Archive size={13} />
+                            取消归档
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => requestArchiveHistory(item)}
+                            className="w-full px-2 py-1.5 rounded-md text-xs text-left text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
+                          >
+                            <Archive size={13} />
+                            归档
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {renamingHistoryItem && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="w-[320px] rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl overflow-hidden"
+            >
+              <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">重命名对话</span>
+                <button onClick={() => setRenamingHistoryItem(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="p-4">
+                <input
+                  value={renameValue}
+                  maxLength={30}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  className="w-full px-3 py-2 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+                <div className="mt-1 text-right text-[11px] text-zinc-400">{renameValue.trim().length}/30</div>
+              </div>
+              <div className="px-4 py-3 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 flex justify-end gap-2">
+                <button onClick={() => setRenamingHistoryItem(null)} className="px-3 py-1.5 rounded-md text-xs text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+                  取消
+                </button>
+                <button
+                  onClick={confirmRenameHistory}
+                  disabled={!renameValue.trim()}
+                  className="px-3 py-1.5 rounded-md text-xs text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  确认
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {archiveConfirmItem && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="w-[340px] rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl overflow-hidden"
+            >
+              <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">确认归档对话？</span>
+                <button onClick={() => setArchiveConfirmItem(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="p-4 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                归档后，该对话将从历史对话列表中移至归档对话，可随时取消归档。已生成的人群包、群聊包和推送任务不会被删除。
+              </div>
+              <div className="px-4 py-3 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 flex justify-end gap-2">
+                <button onClick={() => setArchiveConfirmItem(null)} className="px-3 py-1.5 rounded-md text-xs text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+                  取消
+                </button>
+                <button onClick={confirmArchiveHistory} className="px-3 py-1.5 rounded-md text-xs text-white bg-blue-600 hover:bg-blue-700">
+                  确认归档
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
@@ -7449,6 +7286,7 @@ if (rootElement) {
   const root = createRoot(rootElement);
   root.render(<App />);
 }
+
 </script>
 <script>
 window.addEventListener('DOMContentLoaded', () => {

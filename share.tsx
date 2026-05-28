@@ -4,7 +4,7 @@
 // Consolidated Imports
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ArrowUp, AtSign, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, ChevronLeft, Circle, Clock, Copy, FileText, Filter, History, Image as ImageIcon, ListFilter, Loader2, Mail, MessageSquare, MoreHorizontal, Play, Plus, RefreshCw, Search, Send, Slash, Smile, Square, User, UserPlus, Users, X, Zap, LineChart, UserCircle, FolderPlus, Eye, Trash2, PanelLeftOpen, AlertCircle, Megaphone, Tag, Settings, LayoutGrid, Command, Image, FolderOpen, Flame, Heart, MessageCircle, Share2, ExternalLink, Compass, Link as LinkIcon } from 'lucide-react';
+import { Archive, ArrowUp, AtSign, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, ChevronLeft, Circle, Clock, Copy, FileText, Filter, History, Image as ImageIcon, ListFilter, Loader2, Mail, MessageSquare, MoreHorizontal, Pencil, Pin, Play, Plus, RefreshCw, Search, Send, Slash, Smile, Square, User, UserPlus, Users, X, Zap, LineChart, UserCircle, FolderPlus, Eye, Trash2, PanelLeftOpen, AlertCircle, Megaphone, Tag, Settings, LayoutGrid, Command, Image, FolderOpen, Flame, Heart, MessageCircle, Share2, ExternalLink, Compass, Link as LinkIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
 // --- Analytics Hook (埋点统计工具) ---
@@ -6203,6 +6203,18 @@ interface SidebarProps {
   setIsReasonDropdownOpen?: (open: boolean) => void;
 }
 
+interface AssistantHistoryItem {
+  id: string;
+  title: string;
+  date: string;
+  sortTime: number;
+  crowdPackCount: number;
+  groupPackCount: number;
+  pushTaskCount: number;
+  isPinned: boolean;
+  isArchived: boolean;
+}
+
 function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setIsBlacklistModalOpen, blacklistReason, setBlacklistReason, isReasonDropdownOpen, setIsReasonDropdownOpen }: SidebarProps) {
   const [messages, setMessages] = useState<Message[]>([
     { id: 'init', role: 'ai', content: '你好！我是你的 AI 私域助手。你可以让我帮你圈选人群，或者创建推送任务。' },
@@ -6231,6 +6243,17 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
   const [activeBubbleId, setActiveBubbleId] = useState<string | null>(null);
   const [inputLocked, setInputLocked] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [historyView, setHistoryView] = useState<'active' | 'archived'>('active');
+  const [openHistoryMenuId, setOpenHistoryMenuId] = useState<string | null>(null);
+  const [renamingHistoryItem, setRenamingHistoryItem] = useState<AssistantHistoryItem | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [archiveConfirmItem, setArchiveConfirmItem] = useState<AssistantHistoryItem | null>(null);
+  const [historyItems, setHistoryItems] = useState<AssistantHistoryItem[]>([
+    { id: 'hefei-school-push', title: '圈选合肥学区房用户并推送活动', date: '今天 10:30', sortTime: 3, crowdPackCount: 1, groupPackCount: 1, pushTaskCount: 2, isPinned: true, isArchived: false },
+    { id: 'moments-copy', title: '生成朋友圈文案', date: '昨天 15:20', sortTime: 2, crowdPackCount: 0, groupPackCount: 0, pushTaskCount: 0, isPinned: false, isArchived: false },
+    { id: 'churn-analysis', title: '分析近期客户流失原因', date: '3月1日 09:15', sortTime: 1, crowdPackCount: 1, groupPackCount: 0, pushTaskCount: 0, isPinned: false, isArchived: false },
+    { id: 'old-group-push', title: '南京新房群聊推送复盘', date: '2月18日 16:40', sortTime: 0, crowdPackCount: 0, groupPackCount: 1, pushTaskCount: 1, isPinned: false, isArchived: true }
+  ]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const demoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -6477,7 +6500,8 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
           setDemoStep(s => s + 1);
           break;
         case 'UPDATE_BUBBLE':
-          setBubbles(prev => prev.map(b => b.id === action.payload.id ? action.payload : b));
+          setBubbles(prev => prev.map(b => b.id === (step.payload as Bubble).id ? step.payload as Bubble : b));
+          setDemoStep(s => s + 1);
           break;
         case 'TOGGLE_BUBBLE':
           setActiveBubbleId(step.payload as string);
@@ -6544,6 +6568,65 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
     setActiveBubbleId(null);
     setInputLocked(false);
     stopDemo();
+  };
+
+  const sortedHistoryItems = historyItems
+    .filter(item => historyView === 'archived' ? item.isArchived : !item.isArchived)
+    .sort((a, b) => Number(b.isPinned) - Number(a.isPinned) || b.sortTime - a.sortTime);
+
+  const updateHistoryItem = (id: string, patch: Partial<AssistantHistoryItem>) => {
+    setHistoryItems(prev => prev.map(item => item.id === id ? { ...item, ...patch } : item));
+  };
+
+  const openHistoryPanel = () => {
+    setHistoryView('active');
+    setOpenHistoryMenuId(null);
+    setShowHistory(true);
+  };
+
+  const handleOpenHistoryItem = (item: AssistantHistoryItem) => {
+    setOpenHistoryMenuId(null);
+    if (item.id === 'hefei-school-push') {
+      loadHistoryDemo();
+      return;
+    }
+    setShowHistory(false);
+  };
+
+  const toggleHistoryPin = (item: AssistantHistoryItem) => {
+    if (item.isArchived) return;
+    updateHistoryItem(item.id, { isPinned: !item.isPinned });
+    setOpenHistoryMenuId(null);
+  };
+
+  const openRenameHistory = (item: AssistantHistoryItem) => {
+    setRenamingHistoryItem(item);
+    setRenameValue(item.title);
+    setOpenHistoryMenuId(null);
+  };
+
+  const confirmRenameHistory = () => {
+    const nextTitle = renameValue.trim();
+    if (!renamingHistoryItem || !nextTitle) return;
+    updateHistoryItem(renamingHistoryItem.id, { title: nextTitle.slice(0, 30) });
+    setRenamingHistoryItem(null);
+    setRenameValue('');
+  };
+
+  const requestArchiveHistory = (item: AssistantHistoryItem) => {
+    setArchiveConfirmItem(item);
+    setOpenHistoryMenuId(null);
+  };
+
+  const confirmArchiveHistory = () => {
+    if (!archiveConfirmItem) return;
+    updateHistoryItem(archiveConfirmItem.id, { isArchived: true, isPinned: false });
+    setArchiveConfirmItem(null);
+  };
+
+  const restoreArchivedHistory = (item: AssistantHistoryItem) => {
+    updateHistoryItem(item.id, { isArchived: false, isPinned: false });
+    setOpenHistoryMenuId(null);
   };
 
   const loadHistoryDemo = () => {
@@ -6645,7 +6728,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
           <button onClick={handleNewChat} className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500" title="新建对话">
             <Plus size={16} />
           </button>
-          <button onClick={() => setShowHistory(true)} className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500" title="历史对话">
+          <button onClick={openHistoryPanel} className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500" title="历史对话">
             <History size={16} />
           </button>
           <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
@@ -6772,41 +6855,219 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
             exit={{ opacity: 0, y: -10 }}
             className="absolute top-12 left-0 right-0 bottom-0 bg-white dark:bg-zinc-900 z-30 flex flex-col"
           >
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 font-medium text-sm text-zinc-800 dark:text-zinc-200 flex justify-between items-center">
-              历史对话
-              <button onClick={() => setShowHistory(false)} className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
-                <X size={16} />
-              </button>
+            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                {historyView === 'archived' && (
+                  <button
+                    onClick={() => {
+                      setHistoryView('active');
+                      setOpenHistoryMenuId(null);
+                    }}
+                    className="p-1 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+                    title="返回历史对话"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                )}
+                <span className="font-medium text-sm text-zinc-800 dark:text-zinc-200">
+                  {historyView === 'archived' ? '归档对话' : '历史对话'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                {historyView === 'active' && (
+                  <button
+                    onClick={() => {
+                      setHistoryView('archived');
+                      setOpenHistoryMenuId(null);
+                    }}
+                    className="px-2 py-1 rounded-md text-xs text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors inline-flex items-center gap-1"
+                    title="查看归档对话"
+                  >
+                    <Archive size={14} />
+                    归档
+                  </button>
+                )}
+                <button onClick={() => setShowHistory(false)} className="p-1 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
-              {[
-                { title: '圈选合肥学区房用户并推送活动', date: '今天 10:30', crowdPackCount: 1, groupPackCount: 1, pushTaskCount: 2, onClick: loadHistoryDemo },
-                { title: '生成朋友圈文案', date: '昨天 15:20', crowdPackCount: 0, groupPackCount: 0, pushTaskCount: 0, onClick: () => setShowHistory(false) },
-                { title: '分析近期客户流失原因', date: '3月1日 09:15', crowdPackCount: 1, groupPackCount: 0, pushTaskCount: 0, onClick: () => setShowHistory(false) }
-              ].map((item, i) => (
-                <div key={i} className="p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-lg cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800/50 last:border-0" onClick={item.onClick}>
-                  <div className="flex justify-between items-start mb-1">
-                    <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{item.title}</div>
-                    <div className="text-xs text-zinc-500">{item.date}</div>
-                  </div>
-                  <div className="flex gap-2">
-                    {item.crowdPackCount > 0 && (
-                        <span className="text-xs text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded">人群包({item.crowdPackCount})</span>
-                    )}
-                    {item.groupPackCount > 0 && (
-                        <span className="text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">群聊包({item.groupPackCount})</span>
-                    )}
-                    {item.pushTaskCount > 0 && (
-                        <span className="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">推送任务({item.pushTaskCount})</span>
-                    )}
-                    {item.crowdPackCount === 0 && item.groupPackCount === 0 && item.pushTaskCount === 0 && (
-                         <span className="text-xs text-zinc-400">无关联数据</span>
-                    )}
-                  </div>
+              {sortedHistoryItems.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-sm text-zinc-400">
+                  {historyView === 'archived' ? '暂无归档对话' : '暂无历史对话'}
                 </div>
-              ))}
+              ) : (
+                sortedHistoryItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="group relative p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-lg cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800/50 last:border-0"
+                    onClick={() => handleOpenHistoryItem(item)}
+                  >
+                    <div className="flex justify-between items-start gap-3 mb-1">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">{item.title}</span>
+                          {!item.isArchived && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleHistoryPin(item);
+                              }}
+                              className={`shrink-0 p-0.5 rounded transition-colors ${item.isPinned ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'text-zinc-300 opacity-0 group-hover:opacity-100 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30'}`}
+                              title={item.isPinned ? '取消置顶' : '置顶'}
+                            >
+                              <Pin size={13} className={item.isPinned ? 'fill-current' : ''} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <div className="text-xs text-zinc-500">{item.date}</div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenHistoryMenuId(openHistoryMenuId === item.id ? null : item.id);
+                          }}
+                          className="p-1 rounded-md text-zinc-400 opacity-0 group-hover:opacity-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all"
+                          title="更多"
+                        >
+                          <MoreHorizontal size={15} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-wrap pr-8">
+                      {item.crowdPackCount > 0 && (
+                        <span className="text-xs text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded">人群包({item.crowdPackCount})</span>
+                      )}
+                      {item.groupPackCount > 0 && (
+                        <span className="text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">群聊包({item.groupPackCount})</span>
+                      )}
+                      {item.pushTaskCount > 0 && (
+                        <span className="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">推送任务({item.pushTaskCount})</span>
+                      )}
+                      {item.crowdPackCount === 0 && item.groupPackCount === 0 && item.pushTaskCount === 0 && (
+                        <span className="text-xs text-zinc-400">无关联数据</span>
+                      )}
+                    </div>
+                    {openHistoryMenuId === item.id && (
+                      <div
+                        className="absolute right-3 top-9 z-40 w-32 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg p-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {!item.isArchived && (
+                          <button
+                            onClick={() => toggleHistoryPin(item)}
+                            className="w-full px-2 py-1.5 rounded-md text-xs text-left text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
+                          >
+                            <Pin size={13} />
+                            {item.isPinned ? '取消置顶' : '置顶'}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openRenameHistory(item)}
+                          className="w-full px-2 py-1.5 rounded-md text-xs text-left text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
+                        >
+                          <Pencil size={13} />
+                          重命名
+                        </button>
+                        {item.isArchived ? (
+                          <button
+                            onClick={() => restoreArchivedHistory(item)}
+                            className="w-full px-2 py-1.5 rounded-md text-xs text-left text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center gap-2"
+                          >
+                            <Archive size={13} />
+                            取消归档
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => requestArchiveHistory(item)}
+                            className="w-full px-2 py-1.5 rounded-md text-xs text-left text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
+                          >
+                            <Archive size={13} />
+                            归档
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {renamingHistoryItem && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="w-[320px] rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl overflow-hidden"
+            >
+              <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">重命名对话</span>
+                <button onClick={() => setRenamingHistoryItem(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="p-4">
+                <input
+                  value={renameValue}
+                  maxLength={30}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  className="w-full px-3 py-2 rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+                <div className="mt-1 text-right text-[11px] text-zinc-400">{renameValue.trim().length}/30</div>
+              </div>
+              <div className="px-4 py-3 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 flex justify-end gap-2">
+                <button onClick={() => setRenamingHistoryItem(null)} className="px-3 py-1.5 rounded-md text-xs text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+                  取消
+                </button>
+                <button
+                  onClick={confirmRenameHistory}
+                  disabled={!renameValue.trim()}
+                  className="px-3 py-1.5 rounded-md text-xs text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  确认
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {archiveConfirmItem && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="w-[340px] rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl overflow-hidden"
+            >
+              <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">确认归档对话？</span>
+                <button onClick={() => setArchiveConfirmItem(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="p-4 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                归档后，该对话将从历史对话列表中移至归档对话，可随时取消归档。已生成的人群包、群聊包和推送任务不会被删除。
+              </div>
+              <div className="px-4 py-3 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 flex justify-end gap-2">
+                <button onClick={() => setArchiveConfirmItem(null)} className="px-3 py-1.5 rounded-md text-xs text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+                  取消
+                </button>
+                <button onClick={confirmArchiveHistory} className="px-3 py-1.5 rounded-md text-xs text-white bg-blue-600 hover:bg-blue-700">
+                  确认归档
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
