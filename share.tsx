@@ -1543,6 +1543,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             unionid: 'obS_rtQh4CcTdM8QJi0...',
             id788: selectedCustomer.userId,
             ch: 'ch**00',
+            friendAddedAt: '2026-05-06 10:42:07',
             abnormalTag: null,
             isBlacklisted: false,
             blacklistReason: '',
@@ -1563,6 +1564,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         { label: 'base_id', value: selectedCustomerProfile.baseId || '172952193421911697', copyable: true },
         { label: 'unionid', value: selectedCustomerProfile.unionid || 'obS_rt2d_NDALZvQRS...', copyable: true },
         { label: '788ID', value: selectedCustomerProfile.id788 || selectedCustomer?.userId || '7881299921083644', copyable: true },
+        { label: '添加好友时间', value: selectedCustomerProfile.friendAddedAt || '2026-05-06 10:42:07', copyable: false },
         { label: '语义手机号(2)', value: '139****8666', copyable: false }
     ] : [];
     const customerPortraitTagGroups = [
@@ -2860,6 +2862,7 @@ interface ChatCustomerProfile {
   unionid: string;
   id788: string;
   ch: string;
+  friendAddedAt?: string;
   abnormalTag: string | null;
   isBlacklisted: boolean;
   blacklistReason: string;
@@ -3595,7 +3598,8 @@ function Workspace() {
     { label: 'base_id', value: '576506933939630438' },
     { label: 'unionid', value: 'obS_rtQh4CcTdM8QJi5...' },
     { label: '788ID', value: '7881301319959329' },
-    { label: 'ch', value: 'ch**v8' }
+    { label: 'ch', value: 'ch**v8' },
+    { label: '添加好友时间', value: '2026-05-06 10:42:07' }
   ];
 
   const privatePortraitMaterialTags = [
@@ -3636,6 +3640,7 @@ function Workspace() {
     unionid: 'obS_rtQh4CcTdM8QJi0...',
     id788: '7881301319959300',
     ch: 'ch**00',
+    friendAddedAt: '2026-05-06 10:42:07',
     abnormalTag: null,
     isBlacklisted: false,
     blacklistReason: '',
@@ -4070,7 +4075,8 @@ function Workspace() {
                       { label: 'base_id', value: activeChatProfile?.baseId || privatePortraitBasicInfo[1].value },
                       { label: 'unionid', value: activeChatProfile?.unionid || privatePortraitBasicInfo[2].value },
                       { label: '788ID', value: activeChatProfile?.id788 || privatePortraitBasicInfo[3].value },
-                      { label: 'ch', value: activeChatProfile?.ch || privatePortraitBasicInfo[4].value }
+                      { label: 'ch', value: activeChatProfile?.ch || privatePortraitBasicInfo[4].value },
+                      { label: '添加好友时间', value: activeChatProfile?.friendAddedAt || privatePortraitBasicInfo[5].value }
                     ].map((item, i) => (
                       <div key={i} className="flex items-start justify-between gap-3 text-xs">
                         <span className="text-zinc-500 shrink-0">{item.label}</span>
