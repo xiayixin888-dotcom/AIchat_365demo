@@ -1104,6 +1104,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     const [expandedContents, setExpandedContents] = useState<Record<string, boolean>>({});
     const [contentOverflowMap, setContentOverflowMap] = useState<Record<string, boolean>>({});
     const [processedMomentGroups, setProcessedMomentGroups] = useState<Record<string, boolean>>({});
+    const [copiedMomentGroupId, setCopiedMomentGroupId] = useState<string | null>(null);
     const contentRefs = React.useRef<Record<string, HTMLParagraphElement | null>>({});
 
     // Custom hook to manage mock state updates for moments
@@ -1146,6 +1147,26 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                 <span className={`shrink-0 text-[#fb923c] ${badgeClassName}`}>@365淘房</span>
             </span>
         );
+    };
+
+    const copyMomentGroupId = async (groupId: string) => {
+        try {
+            await navigator.clipboard.writeText(groupId);
+        } catch {
+            const textarea = document.createElement('textarea');
+            textarea.value = groupId;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+        setCopiedMomentGroupId(groupId);
+        window.setTimeout(() => {
+            setCopiedMomentGroupId(current => current === groupId ? null : current);
+        }, 1400);
     };
 
     const handleContextMenu = (e: React.MouseEvent, userId: string, name: string, avatar?: string) => {
@@ -1394,6 +1415,8 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     };
 
     const uncommentedLikers = aggregatedLikes.filter(l => !hasCommented(l.userId)).map(l => l.userId);
+    const defaultLikesPreviewCount = 7;
+    const displayedLikes = isLikesExpanded ? aggregatedLikes : aggregatedLikes.slice(0, defaultLikesPreviewCount);
 
     const commentThreads = React.useMemo(() => {
         const threads: { id: string, momentId: string, rootComment: MomentComment, replies: MomentComment[], account?: EnterpriseAccount }[] = [];
@@ -1684,9 +1707,31 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                 : 'hover:shadow-[0_6px_18px_rgba(16,42,76,0.08)] hover:border-[#bcd5ef]'}`}
                                     >
                                         <div className="flex items-start justify-between gap-3 mb-2">
-                                            <div className="text-[11px] font-medium text-[#8ba7c3]">ID：{group.groupId}</div>
+                                            <div className="relative min-w-0 group/publisher">
+                                                <div className="flex items-baseline gap-1 min-w-0 max-w-[340px] whitespace-nowrap overflow-hidden">
+                                                    {visiblePublisherAccounts.map((account) => (
+                                                        <span key={account.id} className="inline-flex items-baseline gap-0.5 min-w-0 overflow-hidden">
+                                                            <span className="truncate min-w-0 text-[14px] leading-5 font-bold text-[#576b95]">
+                                                                {getEnterpriseDisplayName(account.id, account.name)}
+                                                            </span>
+                                                            {isEnterpriseUserId(account.id) && (
+                                                                <span className="shrink-0 text-[12px] leading-5 text-[#fb923c]">@365淘房</span>
+                                                            )}
+                                                        </span>
+                                                    ))}
+                                                    <span className="shrink-0 whitespace-nowrap text-[11px] leading-5 text-[#8ba7c3]">{publisherSuffix}</span>
+                                                </div>
+                                                <div className="absolute left-0 top-[calc(100%+8px)] hidden group-hover/publisher:block z-20 w-64 bg-white border border-[#d8e5f4] rounded-lg shadow-[0_10px_30px_rgba(16,42,76,0.16)] p-2 max-h-[300px] overflow-y-auto">
+                                                    <div className="text-[11px] text-[#8ba7c3] px-2 py-1 sticky top-0 bg-white/90 backdrop-blur-sm z-10">发布账号列表</div>
+                                                    {group.publisherAccounts.map(account => (
+                                                        <div key={account.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-[#f1f7ff]">
+                                                            <img src={account.avatar} className="w-6 h-6 rounded-md border border-[#d8e5f4] shrink-0" alt="" />
+                                                            {renderEnterpriseName(account.id, account.name, 'text-xs font-semibold text-[#1683ff] min-w-0 truncate', 'text-[12px]')}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
                                             <div className="flex items-center gap-2 shrink-0">
-                                                <div className="text-xs text-[#8ba7c3]">{formatMomentFullTime(group.latestTime)}</div>
                                                 {filter === 'pending' && (
                                                     <button
                                                         onClick={(e) => {
@@ -1699,31 +1744,6 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                         标记已处理
                                                     </button>
                                                 )}
-                                            </div>
-                                        </div>
-
-                                        <div className="mb-3">
-                                            <div className="relative min-w-0 group/publisher">
-                                                <div className="flex items-center gap-0.5 min-w-0 max-w-[300px] text-[12px] whitespace-nowrap overflow-hidden">
-                                                    <span className="truncate min-w-0 font-semibold text-[#1683ff] inline-flex items-center gap-0.5 overflow-hidden">
-                                                        {visiblePublisherAccounts.map((account, index) => (
-                                                            <React.Fragment key={account.id}>
-                                                                {index > 0 && <span className="text-slate-400">、</span>}
-                                                                {renderEnterpriseName(account.id, account.name, 'truncate min-w-0', 'text-[12px]')}
-                                                            </React.Fragment>
-                                                        ))}
-                                                    </span>
-                                                    <span className="shrink-0 whitespace-nowrap text-[#6e86a0]">{publisherSuffix}</span>
-                                                </div>
-                                                <div className="absolute left-0 top-[calc(100%+8px)] hidden group-hover/publisher:block z-20 w-64 bg-white border border-[#d8e5f4] rounded-lg shadow-[0_10px_30px_rgba(16,42,76,0.16)] p-2 max-h-[300px] overflow-y-auto">
-                                                    <div className="text-[11px] text-[#8ba7c3] px-2 py-1 sticky top-0 bg-white/90 backdrop-blur-sm z-10">发布账号列表</div>
-                                                    {group.publisherAccounts.map(account => (
-                                                        <div key={account.id} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-[#f1f7ff]">
-                                                            <img src={account.avatar} className="w-6 h-6 rounded-md border border-[#d8e5f4] shrink-0" alt="" />
-                                                            {renderEnterpriseName(account.id, account.name, 'text-xs font-semibold text-[#1683ff] min-w-0 truncate', 'text-[12px]')}
-                                                        </div>
-                                                    ))}
-                                                </div>
                                             </div>
                                         </div>
 
@@ -1784,6 +1804,27 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                         )}
 
                                         <div className="mt-3 flex flex-col gap-2" onClick={e => e.stopPropagation()}>
+                                            <div className="flex items-center gap-2 text-[12px] text-[#8ba7c3]">
+                                                <span>{formatMomentFullTime(group.latestTime)}</span>
+                                                <details
+                                                    className="relative"
+                                                    onMouseEnter={(e) => { e.currentTarget.open = true; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.open = false; }}
+                                                >
+                                                    <summary
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            copyMomentGroupId(group.groupId);
+                                                        }}
+                                                        className="list-none cursor-pointer select-none inline-flex items-center rounded px-1.5 py-0.5 text-[#9ab0c7] hover:text-[#1683ff] hover:bg-[#eef6ff] transition-colors"
+                                                    >
+                                                        {copiedMomentGroupId === group.groupId ? '已复制' : 'ID'}
+                                                    </summary>
+                                                    <div className="absolute left-0 top-[calc(100%+6px)] z-30 w-max max-w-[260px] rounded-md border border-[#d8e5f4] bg-white px-2.5 py-2 shadow-[0_8px_24px_rgba(16,42,76,0.14)]">
+                                                        <div className="font-mono text-[11px] text-[#31506f] break-all">{group.groupId}</div>
+                                                    </div>
+                                                </details>
+                                            </div>
                                             <div className="flex items-center justify-between gap-2">
                                                 <div className="flex items-center gap-3 text-[12px] text-[#5f7892]">
                                                 <span className="inline-flex items-center gap-1">
@@ -2019,10 +2060,10 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="min-h-[220px] max-h-[300px] overflow-y-auto pr-1">
+                                        <div className={`${isLikesExpanded ? 'min-h-[220px] max-h-[300px] overflow-y-auto' : 'min-h-[120px] max-h-[136px] overflow-hidden'} pr-1`}>
                                             <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-x-7 gap-y-5 p-2">
                                                 {aggregatedLikes.length > 0 ? (
-                                                    (isLikesExpanded ? aggregatedLikes : aggregatedLikes.slice(0, 10)).map((like) => (
+                                                    displayedLikes.map((like) => (
                                                         <div key={like.userId} className="flex flex-col items-center gap-2 relative">
                                                             <div className="absolute top-1 right-1 z-10 bg-white/90 backdrop-blur-sm rounded-md flex items-center justify-center w-6 h-6 shadow-sm border border-[#d8e5f4]">
                                                                 <input
@@ -2109,7 +2150,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                     </div>
                                                 )}
                                             </div>
-                                            {aggregatedLikes.length > 10 && (
+                                            {aggregatedLikes.length > defaultLikesPreviewCount && (
                                                 <div className="flex justify-center mt-2 mb-4">
                                                     <button
                                                         onClick={() => setIsLikesExpanded(!isLikesExpanded)}
@@ -5271,6 +5312,18 @@ function Workspace() {
           </>
         )}
       </div>
+      )}
+
+      {activeModule === 'moments' && !isGroupPanelOpen && (
+        <div className="hidden 2xl:flex w-10 border-r border-[#dbe8f7] bg-[#f3f9ff] shrink-0 items-start justify-center pt-4">
+          <button
+            onClick={() => setIsGroupPanelOpen(true)}
+            className="text-[#7d96b2] hover:text-[#1683ff] hover:bg-[#e7f3ff] transition-colors p-2 rounded-lg"
+            title="展开动态筛选"
+          >
+            <PanelLeftOpen size={18} />
+          </button>
+        </div>
       )}
 
       {/* Middle Panel: Tabs and Content */}
