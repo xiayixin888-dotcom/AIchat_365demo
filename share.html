@@ -2955,6 +2955,30 @@ interface ChatCustomerProfile {
   hasConfirmedReception?: boolean;
 }
 
+interface PrivateFollowUpNote {
+  id: string;
+  operator: string;
+  action: string;
+  time: string;
+  text: string;
+}
+
+interface DeliveryGroupOperationLog {
+  id: string;
+  houseCode: string;
+  operator: string;
+  time: string;
+}
+
+type PrivateSessionFilterField = 'customerName' | 'followupNote' | 'id788' | 'phone';
+
+const privateSessionFilterOptions: Array<{ value: PrivateSessionFilterField; label: string; placeholder: string }> = [
+  { value: 'customerName', label: '客户名称', placeholder: '搜索客户名称' },
+  { value: 'followupNote', label: '跟进备注', placeholder: '搜索跟进备注' },
+  { value: 'id788', label: '788ID', placeholder: '多个788ID用,分隔' },
+  { value: 'phone', label: '手机号', placeholder: '搜索手机号' }
+];
+
 const abnormalUserOptions = ['长周期观望', '超低预算', '已成交', '非决策人看房'];
 
 const sessionList = [
@@ -3480,9 +3504,35 @@ function Workspace() {
   const [isReasonDropdownOpen, setIsReasonDropdownOpen] = useState(false);
   const [isAbnormalTagDropdownOpen, setIsAbnormalTagDropdownOpen] = useState(false);
   const [pendingAbnormalTag, setPendingAbnormalTag] = useState<string | null | undefined>(undefined);
-  const [activeChatFilter, setActiveChatFilter] = useState<'all' | 'session_abnormal' | 'lead_all' | 'lead_abnormal'>('all');
+  const [activeChatFilter, setActiveChatFilter] = useState<'all' | 'session_abnormal' | 'lead_all' | 'lead_abnormal' | 'community_need' | 'moments_need' | 'transfer_mining'>('all');
+  const [privateSessionFilterField, setPrivateSessionFilterField] = useState<PrivateSessionFilterField>('id788');
+  const [privateSessionFilterKeyword, setPrivateSessionFilterKeyword] = useState('');
+  const [isPrivateSessionFilterOpen, setIsPrivateSessionFilterOpen] = useState(false);
   const [isLeadGroupExpanded, setIsLeadGroupExpanded] = useState(true);
   const [generatedLead788Ids, setGeneratedLead788Ids] = useState<string[]>([]);
+  const [communityNeed788Ids, setCommunityNeed788Ids] = useState<string[]>(['7881301319959329', '7881301319959307']);
+  const [momentsNeed788Ids, setMomentsNeed788Ids] = useState<string[]>(['7881301319959305', '7881301319959308']);
+  const [privateFollowUpNotes, setPrivateFollowUpNotes] = useState<PrivateFollowUpNote[]>([
+    {
+      id: 'note-1',
+      operator: '运营-艺心',
+      action: '更新跟进备注',
+      time: '2026-04-11 18:45:00',
+      text: '已初步确认客户对120平左右三居更感兴趣，优先推荐柏堰湖周边高性价比房源。'
+    },
+    {
+      id: 'note-2',
+      operator: '运营-艺心',
+      action: '更新跟进备注',
+      time: '2026-04-11 18:39:20',
+      text: '客户表达预算控制较强，后续沟通以总价和首付压力作为重点切入。'
+    }
+  ]);
+  const [isDeliveryGroupModalOpen, setIsDeliveryGroupModalOpen] = useState(false);
+  const [deliveryHouseCode, setDeliveryHouseCode] = useState('');
+  const [deliveryHouseCodeError, setDeliveryHouseCodeError] = useState('');
+  const [deliveryGroupNotice, setDeliveryGroupNotice] = useState('');
+  const [deliveryGroupLogs, setDeliveryGroupLogs] = useState<DeliveryGroupOperationLog[]>([]);
   const [leadPromptModal, setLeadPromptModal] = useState<{
     open: boolean;
     type: 'abnormal' | 'blacklist';
@@ -3710,17 +3760,6 @@ function Workspace() {
     { text: '新房_业务偏好_新房', tone: 'cyan' }
   ];
 
-  const privateFollowUpNotes = [
-    {
-      time: '2026-04-11 18:45:00',
-      text: '已初步确认客户对120平左右三居更感兴趣，优先推荐柏堰湖周边高性价比房源。'
-    },
-    {
-      time: '2026-04-11 18:39:20',
-      text: '客户表达预算控制较强，后续沟通以总价和首付压力作为重点切入。'
-    }
-  ];
-
   const getDefaultChatCustomerProfile = (name = '客户'): ChatCustomerProfile => ({
     name,
     source: '微信',
@@ -3810,13 +3849,15 @@ function Workspace() {
     : null;
 
   const sessionUsers = sessionList.map(session => {
-    const profile = chatCustomerProfiles[session.tabTitle] || null;
+    const profile = chatCustomerProfiles[session.tabTitle] || Object.values(chatCustomerProfiles).find(item => item.id788 === session.customer788Id) || null;
     return {
       ...session,
       customer788Id: session.customer788Id,
       abnormalTag: profile?.abnormalTag ?? session.abnormalTag,
       isBlacklisted: profile?.isBlacklisted ?? session.isBlacklisted,
       blacklistReason: profile?.blacklistReason || '',
+      phone: profile?.phone || '',
+      followupNoteText: privateFollowUpNotes.map(note => note.text).join(' '),
       profileName: session.name
     };
   });
@@ -3832,12 +3873,38 @@ function Workspace() {
   };
 
   const leadUsers = uniqueBy788Id(sessionUsers.filter(item => generatedLead788Ids.includes(item.customer788Id)));
-  const visibleSessionList = activeChatFilter === 'lead_all'
-    ? leadUsers
-    : sessionUsers;
-  const sessionPanelTitle = activeChatFilter === 'lead_all'
-    ? '线索管理'
-    : '全部会话';
+  const communityNeedUsers = uniqueBy788Id(sessionUsers.filter(item => communityNeed788Ids.includes(item.customer788Id)));
+  const momentsNeedUsers = uniqueBy788Id(sessionUsers.filter(item => momentsNeed788Ids.includes(item.customer788Id)));
+  const transferMiningUsers = uniqueBy788Id(sessionUsers.filter(item => item.tag === 'AI' || item.msg.includes('关注')));
+  const privateSessionFilterOption = privateSessionFilterOptions.find(option => option.value === privateSessionFilterField) || privateSessionFilterOptions[0];
+  const privateSessionDisplayValues = Array.from(new Set(privateSessionFilterKeyword
+    .split(/[,\n]+/)
+    .map(term => term.trim())
+    .filter(Boolean)));
+  const privateSessionSearchValues = privateSessionDisplayValues.map(term => term.toLowerCase());
+  const baseVisibleSessionList =
+    activeChatFilter === 'lead_all' ? leadUsers :
+    activeChatFilter === 'community_need' ? communityNeedUsers :
+    activeChatFilter === 'moments_need' ? momentsNeedUsers :
+    activeChatFilter === 'transfer_mining' ? transferMiningUsers :
+    sessionUsers;
+  const visibleSessionList = privateSessionSearchValues.length === 0
+    ? baseVisibleSessionList
+    : baseVisibleSessionList.filter(session => {
+      const fieldValue =
+        privateSessionFilterField === 'id788' ? session.customer788Id :
+        privateSessionFilterField === 'phone' ? session.phone :
+        privateSessionFilterField === 'followupNote' ? session.followupNoteText :
+        `${session.name} ${session.msg}`;
+      const normalizedFieldValue = fieldValue.toLowerCase();
+      return privateSessionSearchValues.some(value => normalizedFieldValue.includes(value));
+    });
+  const sessionPanelTitle =
+    activeChatFilter === 'lead_all' ? '线索管理' :
+    activeChatFilter === 'community_need' ? '社群需求' :
+    activeChatFilter === 'moments_need' ? '朋友圈需求' :
+    activeChatFilter === 'transfer_mining' ? '转派后挖掘' :
+    '全部会话';
   const groupAgentOptions = Array.from(new Set(groupList.filter(group => group.category !== 'operation').map(group => group.agent)));
   const visibleGroupList = groupList.filter(group => {
     const matchesCategory =
@@ -3887,6 +3954,52 @@ function Workspace() {
     }
     setGeneratedLead788Ids(prev => prev.includes(activeChatProfile.id788) ? prev : [...prev, activeChatProfile.id788]);
     setActiveChatFilter('lead_all');
+  };
+
+  const handlePrivateSessionFilterFieldChange = (field: PrivateSessionFilterField) => {
+    setPrivateSessionFilterField(field);
+    setPrivateSessionFilterKeyword('');
+    setIsPrivateSessionFilterOpen(false);
+  };
+
+  const removePrivateSessionSearchValue = (targetIndex: number) => {
+    setPrivateSessionFilterKeyword(privateSessionDisplayValues.filter((_, index) => index !== targetIndex).join(','));
+  };
+
+  const openDeliveryGroupModal = () => {
+    setDeliveryHouseCode('');
+    setDeliveryHouseCodeError('');
+    setIsDeliveryGroupModalOpen(true);
+  };
+
+  const closeDeliveryGroupModal = () => {
+    setIsDeliveryGroupModalOpen(false);
+    setDeliveryHouseCode('');
+    setDeliveryHouseCodeError('');
+  };
+
+  const submitDeliveryGroup = () => {
+    const code = deliveryHouseCode.trim();
+    if (!code) {
+      setDeliveryHouseCodeError('请输入房源编号');
+      return;
+    }
+    if (!/^\d+$/.test(code)) {
+      setDeliveryHouseCodeError('房源编号仅支持纯数字');
+      return;
+    }
+    setDeliveryGroupLogs(prev => [
+      {
+        id: `delivery-${Date.now()}`,
+        houseCode: code,
+        operator: '运营-艺心',
+        time: '2026-05-06 10:42:07'
+      },
+      ...prev
+    ]);
+    setDeliveryGroupNotice('已通知【“新版-合肥朋友圈建群”工作流】');
+    closeDeliveryGroupModal();
+    window.setTimeout(() => setDeliveryGroupNotice(''), 3000);
   };
 
   const renderTagChipClass = (tone: string) => (
@@ -3983,6 +4096,9 @@ function Workspace() {
               </div>
               <div className="flex flex-col items-end gap-1">
                 <div className="flex items-center gap-2">
+                  <button onClick={openDeliveryGroupModal} className="px-3 py-1.5 border border-blue-200 dark:border-blue-800 rounded text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                    创建交付群
+                  </button>
                   <button onClick={handleValidLeadClick} className="px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded text-xs text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">
                     有效会话线索
                   </button>
@@ -3990,6 +4106,11 @@ function Workspace() {
                     切换AI
                   </button>
                 </div>
+                {deliveryGroupNotice && (
+                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                    {deliveryGroupNotice}
+                  </div>
+                )}
                 {activeChatProfile?.receptionStatus && (
                   <div className="text-[10px] text-orange-500">
                     当前接待: {activeChatProfile.receptionStatus}
@@ -4074,7 +4195,7 @@ function Workspace() {
            </div>
 
            {/* Right Panel: Private Chat Tools */}
-          <div className="hidden 2xl:flex w-[280px] border-l border-zinc-200 dark:border-zinc-800 flex-col shrink-0 bg-white dark:bg-zinc-950 overflow-y-auto">
+          <div className="hidden lg:flex w-[280px] border-l border-zinc-200 dark:border-zinc-800 flex-col shrink-0 bg-white dark:bg-zinc-950 overflow-y-auto">
             <div className="flex flex-wrap gap-x-4 gap-y-2 p-3 border-b border-zinc-200 dark:border-zinc-800 text-xs bg-zinc-50 dark:bg-zinc-900/50">
               {privateRightPanelTabs.map(tab => (
                 <span
@@ -5029,7 +5150,7 @@ function Workspace() {
 
       {/* Group List Panel */}
       {isGroupPanelOpen && (
-        <div className="hidden 2xl:flex w-[180px] border-r border-[#dbe8f7] bg-[#f3f9ff] flex-col shrink-0">
+        <div className="hidden lg:flex w-[180px] border-r border-[#dbe8f7] bg-[#f3f9ff] flex-col shrink-0">
           <div className="p-4 flex items-center gap-2 font-semibold text-[#102a4c]">
             <button
               onClick={() => setIsGroupPanelOpen(false)}
@@ -5098,9 +5219,18 @@ function Workspace() {
                     <ChevronDown size={14} className="text-[#7d96b2] rotate-180" />
                   </div>
                   <div className="flex flex-col py-1">
-                    {['群/朋友圈需求', '找房需求', '转派后挖掘'].map(item => (
-                      <div key={item} className="mx-3 pl-9 pr-3 py-1.5 rounded-md text-[#5f7892] hover:bg-[#eaf4ff] hover:text-[#1683ff] cursor-pointer text-sm transition-colors">
-                        {item}
+                    {[
+                      { label: '社群需求', filter: 'community_need' as const, count: communityNeedUsers.length },
+                      { label: '朋友圈需求', filter: 'moments_need' as const, count: momentsNeedUsers.length },
+                      { label: '转派后挖掘', filter: 'transfer_mining' as const, count: transferMiningUsers.length }
+                    ].map(item => (
+                      <div
+                        key={item.filter}
+                        onClick={() => setActiveChatFilter(item.filter)}
+                        className={`mx-3 pl-9 pr-3 py-1.5 rounded-md cursor-pointer text-sm flex items-center justify-between transition-colors ${activeChatFilter === item.filter ? 'text-[#1683ff] bg-[#e7f3ff]' : 'text-[#5f7892] hover:bg-[#eaf4ff] hover:text-[#1683ff]'}`}
+                      >
+                        <span>{item.label}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white text-[#7d96b2] border border-[#d8e5f4]">{item.count}</span>
                       </div>
                     ))}
                   </div>
@@ -5236,14 +5366,69 @@ function Workspace() {
                   <span className="font-bold text-base text-[#102a4c]">{sessionPanelTitle}</span>
                 </div>
               </div>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="搜索客户名称"
-                  className="w-full h-9 pl-3 pr-9 bg-white border border-[#cfd8e3] rounded text-xs text-[#31506f] placeholder:text-[#9db4ca] focus:outline-none focus:border-[#1683ff] focus:ring-2 focus:ring-[#1683ff]/10"
-                />
-                <Search size={15} className="absolute right-2.5 top-2.5 text-[#1683ff]" />
+              <div className="flex h-9 rounded border border-[#cfd8e3] bg-white focus-within:border-[#1683ff] focus-within:ring-2 focus-within:ring-[#1683ff]/10">
+                <div className="relative w-[104px] shrink-0 border-r border-[#dbe8f7]">
+                  <button
+                    type="button"
+                    onClick={() => setIsPrivateSessionFilterOpen(prev => !prev)}
+                    className="h-full w-full flex items-center justify-between gap-1 px-3 text-xs text-[#31506f] hover:bg-[#f4f9ff]"
+                  >
+                    <span className="truncate">{privateSessionFilterOption.label}</span>
+                    <ChevronDown size={12} className={`shrink-0 text-[#7d96b2] transition-transform ${isPrivateSessionFilterOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isPrivateSessionFilterOpen && (
+                    <div className="absolute left-0 top-full mt-1 w-[132px] rounded-md border border-[#d8e5f4] bg-white shadow-[0_8px_24px_rgba(16,42,76,0.12)] z-30 py-1">
+                      {privateSessionFilterOptions.map(option => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => handlePrivateSessionFilterFieldChange(option.value)}
+                          className={`w-full px-3 py-2 text-left text-xs transition-colors ${privateSessionFilterField === option.value ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#31506f] hover:bg-[#f4f9ff]'}`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="relative flex-1 min-w-0">
+                  <textarea
+                    rows={1}
+                    placeholder={privateSessionFilterOption.placeholder}
+                    value={privateSessionFilterKeyword}
+                    onChange={(e) => setPrivateSessionFilterKeyword(e.target.value)}
+                    className="w-full h-full resize-none overflow-hidden pl-3 pr-9 py-2 bg-transparent border-0 text-xs leading-5 text-[#31506f] placeholder:text-[#9db4ca] focus:outline-none"
+                  />
+                  <Search size={15} className="absolute right-2.5 top-2.5 text-[#1683ff]" />
+                </div>
               </div>
+              {privateSessionFilterField === 'id788' && privateSessionDisplayValues.length > 0 && (
+                <div className="rounded border border-[#d8e5f4] bg-[#f7fbff] px-2.5 py-2 -mt-1">
+                  <div className="mb-2 flex items-center justify-between text-[11px] text-[#7d96b2]">
+                    <span>已输入 {privateSessionDisplayValues.length} 个788ID</span>
+                    <button
+                      onClick={() => setPrivateSessionFilterKeyword('')}
+                      className="text-[#1683ff] hover:text-[#0f6fd6]"
+                    >
+                      清空
+                    </button>
+                  </div>
+                  <div className="max-h-[72px] overflow-y-auto flex flex-wrap gap-1.5 pr-1">
+                    {privateSessionDisplayValues.map((id, index) => (
+                      <span key={`${id}-${index}`} className="max-w-full inline-flex items-center gap-1 rounded-full border border-[#c9e3ff] bg-white px-2 py-1 text-[11px] text-[#31506f]">
+                        <span className="truncate max-w-[180px]">{id}</span>
+                        <button
+                          onClick={() => removePrivateSessionSearchValue(index)}
+                          className="shrink-0 text-[#7d96b2] hover:text-red-500"
+                          title="移除"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex gap-2">
                 <div className="flex-1 h-8 flex items-center justify-between px-3 bg-white border border-[#cfd8e3] rounded text-xs cursor-pointer text-[#31506f]">
                   <span>全国</span>
@@ -5328,8 +5513,13 @@ function Workspace() {
                   <span className="font-bold text-base text-[#102a4c]">交付群会话</span>
                 </div>
                 <div className="flex gap-2">
-                   <button className="p-1.5 hover:bg-[#e7f3ff] rounded text-[#7d96b2] hover:text-[#1683ff]">
-                     <Plus size={16} />
+                   <button
+                     onClick={openMatchGroupModal}
+                     className="h-8 px-2.5 flex items-center gap-1.5 hover:bg-[#e7f3ff] rounded text-[#31506f] hover:text-[#1683ff] text-xs border border-[#d8e5f4]"
+                     title="创建交付群"
+                   >
+                     <Plus size={15} />
+                     创建交付群
                    </button>
                 </div>
               </div>
@@ -5455,7 +5645,7 @@ function Workspace() {
       )}
 
       {activeModule === 'moments' && !isGroupPanelOpen && (
-        <div className="hidden 2xl:flex w-10 border-r border-[#dbe8f7] bg-[#f3f9ff] shrink-0 items-start justify-center pt-4">
+        <div className="hidden lg:flex w-10 border-r border-[#dbe8f7] bg-[#f3f9ff] shrink-0 items-start justify-center pt-4">
           <button
             onClick={() => setIsGroupPanelOpen(true)}
             className="text-[#7d96b2] hover:text-[#1683ff] hover:bg-[#e7f3ff] transition-colors p-2 rounded-lg"
@@ -5655,6 +5845,76 @@ function Workspace() {
 
       {/* --- Modals --- */}
       <AnimatePresence>
+        {isDeliveryGroupModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={(e) => e.stopPropagation()}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-zinc-900 rounded shadow-xl w-[460px] border border-zinc-200 dark:border-zinc-800"
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800">
+                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">创建交付群</h3>
+                <button onClick={closeDeliveryGroupModal} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="px-6 py-5 space-y-4">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    <span className="text-red-500 mr-1">*</span>房源编号
+                  </label>
+                  <input
+                    type="text"
+                    value={deliveryHouseCode}
+                    onChange={(e) => {
+                      setDeliveryHouseCode(e.target.value);
+                      setDeliveryHouseCodeError('');
+                    }}
+                    placeholder="请输入房源编号"
+                    className={`w-full h-10 px-3 rounded border bg-white dark:bg-zinc-950 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 ${deliveryHouseCodeError ? 'border-red-300 focus:border-red-400 focus:ring-red-100' : 'border-zinc-200 dark:border-zinc-700 focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30'}`}
+                  />
+                  {deliveryHouseCodeError && (
+                    <div className="mt-1.5 text-xs text-red-500">{deliveryHouseCodeError}</div>
+                  )}
+                </div>
+                <div className="rounded bg-blue-50 dark:bg-blue-900/20 px-3 py-2 text-xs leading-5 text-blue-700 dark:text-blue-300">
+                  保存后将通知【“新版-合肥朋友圈建群”工作流】，由工作流自动创建交付群。
+                </div>
+                {deliveryGroupLogs.length > 0 && (
+                  <div className="rounded border border-zinc-100 dark:border-zinc-800">
+                    <div className="px-3 py-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">最近操作</div>
+                    <div className="max-h-[104px] overflow-y-auto">
+                      {deliveryGroupLogs.slice(0, 3).map(log => (
+                        <div key={log.id} className="px-3 py-2 text-xs text-zinc-600 dark:text-zinc-300 flex items-center justify-between border-b last:border-b-0 border-zinc-100 dark:border-zinc-800">
+                          <span className="truncate">房源 {log.houseCode}</span>
+                          <span className="shrink-0 text-zinc-400">{log.time}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-3 bg-zinc-50/50 dark:bg-zinc-800/50">
+                <button
+                  onClick={closeDeliveryGroupModal}
+                  className="px-5 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors border border-zinc-200 dark:border-zinc-700"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={submitDeliveryGroup}
+                  className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors shadow-sm"
+                >
+                  保存
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {isMatchGroupModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={(e) => e.stopPropagation()}>
             <motion.div
@@ -5664,7 +5924,7 @@ function Workspace() {
               className="bg-white dark:bg-zinc-900 rounded shadow-xl w-[680px] max-h-[86vh] flex flex-col border border-zinc-200 dark:border-zinc-800"
             >
               <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800">
-                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">创建撮合群</h3>
+                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">创建交付群</h3>
                 <button onClick={() => setIsMatchGroupModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
                   <X size={18} />
                 </button>
@@ -7287,7 +7547,7 @@ if (rootElement) {
   root.render(<App />);
 }
 
-</script>
+    </script>
 <script>
 window.addEventListener('DOMContentLoaded', () => {
     if (typeof Babel === 'undefined') {
