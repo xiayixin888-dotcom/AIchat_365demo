@@ -84,6 +84,60 @@ interface Bubble {
   items: { id: string; name: string; tabName: string }[];
 }
 
+type AssistantResourceView = 'chat' | 'audience' | 'group' | 'task';
+type AudienceResourceStatus = '生成中' | '已生成' | '生成失败' | '草稿';
+type GroupResourceStatus = '生成中' | '已生成' | '生成失败' | '草稿';
+type PushTaskStatus = '草稿' | '待执行' | '执行中' | '已完成' | '已失败' | '已取消';
+
+interface AudienceResource {
+  id: string;
+  name: string;
+  originalName: string;
+  tabName: string;
+  type: string;
+  source: string;
+  status: AudienceResourceStatus;
+  audienceCount: number;
+  createdAt: string;
+  updatedAt: string;
+  updatedOrder: number;
+  relatedTaskCount: number;
+  configSnapshot: string[];
+}
+
+interface PushTaskResource {
+  id: string;
+  name: string;
+  originalName: string;
+  tabName: string;
+  pushType: string;
+  status: PushTaskStatus;
+  relatedAudienceName: string;
+  estimatedReach: number;
+  pushTime: string;
+  createdAt: string;
+  updatedAt: string;
+  updatedOrder: number;
+  creator: string;
+  configSnapshot: string[];
+  executionResult: string;
+}
+
+interface GroupResource {
+  id: string;
+  name: string;
+  originalName: string;
+  tabName: string;
+  status: GroupResourceStatus;
+  groupCount: number;
+  customerCount: number;
+  createdAt: string;
+  updatedAt: string;
+  updatedOrder: number;
+  relatedTaskCount: number;
+  configSnapshot: string[];
+}
+
 interface Tab {
   id: string;
   title: string;
@@ -94,6 +148,10 @@ interface MomentLike {
     userId: string;
     name: string;
     avatar: string;
+}
+
+interface MomentLikeWithFrequency extends MomentLike {
+    recentLikeCount?: number;
 }
 
 interface MomentComment {
@@ -154,11 +212,92 @@ function ProfileField({ label, value, type, time }: { label: string, value: stri
 
 // --- src/components/Cards.tsx ---
 
-function AudienceCard({ data, onUserClick, onConfirm }: { data: Extract<CardData, { type: 'audience' }>, onUserClick: (name: string, list?: string[]) => void, onConfirm: () => void }) {
+// --- confirm card name edit helper ---
+const MAX_CONFIRM_CARD_NAME_LENGTH = 20;
+
+function getConfirmCardNameLength(value) {
+  return Array.from((value || '').trim()).length;
+}
+
+function validateConfirmCardName(value) {
+  const trimmedValue = (value || '').trim();
+  if (!trimmedValue) return '名称不能为空';
+  if (getConfirmCardNameLength(trimmedValue) > MAX_CONFIRM_CARD_NAME_LENGTH) return '名称最多20个汉字';
+  return '';
+}
+// --- end confirm card name edit helper ---
+
+function ConfirmCardNameField({
+  label,
+  value,
+  error,
+  confirmed,
+  onChange
+}: {
+  label: string;
+  value: string;
+  error: string;
+  confirmed?: boolean;
+  onChange: (value: string) => void;
+}) {
+  const nameLength = getConfirmCardNameLength(value);
+
+  return (
+    <div className="flex flex-col gap-1 rounded-lg border border-indigo-100 dark:border-indigo-900/40 bg-white dark:bg-zinc-900/60 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-zinc-500">{label}</span>
+      </div>
+      {!confirmed ? (
+        <input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={`请输入${label}`}
+          className={`h-9 w-full rounded-md border bg-white dark:bg-zinc-950 px-2.5 text-sm font-medium text-zinc-900 dark:text-zinc-100 outline-none transition-colors ${
+            error
+              ? 'border-red-300 dark:border-red-800 focus:border-red-400'
+              : 'border-indigo-200 dark:border-indigo-800 focus:border-indigo-400 dark:focus:border-indigo-600'
+          }`}
+        />
+      ) : (
+        <div className="min-h-[28px] text-sm font-semibold text-zinc-900 dark:text-zinc-100 break-all">
+          {value}
+        </div>
+      )}
+      {!confirmed && (
+        <div className="flex items-center justify-between gap-2 text-[11px]">
+          <span className={error ? 'text-red-500' : 'text-zinc-400'}>
+            {error || '输入后自动保留，确认时生效'}
+          </span>
+          <span className={nameLength > MAX_CONFIRM_CARD_NAME_LENGTH ? 'text-red-500' : 'text-zinc-400'}>
+            {nameLength}/{MAX_CONFIRM_CARD_NAME_LENGTH}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AudienceCard({ data, onUserClick, onConfirm }: { data: Extract<CardData, { type: 'audience' }>, onUserClick: (name: string, list?: string[]) => void, onConfirm: (name: string) => void }) {
+  const [editableName, setEditableName] = useState(data.name);
+  const [nameError, setNameError] = useState('');
   const cycleMap = {
     'hour': '每小时更新',
     'day': '每日更新',
     'once': '一次性'
+  };
+
+  useEffect(() => {
+    setEditableName(data.name);
+    setNameError('');
+  }, [data.name]);
+
+  const handleConfirm = () => {
+    const error = validateConfirmCardName(editableName);
+    if (error) {
+      setNameError(error);
+      return;
+    }
+    onConfirm(editableName.trim());
   };
 
   return (
@@ -177,10 +316,16 @@ function AudienceCard({ data, onUserClick, onConfirm }: { data: Extract<CardData
         </div>
 
         <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800">
-          <div className="flex justify-between text-xs">
-            <span className="text-zinc-500">人群包名称</span>
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">{data.name}</span>
-          </div>
+          <ConfirmCardNameField
+            label="人群包名称"
+            value={editableName}
+            error={nameError}
+            confirmed={data.confirmed}
+            onChange={(value) => {
+              setEditableName(value);
+              setNameError('');
+            }}
+          />
           <div className="flex justify-between text-xs">
             <span className="text-zinc-500">更新周期</span>
             <span className="font-medium text-zinc-900 dark:text-zinc-100">{cycleMap[data.updateCycle]}</span>
@@ -203,7 +348,7 @@ function AudienceCard({ data, onUserClick, onConfirm }: { data: Extract<CardData
         </div>
 
         <button
-          onClick={onConfirm}
+          onClick={handleConfirm}
           disabled={data.confirmed}
           className={`w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors mt-2 ${
             data.confirmed
@@ -222,11 +367,27 @@ function AudienceCard({ data, onUserClick, onConfirm }: { data: Extract<CardData
   );
 }
 
-function GroupPackageCard({ data, onGroupClick, onUserClick, onConfirm }: { data: Extract<CardData, { type: 'group_package' }>, onGroupClick: (name: string, list?: string[]) => void, onUserClick: (name: string, list?: string[]) => void, onConfirm: () => void }) {
+function GroupPackageCard({ data, onGroupClick, onUserClick, onConfirm }: { data: Extract<CardData, { type: 'group_package' }>, onGroupClick: (name: string, list?: string[]) => void, onUserClick: (name: string, list?: string[]) => void, onConfirm: (name: string) => void }) {
+  const [editableName, setEditableName] = useState(data.name);
+  const [nameError, setNameError] = useState('');
   const cycleMap = {
     'hour': '每小时更新',
     'day': '每日更新',
     'once': '一次性'
+  };
+
+  useEffect(() => {
+    setEditableName(data.name);
+    setNameError('');
+  }, [data.name]);
+
+  const handleConfirm = () => {
+    const error = validateConfirmCardName(editableName);
+    if (error) {
+      setNameError(error);
+      return;
+    }
+    onConfirm(editableName.trim());
   };
 
   return (
@@ -245,10 +406,16 @@ function GroupPackageCard({ data, onGroupClick, onUserClick, onConfirm }: { data
         </div>
 
         <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800">
-          <div className="flex justify-between text-xs">
-            <span className="text-zinc-500">群聊包名称</span>
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">{data.name}</span>
-          </div>
+          <ConfirmCardNameField
+            label="群聊包名称"
+            value={editableName}
+            error={nameError}
+            confirmed={data.confirmed}
+            onChange={(value) => {
+              setEditableName(value);
+              setNameError('');
+            }}
+          />
           <div className="flex justify-between text-xs">
             <span className="text-zinc-500">更新周期</span>
             <span className="font-medium text-zinc-900 dark:text-zinc-100">{cycleMap[data.updateCycle]}</span>
@@ -282,7 +449,7 @@ function GroupPackageCard({ data, onGroupClick, onUserClick, onConfirm }: { data
         </div>
 
         <button
-          onClick={onConfirm}
+          onClick={handleConfirm}
           disabled={data.confirmed}
           className={`w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors mt-2 ${
             data.confirmed
@@ -447,15 +614,30 @@ function ContentPreviewCard({ data }: { data: Extract<CardData, { type: 'content
   );
 }
 
-function TaskSummaryCard({ data, onConfirm }: { data: Extract<CardData, { type: 'task_summary' }>, onConfirm: () => void }) {
+function TaskSummaryCard({ data, onConfirm }: { data: Extract<CardData, { type: 'task_summary' }>, onConfirm: (taskName: string) => void }) {
+  const [editableName, setEditableName] = useState(data.taskName);
+  const [nameError, setNameError] = useState('');
   const fields = [
-    { label: '任务名称', value: data.taskName },
     { label: '通道', value: data.channel },
     { label: '推送时间', value: data.pushTime },
     { label: '推送间隔', value: data.pushInterval },
     { label: '接收对象', value: data.recipient },
     { label: '发送人', value: data.sender },
   ];
+
+  useEffect(() => {
+    setEditableName(data.taskName);
+    setNameError('');
+  }, [data.taskName]);
+
+  const handleConfirm = () => {
+    const error = validateConfirmCardName(editableName);
+    if (error) {
+      setNameError(error);
+      return;
+    }
+    onConfirm(editableName.trim());
+  };
 
   return (
     <div className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm mt-2">
@@ -468,6 +650,18 @@ function TaskSummaryCard({ data, onConfirm }: { data: Extract<CardData, { type: 
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="col-span-2">
+            <ConfirmCardNameField
+              label="任务名称"
+              value={editableName}
+              error={nameError}
+              confirmed={data.confirmed}
+              onChange={(value) => {
+                setEditableName(value);
+                setNameError('');
+              }}
+            />
+          </div>
           {fields.map((field, i) => (
             <div key={i} className="flex flex-col gap-1">
               <span className="text-zinc-500">{field.label}</span>
@@ -483,7 +677,7 @@ function TaskSummaryCard({ data, onConfirm }: { data: Extract<CardData, { type: 
         </div>
 
         <button
-          onClick={onConfirm}
+          onClick={handleConfirm}
           disabled={data.confirmed}
           className={`w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors mt-2 ${
             data.confirmed
@@ -1080,6 +1274,9 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     const [selectedCustomer, setSelectedCustomer] = useState<{ userId: string, name: string, avatar?: string } | null>(null);
     const [activeCustomerPanelTab, setActiveCustomerPanelTab] = useState<'客户档案' | '客户画像' | '客户行为'>('客户档案');
     const [selectedMomentCity, setSelectedMomentCity] = useState('合肥');
+    const [momentDateStart, setMomentDateStart] = useState('');
+    const [momentDateEnd, setMomentDateEnd] = useState('');
+    const [isMomentDateFilterOpen, setIsMomentDateFilterOpen] = useState(false);
     const [groupReplyImage, setGroupReplyImage] = useState<string | null>(null);
     const [replyImage, setReplyImage] = useState<string | null>(null);
     const [isGroupEmojiPickerOpen, setIsGroupEmojiPickerOpen] = useState(false);
@@ -1096,6 +1293,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     const [batchMaterialTab, setBatchMaterialTab] = useState<'图片' | '小程序卡片'>('图片');
     const [batchMaterialQuery, setBatchMaterialQuery] = useState('');
     const [isLikesExpanded, setIsLikesExpanded] = useState(false);
+    const [isFrequentLikesExpanded, setIsFrequentLikesExpanded] = useState(false);
 
     // Added for new features
     const [commentSortBy, setCommentSortBy] = useState<'time' | 'heat'>('time');
@@ -1336,8 +1534,9 @@ const MomentsView: React.FC<MomentsViewProps> = ({
             }
         });
 
-        return groups.sort((a, b) => parseDateTime(b.latestTime).getTime() - parseDateTime(a.latestTime).getTime());
-    }, [mockMomentsState, filter, accounts, selectedMomentCity, getDisplayedCommentCountForMoments, processedMomentGroups]);
+        const sortedGroups = groups.sort((a, b) => parseDateTime(b.latestTime).getTime() - parseDateTime(a.latestTime).getTime());
+        return filterMomentGroupsByDateRange(sortedGroups, momentDateStart, momentDateEnd);
+    }, [mockMomentsState, filter, accounts, selectedMomentCity, momentDateStart, momentDateEnd, getDisplayedCommentCountForMoments, processedMomentGroups]);
 
     useEffect(() => {
         const nextOverflowMap: Record<string, boolean> = {};
@@ -1374,6 +1573,16 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     }, [groupedMoments]);
 
     const selectedMoment = mockMomentsState.find(m => m.id === selectedMomentId);
+    useEffect(() => {
+        if (!groupedMoments.length) return;
+        const selectedMomentStillVisible = groupedMoments.some(group =>
+            group.moments.some(moment => moment.id === selectedMomentId)
+        );
+        if (!selectedMomentId || !selectedMomentStillVisible) {
+            onSelectMoment(groupedMoments[0].moments[0].id);
+        }
+    }, [groupedMoments, selectedMomentId, onSelectMoment]);
+
     const selectedContent = selectedMoment?.content;
     const relatedMoments = React.useMemo(() => {
         if (!selectedContent) return [];
@@ -1416,7 +1625,28 @@ const MomentsView: React.FC<MomentsViewProps> = ({
 
     const uncommentedLikers = aggregatedLikes.filter(l => !hasCommented(l.userId)).map(l => l.userId);
     const defaultLikesPreviewCount = 7;
-    const displayedLikes = isLikesExpanded ? aggregatedLikes : aggregatedLikes.slice(0, defaultLikesPreviewCount);
+    const recentLikeCounts = React.useMemo<Record<string, number>>(() => ({
+        c_hf_l2: 4,
+        c_hf_l5: 3,
+        c_hf_l12: 6,
+        c_hf_l18: 5
+    }), []);
+    const likeTiers = React.useMemo(() => (
+        buildMomentsLikeTiers(aggregatedLikes, recentLikeCounts, [], 3)
+    ), [aggregatedLikes, recentLikeCounts]);
+    const priorityLikes = likeTiers.priorityLikes;
+    const frequentLikes = likeTiers.frequentLikes;
+    const allSelectableLikeIds = React.useMemo(
+        () => [...priorityLikes, ...frequentLikes].map(like => like.userId),
+        [priorityLikes, frequentLikes]
+    );
+    const uncommentedLikersInAllTiers = React.useMemo(
+        () => [...priorityLikes, ...frequentLikes].filter(l => !hasCommented(l.userId)).map(l => l.userId),
+        [priorityLikes, frequentLikes, aggregatedComments]
+    );
+    const selectedFrequentLikerCount = frequentLikes.filter(like => selectedLikers.includes(like.userId)).length;
+    const displayedPriorityLikes = isLikesExpanded ? priorityLikes : priorityLikes.slice(0, defaultLikesPreviewCount);
+    const displayedFrequentLikes = isFrequentLikesExpanded ? frequentLikes : [];
 
     const commentThreads = React.useMemo(() => {
         const threads: { id: string, momentId: string, rootComment: MomentComment, replies: MomentComment[], account?: EnterpriseAccount }[] = [];
@@ -1501,11 +1731,12 @@ const MomentsView: React.FC<MomentsViewProps> = ({
     }, [commentAccountOptions, selectedCommentAccountId]);
 
     useEffect(() => {
-        setSelectedLikers(prev => prev.filter(userId => aggregatedLikes.some(like => like.userId === userId)));
-    }, [aggregatedLikes]);
+        setSelectedLikers(prev => prev.filter(userId => allSelectableLikeIds.includes(userId)));
+    }, [allSelectableLikeIds]);
 
     useEffect(() => {
         setIsLikesExpanded(false);
+        setIsFrequentLikesExpanded(false);
     }, [selectedContent]);
 
     const filteredCommentThreads = React.useMemo(() => {
@@ -1636,8 +1867,93 @@ const MomentsView: React.FC<MomentsViewProps> = ({
         return 0;
     };
 
+    const getLikeDisplayName = (like: MomentLikeWithFrequency) => {
+        if (like.userId === 'me') return accounts[0]?.name || '我';
+        const acc = accounts.find(a => a.id === like.userId);
+        return acc?.name || like.name;
+    };
+
+    const getLikeDisplayAvatar = (like: MomentLikeWithFrequency) => {
+        if (like.userId === 'me') return accounts[0]?.avatar;
+        const acc = accounts.find(a => a.id === like.userId);
+        return acc?.avatar || like.avatar;
+    };
+
+    const renderLikeSectionInfo = (testId: string, titleText: string, description: string) => (
+        <span className="relative group inline-flex">
+            <button
+                type="button"
+                data-testid={testId}
+                title={description}
+                className="w-[18px] h-[18px] rounded-full border border-[#b8d7ff] bg-[#f1f7ff] text-[#1683ff] text-[12px] leading-[16px] flex items-center justify-center hover:bg-[#e5f1ff] transition-colors"
+            >
+                ?
+            </button>
+            <span className="pointer-events-none absolute left-1/2 top-6 z-30 hidden w-64 -translate-x-1/2 rounded-lg border border-[#b8d7ff] bg-white px-3 py-2 text-left text-xs leading-5 text-[#5f7892] shadow-lg group-hover:block">
+                <span className="block font-semibold text-[#31506f] mb-1">{titleText}</span>
+                {description}
+            </span>
+        </span>
+    );
+
+    const renderLikeCard = (like: MomentLikeWithFrequency, showRecentLikeCount = false) => {
+        const displayName = getLikeDisplayName(like);
+        const displayAvatar = getLikeDisplayAvatar(like);
+        return (
+            <div key={like.userId} className="flex flex-col items-center gap-2 relative">
+                <div className="absolute top-1 right-1 z-10 bg-white/90 backdrop-blur-sm rounded-md flex items-center justify-center w-6 h-6 shadow-sm border border-[#d8e5f4]">
+                    <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded border-[#cfe0f5] text-[#1683ff] focus:ring-[#1683ff] shadow-sm cursor-pointer"
+                        checked={selectedLikers.includes(like.userId)}
+                        onChange={(e) => {
+                            if (e.target.checked) {
+                                setSelectedLikers(prev => prev.includes(like.userId) ? prev : [...prev, like.userId]);
+                            } else {
+                                setSelectedLikers(prev => prev.filter(id => id !== like.userId));
+                            }
+                        }}
+                    />
+                </div>
+                <button
+                    type="button"
+                    onClick={() => openCustomerPanel(like.userId, displayName, displayAvatar)}
+                    onContextMenu={(e) => handleContextMenu(e, like.userId, displayName, displayAvatar)}
+                    className="group relative inline-block cursor-pointer mb-0.5"
+                >
+                    <img src={displayAvatar} referrerPolicy="no-referrer" className="w-14 h-14 rounded-md border border-[#d8e5f4] shadow-sm group-hover:scale-105 group-hover:shadow-md transition-all duration-200 object-cover" alt="" />
+                    {hasCommented(like.userId) && (
+                        <div className="absolute -bottom-1.5 -right-1.5 bg-white text-[#1683ff] rounded-full p-1 border border-[#c9e3ff] shadow-sm" title="已回评论">
+                            <MessageCircle size={12} className="fill-[#e8f4ff] stroke-[#1683ff]" />
+                        </div>
+                    )}
+                </button>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        openCustomerPanel(like.userId, displayName, displayAvatar);
+                    }}
+                    className="text-[13px] text-[#31506f] font-semibold w-full text-center hover:text-[#1683ff] transition-colors break-words whitespace-normal leading-5"
+                >
+                    {renderEnterpriseName(like.userId, displayName, 'break-words whitespace-normal', 'text-[13px]')}
+                </button>
+                {showRecentLikeCount && Boolean(like.recentLikeCount) && (
+                    <span className="rounded-full border border-[#d2e6ff] bg-[#edf5ff] px-2 py-0.5 text-[11px] leading-4 text-[#5f7892]">
+                        近3天点赞{like.recentLikeCount}次
+                    </span>
+                )}
+            </div>
+        );
+    };
+
     return (
-        <div className="flex h-full w-full overflow-hidden bg-[#eaf4ff]" onClick={closeContextMenu}>
+        <div
+            className="flex h-full w-full overflow-hidden bg-[#eaf4ff]"
+            onClick={() => {
+                closeContextMenu();
+                setIsMomentDateFilterOpen(false);
+            }}
+        >
             {/* 3rd Column: Moments List */}
             <div className="w-[540px] min-w-[540px] border-r border-[#dbe8f7] flex flex-col bg-[#edf6ff] overflow-x-hidden">
                 <div className="px-6 py-4 border-b border-[#dbe8f7] bg-[#f8fbff]">
@@ -1646,17 +1962,79 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                             <Compass size={16} className="text-[#1683ff]" />
                             朋友圈动态
                         </h3>
-                        <div className="relative">
-                            <select
-                                value={selectedMomentCity}
-                                onChange={(e) => setSelectedMomentCity(e.target.value)}
-                                className="appearance-none bg-white border border-[#cfe0f5] rounded-md pl-3 pr-8 py-1.5 text-xs text-[#31506f] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#b8dcff] focus:border-[#5caaff]"
+                        <div className="flex items-center gap-2">
+                            <div
+                                data-testid="moments-date-range-filter"
+                                className="relative"
+                                onClick={(e) => e.stopPropagation()}
                             >
-                                {['南京', '无锡', '苏州', '合肥', '芜湖', '西安'].map(city => (
-                                    <option key={city} value={city}>{city}</option>
-                                ))}
-                            </select>
-                            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7fa6ca] pointer-events-none" />
+                                <button
+                                    type="button"
+                                    data-testid="moments-date-filter-trigger"
+                                    onClick={() => setIsMomentDateFilterOpen(prev => !prev)}
+                                    className="h-8 min-w-[164px] rounded-md border border-[#cfe0f5] bg-white px-2.5 text-xs text-[#31506f] shadow-sm flex items-center justify-between gap-2 hover:border-[#8ec5ff] hover:text-[#1683ff]"
+                                >
+                                    <span className="truncate">{getMomentDateRangeLabel(momentDateStart, momentDateEnd)}</span>
+                                    <ChevronDown size={14} className={`shrink-0 text-[#7fa6ca] transition-transform ${isMomentDateFilterOpen ? 'rotate-180' : ''}`} />
+                                </button>
+                                {isMomentDateFilterOpen && (
+                                    <div
+                                        data-testid="moments-date-filter-panel"
+                                        className="absolute right-0 top-10 z-30 w-[318px] rounded-xl border border-[#cfe0f5] bg-white p-3 shadow-xl"
+                                    >
+                                        <div className="mb-2 flex items-center justify-between">
+                                            <span className="text-xs font-semibold text-[#31506f]">选择发布日期</span>
+                                            {(momentDateStart || momentDateEnd) && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setMomentDateStart('');
+                                                        setMomentDateEnd('');
+                                                    }}
+                                                    className="rounded-full px-2 py-0.5 text-[11px] text-[#7fa6ca] hover:bg-[#eef7ff] hover:text-[#1683ff]"
+                                                >
+                                                    清空
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                                            <input
+                                                type="date"
+                                                aria-label="朋友圈开始日期"
+                                                min={MOMENT_DATE_FILTER_MIN}
+                                                max={momentDateEnd || MOMENT_DATE_FILTER_TODAY}
+                                                value={momentDateStart}
+                                                onChange={(e) => setMomentDateStart(e.target.value)}
+                                                onClick={(e) => (e.currentTarget as HTMLInputElement & { showPicker?: () => void }).showPicker?.()}
+                                                className="h-9 min-w-0 cursor-pointer rounded-md border border-[#dbe8f7] bg-[#f8fbff] px-2 text-xs text-[#31506f] outline-none focus:border-[#5caaff] focus:ring-2 focus:ring-[#b8dcff]/50"
+                                            />
+                                            <span className="text-[11px] text-[#7fa6ca]">至</span>
+                                            <input
+                                                type="date"
+                                                aria-label="朋友圈结束日期"
+                                                min={momentDateStart || MOMENT_DATE_FILTER_MIN}
+                                                max={MOMENT_DATE_FILTER_TODAY}
+                                                value={momentDateEnd}
+                                                onChange={(e) => setMomentDateEnd(e.target.value)}
+                                                onClick={(e) => (e.currentTarget as HTMLInputElement & { showPicker?: () => void }).showPicker?.()}
+                                                className="h-9 min-w-0 cursor-pointer rounded-md border border-[#dbe8f7] bg-[#f8fbff] px-2 text-xs text-[#31506f] outline-none focus:border-[#5caaff] focus:ring-2 focus:ring-[#b8dcff]/50"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="relative">
+                                <select
+                                    value={selectedMomentCity}
+                                    onChange={(e) => setSelectedMomentCity(e.target.value)}
+                                    className="appearance-none bg-white border border-[#cfe0f5] rounded-md pl-3 pr-8 py-1.5 text-xs text-[#31506f] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#b8dcff] focus:border-[#5caaff]"
+                                >
+                                    {['南京', '无锡', '苏州', '合肥', '芜湖', '西安'].map(city => (
+                                        <option key={city} value={city}>{city}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7fa6ca] pointer-events-none" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2007,21 +2385,21 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                             <div>
                                 <div className="flex flex-col gap-6">
                                     <div className="rounded-lg border border-[#d8e5f4] bg-white p-4 shadow-[0_1px_2px_rgba(16,42,76,0.04)]">
-                                        <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center justify-between gap-3 mb-4">
                                             <div className="flex items-center gap-2">
                                                 <Heart size={16} className="text-[#1683ff]" />
-                                                <span className="text-[15px] font-bold text-[#102a4c]">点赞人 ({aggregatedLikes.length})</span>
+                                                <span className="text-[15px] font-bold text-[#102a4c]">点赞区 ({aggregatedLikes.length})</span>
                                             </div>
-                                            {aggregatedLikes.length > 0 && (
+                                            {allSelectableLikeIds.length > 0 && (
                                                 <div className="flex items-center gap-4">
                                                     <label className="flex items-center gap-2 text-sm text-[#5f7892] cursor-pointer">
                                                         <input
                                                             type="checkbox"
                                                             className="rounded border-[#cfe0f5] text-[#1683ff] focus:ring-[#1683ff] cursor-pointer"
-                                                            checked={selectedLikers.length === aggregatedLikes.length && aggregatedLikes.length > 0}
+                                                            checked={selectedLikers.length === allSelectableLikeIds.length && allSelectableLikeIds.length > 0}
                                                             onChange={(e) => {
                                                                 if (e.target.checked) {
-                                                                    setSelectedLikers(aggregatedLikes.map(l => l.userId));
+                                                                    setSelectedLikers(allSelectableLikeIds);
                                                                 } else {
                                                                     setSelectedLikers([]);
                                                                 }
@@ -2033,16 +2411,16 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                         <input
                                                             type="checkbox"
                                                             className="rounded border-[#cfe0f5] text-[#1683ff] focus:ring-[#1683ff] cursor-pointer"
-                                                            checked={uncommentedLikers.length > 0 && uncommentedLikers.every(id => selectedLikers.includes(id))}
+                                                            checked={uncommentedLikersInAllTiers.length > 0 && uncommentedLikersInAllTiers.every(id => selectedLikers.includes(id))}
                                                             onChange={(e) => {
                                                                 if (e.target.checked) {
                                                                     setSelectedLikers(prev => {
                                                                         const next = new Set(prev);
-                                                                        uncommentedLikers.forEach(id => next.add(id));
+                                                                        uncommentedLikersInAllTiers.forEach(id => next.add(id));
                                                                         return Array.from(next);
                                                                     });
                                                                 } else {
-                                                                    setSelectedLikers(prev => prev.filter(id => !uncommentedLikers.includes(id)));
+                                                                    setSelectedLikers(prev => prev.filter(id => !uncommentedLikersInAllTiers.includes(id)));
                                                                 }
                                                             }}
                                                         />
@@ -2062,105 +2440,75 @@ const MomentsView: React.FC<MomentsViewProps> = ({
                                                 </div>
                                             )}
                                         </div>
-                                        <div className={`${isLikesExpanded ? 'min-h-[220px] max-h-[300px] overflow-y-auto' : 'min-h-[120px] max-h-[136px] overflow-hidden'} pr-1`}>
-                                            <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-x-7 gap-y-5 p-2">
-                                                {aggregatedLikes.length > 0 ? (
-                                                    displayedLikes.map((like) => (
-                                                        <div key={like.userId} className="flex flex-col items-center gap-2 relative">
-                                                            <div className="absolute top-1 right-1 z-10 bg-white/90 backdrop-blur-sm rounded-md flex items-center justify-center w-6 h-6 shadow-sm border border-[#d8e5f4]">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    className="w-4 h-4 rounded border-[#cfe0f5] text-[#1683ff] focus:ring-[#1683ff] shadow-sm cursor-pointer"
-                                                                    checked={selectedLikers.includes(like.userId)}
-                                                                    onChange={(e) => {
-                                                                        if (e.target.checked) {
-                                                                            setSelectedLikers(prev => [...prev, like.userId]);
-                                                                        } else {
-                                                                            setSelectedLikers(prev => prev.filter(id => id !== like.userId));
-                                                                        }
-                                                                    }}
-                                                                />
+
+                                        <div className="space-y-4">
+                                            <div>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="rounded-full bg-[#eff6ff] px-2 py-0.5 text-[12px] font-medium text-[#3a7edc]">优先处理</span>
+                                                        <span className="text-[12px] text-[#6f86a0]">{priorityLikes.length}人</span>
+                                                        {renderLikeSectionInfo(
+                                                            'priority-likes-info',
+                                                            '优先处理点赞人',
+                                                            '当前动态下点赞，且近3个自然日全平台点赞次数未达到3次的用户，建议优先处理。'
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className={`${isLikesExpanded ? 'min-h-[180px] max-h-[260px] overflow-y-auto' : 'min-h-[120px] max-h-[136px] overflow-hidden'} pr-1`}>
+                                                    <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-x-7 gap-y-5 p-2">
+                                                        {priorityLikes.length > 0 ? (
+                                                            displayedPriorityLikes.map((like) => renderLikeCard(like))
+                                                        ) : (
+                                                            <div className="col-span-full py-10 flex flex-col items-center justify-center text-slate-300">
+                                                                <Heart size={28} strokeWidth={1} className="mb-2" />
+                                                                <p className="text-xs">暂无优先处理点赞人</p>
                                                             </div>
+                                                        )}
+                                                    </div>
+                                                    {priorityLikes.length > defaultLikesPreviewCount && (
+                                                        <div className="flex justify-center mt-2 mb-4">
                                                             <button
-                                                                type="button"
-                                                                onClick={() => openCustomerPanel(
-                                                                    like.userId,
-                                                                    (() => {
-                                                                        if (like.userId === 'me') return accounts[0]?.name || '我';
-                                                                        const acc = accounts.find(a => a.id === like.userId);
-                                                                        if (acc) return acc.name;
-                                                                        return like.name;
-                                                                    })(),
-                                                                    (() => {
-                                                                        if (like.userId === 'me') return accounts[0]?.avatar;
-                                                                        const acc = accounts.find(a => a.id === like.userId);
-                                                                        if (acc) return acc.avatar;
-                                                                        return like.avatar;
-                                                                    })()
-                                                                )}
-                                                                onContextMenu={(e) => handleContextMenu(e, like.userId, like.name, like.avatar)}
-                                                                className="group relative inline-block cursor-pointer mb-0.5"
+                                                                onClick={() => setIsLikesExpanded(!isLikesExpanded)}
+                                                                className="text-xs text-[#1683ff] hover:text-[#006fe6] flex items-center gap-1"
                                                             >
-                                                                <img src={(() => {
-                                                                    if (like.userId === 'me') return accounts[0]?.avatar;
-                                                                    const acc = accounts.find(a => a.id === like.userId);
-                                                                    if (acc) return acc.avatar;
-                                                                    return like.avatar;
-                                                                })()} referrerPolicy="no-referrer" className="w-14 h-14 rounded-md border border-[#d8e5f4] shadow-sm group-hover:scale-105 group-hover:shadow-md transition-all duration-200 object-cover" alt="" />
-                                                                {hasCommented(like.userId) && (
-                                                                    <div className="absolute -bottom-1.5 -right-1.5 bg-white text-[#1683ff] rounded-full p-1 border border-[#c9e3ff] shadow-sm" title="已回评论">
-                                                                        <MessageCircle size={12} className="fill-[#e8f4ff] stroke-[#1683ff]" />
-                                                                    </div>
-                                                                )}
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    openCustomerPanel(
-                                                                        like.userId,
-                                                                        (() => {
-                                                                            if (like.userId === 'me') return accounts[0]?.name || '我';
-                                                                            const acc = accounts.find(a => a.id === like.userId);
-                                                                            if (acc) return acc.name;
-                                                                            return like.name;
-                                                                        })(),
-                                                                        (() => {
-                                                                            if (like.userId === 'me') return accounts[0]?.avatar;
-                                                                            const acc = accounts.find(a => a.id === like.userId);
-                                                                            if (acc) return acc.avatar;
-                                                                            return like.avatar;
-                                                                        })()
-                                                                    );
-                                                                }}
-                                                                className="text-[13px] text-[#31506f] font-semibold w-full text-center hover:text-[#1683ff] transition-colors break-words whitespace-normal leading-5"
-                                                            >
-                                                                {(() => {
-                                                                    if (like.userId === 'me') {
-                                                                        return renderEnterpriseName('me', accounts[0]?.name || '我', 'break-words whitespace-normal', 'text-[13px]');
-                                                                    }
-                                                                    const acc = accounts.find(a => a.id === like.userId);
-                                                                    if (acc) return renderEnterpriseName(acc.id, acc.name, 'break-words whitespace-normal', 'text-[13px]');
-                                                                    return renderEnterpriseName(like.userId, like.name, 'break-words whitespace-normal', 'text-[13px]');
-                                                                })()}
+                                                                {isLikesExpanded ? '收起' : '查看更多'}
+                                                                <ChevronDown size={12} className={`transform transition-transform ${isLikesExpanded ? 'rotate-180' : ''}`} />
                                                             </button>
                                                         </div>
-                                                    ))
-                                                ) : (
-                                                    <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-300">
-                                                        <Heart size={32} strokeWidth={1} className="mb-2" />
-                                                        <p className="text-xs">暂无点赞</p>
-                                                    </div>
-                                                )}
+                                                    )}
+                                                </div>
                                             </div>
-                                            {aggregatedLikes.length > defaultLikesPreviewCount && (
-                                                <div className="flex justify-center mt-2 mb-4">
-                                                    <button
-                                                        onClick={() => setIsLikesExpanded(!isLikesExpanded)}
-                                                        className="text-xs text-[#1683ff] hover:text-[#006fe6] flex items-center gap-1"
-                                                    >
-                                                        {isLikesExpanded ? '收起' : '查看更多'}
-                                                        <ChevronDown size={12} className={`transform transition-transform ${isLikesExpanded ? 'rotate-180' : ''}`} />
-                                                    </button>
+
+                                            {frequentLikes.length > 0 && (
+                                                <div className="border-t border-dashed border-[#e4edf7] pt-3">
+                                                    <div className="flex items-center justify-between gap-3 px-1 py-1">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                            <span className="rounded-full bg-[#eff6ff] px-2 py-0.5 text-[12px] font-medium text-[#3a7edc] shrink-0">近3天点赞3次及以上</span>
+                                                            <span className="text-[12px] text-[#6f86a0]">{frequentLikes.length}人</span>
+                                                            {renderLikeSectionInfo(
+                                                                'frequent-likes-info',
+                                                                '近3天点赞3次及以上用户',
+                                                                '近3个自然日内全平台点赞次数达到3次及以上的用户，默认收起降低处理优先级；可展开查看并参与勾选、全选、选择未评论用户和批量私聊回复。'
+                                                            )}
+                                                            {selectedFrequentLikerCount > 0 && (
+                                                                <span className="rounded-full bg-[#edf6ff] px-2 py-0.5 text-[12px] text-[#1683ff]">
+                                                                    已选{selectedFrequentLikerCount}人
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setIsFrequentLikesExpanded(prev => !prev)}
+                                                            className="shrink-0 text-xs text-[#1683ff] hover:text-[#006fe6] flex items-center gap-1"
+                                                        >
+                                                            {isFrequentLikesExpanded ? '收起' : '展开'}
+                                                            <ChevronDown size={12} className={`transform transition-transform ${isFrequentLikesExpanded ? 'rotate-180' : ''}`} />
+                                                        </button>
+                                                    </div>
+                                                    {isFrequentLikesExpanded && (
+                                                        <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-x-7 gap-y-5 px-2 pb-1">
+                                                            {displayedFrequentLikes.map((like) => renderLikeCard(like, true))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
@@ -2849,6 +3197,7 @@ const MomentsView: React.FC<MomentsViewProps> = ({
 interface WorkspaceTab {
   id: string;
   title: string;
+  routeTitle?: string;
   type: 'chat' | 'feature';
 }
 
@@ -2885,7 +3234,23 @@ interface DeliveryGroupOperationLog {
   time: string;
 }
 
+interface CustomGroupMember {
+  customer788Id: string;
+  workflow: string;
+  outputs: string[];
+}
+
+interface CustomGroup {
+  id: string;
+  name: string;
+  workflows: string[];
+  outputs: string[];
+  members: CustomGroupMember[];
+  status: 'idle' | 'recalculating';
+}
+
 type PrivateSessionFilterField = 'customerName' | 'followupNote' | 'id788' | 'phone';
+type ActiveChatFilter = 'all' | 'session_abnormal' | 'lead_all' | 'lead_abnormal' | 'community_need' | 'moments_need' | 'transfer_mining' | `custom:${string}`;
 
 const privateSessionFilterOptions: Array<{ value: PrivateSessionFilterField; label: string; placeholder: string }> = [
   { value: 'customerName', label: '客户名称', placeholder: '搜索客户名称' },
@@ -2895,16 +3260,130 @@ const privateSessionFilterOptions: Array<{ value: PrivateSessionFilterField; lab
 ];
 
 const abnormalUserOptions = ['长周期观望', '超低预算', '已成交', '非决策人看房'];
+const pauseFollowupFilterOptions = ['无异常', '全部暂停跟进用户', ...abnormalUserOptions];
+
+// --- pause follow-up filter helper ---
+function filterSessionsByPauseTags(sessions, selectedTags) {
+  if (selectedTags.length === 0) return sessions;
+  if (selectedTags.includes('无异常')) {
+    return sessions.filter(session => !session.abnormalTag);
+  }
+  if (selectedTags.includes('全部暂停跟进用户')) {
+    return sessions.filter(session => Boolean(session.abnormalTag));
+  }
+  return sessions.filter(session => selectedTags.includes(session.abnormalTag || '无异常'));
+}
+// --- end pause follow-up filter helper ---
+
+// --- session reception status helper ---
+function getSessionReceptionStatus(session, profile) {
+  const receptionStatus = profile?.receptionStatus || session.receptionStatus || (session.tag === 'AI' ? 'AI' : '小B');
+  return receptionStatus === '线索承接' ? '小B' : receptionStatus;
+}
+// --- end session reception status helper ---
+
+function getSessionReceptionBadgeClass(status) {
+  return status === 'AI' ? 'border-fuchsia-300 text-fuchsia-500 bg-fuchsia-50' :
+    status === '小B' ? 'border-blue-300 text-blue-500 bg-blue-50' :
+    status === '运营' ? 'border-amber-300 text-amber-600 bg-amber-50' :
+    status === '业务专家' ? 'border-emerald-300 text-emerald-600 bg-emerald-50' :
+    'border-slate-300 text-slate-500 bg-slate-50';
+}
+
+// --- pause badge text helper ---
+function getPauseFollowupBadgeText(abnormalTag) {
+  return abnormalTag || '';
+}
+// --- end pause badge text helper ---
+
+// --- private session ownership filter helper ---
+function filterSessionsByOwnership(sessions, selectedCity, selectedCustomerService) {
+  return sessions.filter(session =>
+    (!selectedCity || session.city === selectedCity) &&
+    (!selectedCustomerService || session.customerService === selectedCustomerService)
+  );
+}
+// --- end private session ownership filter helper ---
+
+// --- custom group recalculation helper ---
+function recalculateExistingCustomGroupMembers(members, workflows, outputs) {
+  return members.filter(member =>
+    workflows.includes(member.workflow) &&
+    member.outputs.some(output => outputs.includes(output))
+  );
+}
+// --- end custom group recalculation helper ---
+
+// --- moments like tier helper ---
+function buildMomentsLikeTiers(currentLikes, recentLikeCounts, _ignoredNonCurrentLikes = [], threshold = 3) {
+  const priorityLikes = [];
+  const frequentLikeMap = new Map();
+  currentLikes.forEach(like => {
+    const recentLikeCount = recentLikeCounts[like.userId] || 0;
+    if (recentLikeCount >= threshold) {
+      frequentLikeMap.set(like.userId, { ...like, recentLikeCount });
+    } else {
+      priorityLikes.push(like);
+    }
+  });
+  const frequentLikes = Array.from(frequentLikeMap.values())
+    .sort((a, b) => (b.recentLikeCount || 0) - (a.recentLikeCount || 0));
+  return { priorityLikes, frequentLikes };
+}
+// --- end moments like tier helper ---
+
+// --- moments date range filter helper ---
+const MOMENT_DATE_FILTER_MIN = '2026-05-01';
+const MOMENT_DATE_FILTER_TODAY = '2026-07-07';
+const MOMENT_DATE_FILTER_DEFAULT_LABEL = '发布日期：全部';
+
+function normalizeMomentDateKey(value) {
+  if (!value) return '';
+  const text = String(value).trim();
+  const directMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (directMatch) return `${directMatch[1]}-${directMatch[2]}-${directMatch[3]}`;
+  const date = new Date(text.replace(/-/g, '/'));
+  if (Number.isNaN(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getMomentDateRangeLabel(startDate, endDate) {
+  const startKey = normalizeMomentDateKey(startDate);
+  const endKey = normalizeMomentDateKey(endDate);
+  if (startKey && endKey) return `发布日期：${startKey} 至 ${endKey}`;
+  if (startKey) return `发布日期：${startKey} 起`;
+  if (endKey) return `发布日期：截至 ${endKey}`;
+  return MOMENT_DATE_FILTER_DEFAULT_LABEL;
+}
+
+function filterMomentGroupsByDateRange(groups, startDate, endDate) {
+  const startKey = normalizeMomentDateKey(startDate);
+  const endKey = normalizeMomentDateKey(endDate);
+  return groups.filter(group => {
+    const dateKey = normalizeMomentDateKey(group.dateKey || group.latestTime || group.time);
+    if (!dateKey) return false;
+    if (startKey && dateKey < startKey) return false;
+    if (endKey && dateKey > endKey) return false;
+    return true;
+  });
+}
+// --- end moments date range filter helper ---
+
+const privateCityOptions = ['合肥', '南京'];
+const privateCustomerServiceOptions = ['张三', '李四', '王五'];
 
 const sessionList = [
-  { name: '雾里看花', time: '5-06', msg: '稍等，我找了解这套房的经纪人和...', tag: '', unread: false, customer788Id: '7881301319959329', abnormalTag: null, isBlacklisted: false, tabTitle: '雾里看花' },
-  { name: '优庆状1347086...', time: '4-25', msg: '[群邀请消息]', tag: 'AI', unread: false, customer788Id: '7881301319959307', abnormalTag: null, isBlacklisted: false, tabTitle: '优庆状1347086...' },
-  { name: 'A_南京miu猫猫', time: '4-17', msg: '您最近关注哪个区域板块的楼盘和...', tag: 'AI', unread: false, customer788Id: '7881301319959305', abnormalTag: null, isBlacklisted: false, tabTitle: 'A_南京miu猫猫' },
-  { name: '二宝', time: '4-17', msg: '[群邀请消息]', tag: '', unread: false, customer788Id: '7881301319959304', abnormalTag: null, isBlacklisted: false, tabTitle: '二宝' },
-  { name: '施向阳 家庭指导师', time: '4-13', msg: '您最近关注哪个区域板块的楼盘和...', tag: '', unread: false, customer788Id: '7881301319959306', abnormalTag: null, isBlacklisted: false, tabTitle: '施向阳 家庭指导师' },
-  { name: '我已在途中', time: '4-05', msg: '看到您关注了蜀山区西七里塘、五...', tag: 'AI', unread: false, customer788Id: '7881301319959308', abnormalTag: null, isBlacklisted: false, tabTitle: '我已在途中' },
-  { name: '浩~心飞', time: '3-30', msg: '您现在关注哪个板块，我给您找几...', tag: '', unread: false, customer788Id: '7881301319959344', abnormalTag: null, isBlacklisted: false, tabTitle: '浩~心飞' },
-  { name: '钟钟鸣', time: '3-29', msg: '下午好，年后南京房价有了新变化...', tag: '', unread: false, customer788Id: '7881301319959301', abnormalTag: null, isBlacklisted: false, tabTitle: '钟钟鸣' },
+  { name: '雾里看花', time: '5-06', msg: '稍等，我找了解这套房的经纪人和...', tag: '', unread: false, customer788Id: '7881301319959329', abnormalTag: null, isBlacklisted: false, tabTitle: '雾里看花', city: '合肥', customerService: '张三' },
+  { name: '优庆状1347086...', time: '4-25', msg: '[群邀请消息]', tag: 'AI', unread: false, customer788Id: '7881301319959307', abnormalTag: null, isBlacklisted: false, tabTitle: '优庆状1347086...', city: '南京', customerService: '李四' },
+  { name: 'A_南京miu猫猫', time: '4-17', msg: '您最近关注哪个区域板块的楼盘和...', tag: 'AI', unread: false, customer788Id: '7881301319959305', abnormalTag: null, isBlacklisted: false, tabTitle: 'A_南京miu猫猫', city: '南京', customerService: '王五' },
+  { name: '二宝', time: '4-17', msg: '[群邀请消息]', tag: '', unread: false, customer788Id: '7881301319959304', abnormalTag: null, isBlacklisted: false, tabTitle: '二宝', city: '合肥', customerService: '张三' },
+  { name: '施向阳 家庭指导师', time: '4-13', msg: '您最近关注哪个区域板块的楼盘和...', tag: '', unread: false, customer788Id: '7881301319959306', abnormalTag: null, isBlacklisted: false, tabTitle: '施向阳 家庭指导师', city: '合肥', customerService: '李四' },
+  { name: '我已在途中', time: '4-05', msg: '看到您关注了蜀山区西七里塘、五...', tag: 'AI', unread: false, customer788Id: '7881301319959308', abnormalTag: null, isBlacklisted: false, tabTitle: '我已在途中', city: '合肥', customerService: '张三' },
+  { name: '浩~心飞', time: '3-30', msg: '您现在关注哪个板块，我给您找几...', tag: '', unread: false, customer788Id: '7881301319959344', abnormalTag: null, isBlacklisted: false, tabTitle: '浩~心飞', city: '南京', customerService: '王五' },
+  { name: '钟钟鸣', time: '3-29', msg: '下午好，年后南京房价有了新变化...', tag: '', unread: false, customer788Id: '7881301319959301', abnormalTag: null, isBlacklisted: false, tabTitle: '钟钟鸣', city: '南京', customerService: '张三' },
 ];
 
 const DISTRIBUTION_AGENTS = [
@@ -3419,10 +3898,16 @@ function Workspace() {
   const [isReasonDropdownOpen, setIsReasonDropdownOpen] = useState(false);
   const [isAbnormalTagDropdownOpen, setIsAbnormalTagDropdownOpen] = useState(false);
   const [pendingAbnormalTag, setPendingAbnormalTag] = useState<string | null | undefined>(undefined);
-  const [activeChatFilter, setActiveChatFilter] = useState<'all' | 'session_abnormal' | 'lead_all' | 'lead_abnormal' | 'community_need' | 'moments_need' | 'transfer_mining'>('all');
+  const [activeChatFilter, setActiveChatFilter] = useState<ActiveChatFilter>('all');
   const [privateSessionFilterField, setPrivateSessionFilterField] = useState<PrivateSessionFilterField>('id788');
   const [privateSessionFilterKeyword, setPrivateSessionFilterKeyword] = useState('');
   const [isPrivateSessionFilterOpen, setIsPrivateSessionFilterOpen] = useState(false);
+  const [isPauseFollowupFilterOpen, setIsPauseFollowupFilterOpen] = useState(false);
+  const [selectedPauseFollowupTags, setSelectedPauseFollowupTags] = useState<string[]>([]);
+  const [selectedPrivateCity, setSelectedPrivateCity] = useState('');
+  const [selectedPrivateCustomerService, setSelectedPrivateCustomerService] = useState('');
+  const [isPrivateCityFilterOpen, setIsPrivateCityFilterOpen] = useState(false);
+  const [isPrivateCustomerServiceFilterOpen, setIsPrivateCustomerServiceFilterOpen] = useState(false);
   const [isLeadGroupExpanded, setIsLeadGroupExpanded] = useState(true);
   const [generatedLead788Ids, setGeneratedLead788Ids] = useState<string[]>([]);
   const [communityNeed788Ids, setCommunityNeed788Ids] = useState<string[]>(['7881301319959329', '7881301319959307']);
@@ -3490,12 +3975,25 @@ function Workspace() {
     { id: 10, name: '365南京二手房线索运营群', category: 'operation', city: '南京', agent: '运营', lastMsg: '运营消息：今日重点跟进高意向客户', time: '5-09', unread: 0, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=96&h=96&q=80', service: '运营群', source: '运营群' },
   ];
 
-  const [customGroups, setCustomGroups] = useState([
-    { id: 'cg-1', name: '高潜客户', workflows: ['【勿选】微客3.0'], outputs: ['用户需要资料', '咨询学区政策，需要人工介入'] }
+  const [customGroups, setCustomGroups] = useState<CustomGroup[]>([
+    {
+      id: 'cg-1',
+      name: '高潜客户',
+      workflows: ['【勿选】微客3.0'],
+      outputs: ['用户需要资料', '咨询学区政策，需要人工介入'],
+      members: [
+        { customer788Id: '7881301319959329', workflow: '【勿选】微客3.0', outputs: ['用户需要资料'] },
+        { customer788Id: '7881301319959307', workflow: '【勿选】微客3.0', outputs: ['咨询学区政策，需要人工介入'] },
+        { customer788Id: '7881301319959305', workflow: '【勿选】微客3.0', outputs: ['用户需要资料', '咨询学区政策，需要人工介入'] }
+      ],
+      status: 'idle'
+    }
   ]);
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [isOutputDropdownOpen, setIsOutputDropdownOpen] = useState(false);
   const [groupForm, setGroupForm] = useState({ name: '', workflows: [] as string[], outputs: [] as string[] });
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [customGroupNotice, setCustomGroupNotice] = useState('');
   const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
   const [viewingLogicGroupId, setViewingLogicGroupId] = useState<string | null>(null);
   const [isGroupPanelOpen, setIsGroupPanelOpen] = useState(true);
@@ -3729,25 +4227,87 @@ function Workspace() {
     '咨询学区政策，需要人工介入', '房东卖房', '租房', '用户需要资料'
   ];
 
-  const handleCreateCustomGroup = () => {
+  const closeCustomGroupForm = () => {
+    setIsCreateGroupModalOpen(false);
+    setIsOutputDropdownOpen(false);
+    setEditingGroupId(null);
+    setGroupForm({ name: '', workflows: [], outputs: [] });
+  };
+
+  const openCreateCustomGroup = () => {
+    setEditingGroupId(null);
+    setGroupForm({ name: '', workflows: [], outputs: [] });
+    setIsOutputDropdownOpen(false);
+    setIsCreateGroupModalOpen(true);
+  };
+
+  const openEditCustomGroup = (group: CustomGroup) => {
+    if (group.status === 'recalculating') return;
+    setEditingGroupId(group.id);
+    setGroupForm({ name: group.name, workflows: [...group.workflows], outputs: [...group.outputs] });
+    setIsOutputDropdownOpen(false);
+    setIsCreateGroupModalOpen(true);
+  };
+
+  const handleSubmitCustomGroup = () => {
     const name = groupForm.name.trim();
     if (name && groupForm.workflows.length > 0 && groupForm.outputs.length > 0) {
       if (!/^[\u4e00-\u9fa5]{1,6}$/.test(name)) {
         alert('分组名称必须是1-6个汉字');
         return;
       }
-      if (customGroups.some(g => g.name === name)) {
+      if (customGroups.some(group => group.name === name && group.id !== editingGroupId)) {
         alert('分组名称不能重复');
         return;
       }
-      setCustomGroups([...customGroups, {
-        id: `cg-${Date.now()}`,
-        name: name,
-        workflows: groupForm.workflows,
-        outputs: groupForm.outputs
-      }]);
-      setIsCreateGroupModalOpen(false);
-      setGroupForm({ name: '', workflows: [], outputs: [] });
+
+      if (!editingGroupId) {
+        setCustomGroups([...customGroups, {
+          id: `cg-${Date.now()}`,
+          name,
+          workflows: [...groupForm.workflows],
+          outputs: [...groupForm.outputs],
+          members: [],
+          status: 'idle'
+        }]);
+        closeCustomGroupForm();
+        return;
+      }
+
+      const previousGroup = customGroups.find(group => group.id === editingGroupId);
+      if (!previousGroup) return;
+
+      const nextRules = {
+        name,
+        workflows: [...groupForm.workflows],
+        outputs: [...groupForm.outputs]
+      };
+      setCustomGroups(current => current.map(group => group.id === editingGroupId
+        ? { ...group, ...nextRules, status: 'recalculating' }
+        : group
+      ));
+      setActiveChatFilter(`custom:${editingGroupId}`);
+      setCustomGroupNotice('编辑已保存，正在重新计算当前分组内的会话…');
+      closeCustomGroupForm();
+
+      window.setTimeout(() => {
+        try {
+          const recalculatedMembers = recalculateExistingCustomGroupMembers(
+            previousGroup.members,
+            nextRules.workflows,
+            nextRules.outputs
+          );
+          const removedCount = previousGroup.members.length - recalculatedMembers.length;
+          setCustomGroups(current => current.map(group => group.id === previousGroup.id
+            ? { ...group, members: recalculatedMembers, status: 'idle' }
+            : group
+          ));
+          setCustomGroupNotice(`重新计算完成：保留 ${recalculatedMembers.length} 个会话，移出 ${removedCount} 个会话`);
+        } catch (error) {
+          setCustomGroups(current => current.map(group => group.id === previousGroup.id ? previousGroup : group));
+          setCustomGroupNotice('重新计算失败，已回滚本次编辑，请重试');
+        }
+      }, 1200);
     } else {
       alert('请填写完整信息');
     }
@@ -3755,6 +4315,9 @@ function Workspace() {
 
   const handleDeleteCustomGroup = (id: string) => {
     setCustomGroups(customGroups.filter(g => g.id !== id));
+    if (activeChatFilter === `custom:${id}`) {
+      setActiveChatFilter('all');
+    }
     setDeletingGroupId(null);
   };
 
@@ -3771,6 +4334,7 @@ function Workspace() {
       abnormalTag: profile?.abnormalTag ?? session.abnormalTag,
       isBlacklisted: profile?.isBlacklisted ?? session.isBlacklisted,
       blacklistReason: profile?.blacklistReason || '',
+      receptionStatus: getSessionReceptionStatus(session, profile),
       phone: profile?.phone || '',
       followupNoteText: privateFollowUpNotes.map(note => note.text).join(' '),
       profileName: session.name
@@ -3791,6 +4355,12 @@ function Workspace() {
   const communityNeedUsers = uniqueBy788Id(sessionUsers.filter(item => communityNeed788Ids.includes(item.customer788Id)));
   const momentsNeedUsers = uniqueBy788Id(sessionUsers.filter(item => momentsNeed788Ids.includes(item.customer788Id)));
   const transferMiningUsers = uniqueBy788Id(sessionUsers.filter(item => item.tag === 'AI' || item.msg.includes('关注')));
+  const activeCustomGroupId = activeChatFilter.startsWith('custom:') ? activeChatFilter.slice('custom:'.length) : null;
+  const activeCustomGroup = activeCustomGroupId ? customGroups.find(group => group.id === activeCustomGroupId) || null : null;
+  const activeCustomGroupMemberIds = new Set(activeCustomGroup?.members.map(member => member.customer788Id) || []);
+  const activeCustomGroupUsers = activeCustomGroup
+    ? sessionUsers.filter(item => activeCustomGroupMemberIds.has(item.customer788Id))
+    : [];
   const privateSessionFilterOption = privateSessionFilterOptions.find(option => option.value === privateSessionFilterField) || privateSessionFilterOptions[0];
   const privateSessionDisplayValues = Array.from(new Set(privateSessionFilterKeyword
     .split(/[,\n]+/)
@@ -3798,14 +4368,23 @@ function Workspace() {
     .filter(Boolean)));
   const privateSessionSearchValues = privateSessionDisplayValues.map(term => term.toLowerCase());
   const baseVisibleSessionList =
+    activeCustomGroup ? activeCustomGroupUsers :
     activeChatFilter === 'lead_all' ? leadUsers :
     activeChatFilter === 'community_need' ? communityNeedUsers :
     activeChatFilter === 'moments_need' ? momentsNeedUsers :
     activeChatFilter === 'transfer_mining' ? transferMiningUsers :
     sessionUsers;
+  const ownershipFilteredSessionList = filterSessionsByOwnership(
+    baseVisibleSessionList,
+    selectedPrivateCity,
+    selectedPrivateCustomerService
+  );
+  const pauseFilteredSessionList = activeChatFilter === 'all'
+    ? filterSessionsByPauseTags(ownershipFilteredSessionList, selectedPauseFollowupTags)
+    : ownershipFilteredSessionList;
   const visibleSessionList = privateSessionSearchValues.length === 0
-    ? baseVisibleSessionList
-    : baseVisibleSessionList.filter(session => {
+    ? pauseFilteredSessionList
+    : pauseFilteredSessionList.filter(session => {
       const fieldValue =
         privateSessionFilterField === 'id788' ? session.customer788Id :
         privateSessionFilterField === 'phone' ? session.phone :
@@ -3814,7 +4393,13 @@ function Workspace() {
       const normalizedFieldValue = fieldValue.toLowerCase();
       return privateSessionSearchValues.some(value => normalizedFieldValue.includes(value));
     });
+  const pauseFollowupFilterLabel =
+    selectedPauseFollowupTags.length === 0 ? '暂停跟进用户' :
+    selectedPauseFollowupTags.includes('全部暂停跟进用户') ? '全部暂停跟进用户' :
+    selectedPauseFollowupTags.length === 1 ? selectedPauseFollowupTags[0] :
+    `已选${selectedPauseFollowupTags.length}项`;
   const sessionPanelTitle =
+    activeCustomGroup ? activeCustomGroup.name :
     activeChatFilter === 'lead_all' ? '线索管理' :
     activeChatFilter === 'community_need' ? '社群需求' :
     activeChatFilter === 'moments_need' ? '朋友圈需求' :
@@ -3879,6 +4464,18 @@ function Workspace() {
 
   const removePrivateSessionSearchValue = (targetIndex: number) => {
     setPrivateSessionFilterKeyword(privateSessionDisplayValues.filter((_, index) => index !== targetIndex).join(','));
+  };
+
+  const togglePauseFollowupTag = (tag: string) => {
+    setSelectedPauseFollowupTags(current => {
+      if (tag === '无异常' || tag === '全部暂停跟进用户') {
+        return current.includes(tag) ? [] : [tag];
+      }
+      const withoutSummary = current.filter(item => item !== '无异常' && item !== '全部暂停跟进用户');
+      return withoutSummary.includes(tag)
+        ? withoutSummary.filter(item => item !== tag)
+        : [...withoutSummary, tag];
+    });
   };
 
   const openDeliveryGroupModal = () => {
@@ -3980,14 +4577,19 @@ function Workspace() {
     setMiniProgramContextMenu(prev => ({ ...prev, visible: false }));
   };
 
-  const openTab = (title: string) => {
-    const existingTab = tabs.find(t => t.title === title);
+  const openTab = (title: string, displayTitle?: string) => {
+    const nextTitle = displayTitle || title;
+    const existingTab = tabs.find(t => (t.routeTitle || t.title) === title);
     if (existingTab) {
+      if (displayTitle && existingTab.title !== displayTitle) {
+        setTabs(prev => prev.map(tab => tab.id === existingTab.id ? { ...tab, title: nextTitle, routeTitle: title } : tab));
+      }
       setActiveTabId(existingTab.id);
     } else {
       const newTab: WorkspaceTab = {
         id: `feature-${Date.now()}`,
-        title,
+        title: nextTitle,
+        routeTitle: title,
         type: 'feature'
       };
       setTabs([...tabs, newTab]);
@@ -3995,7 +4597,13 @@ function Workspace() {
     }
   };
 
+  const renameOpenedTab = (title: string, displayTitle: string) => {
+    setTabs(prev => prev.map(tab => (tab.routeTitle || tab.title) === title ? { ...tab, title: displayTitle, routeTitle: title } : tab));
+  };
+
   const renderContent = () => {
+    const featureRouteTitle = activeTab.routeTitle || activeTab.title;
+
     if (activeTab.type === 'chat') {
       const chatDisplayName = activeChatProfile?.name || activeTab.title;
       return (
@@ -4262,7 +4870,7 @@ function Workspace() {
                 <div className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm border border-zinc-100 dark:border-zinc-800">
                   <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-4">客户标签</h3>
                   <div className="mb-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
-                    <div className="text-xs text-zinc-500 mb-2">异常用户标签</div>
+                    <div className="text-xs text-zinc-500 mb-2">暂停跟进用户</div>
                     <div className="relative">
                       <div className="flex items-center gap-2">
                         <div
@@ -4430,7 +5038,7 @@ function Workspace() {
       );
     }
 
-    if (activeTab.title === '[AI] 合肥100w学区房') {
+    if (featureRouteTitle === '[AI] 合肥100w学区房') {
       return (
         <div className="w-full h-full bg-white dark:bg-zinc-950 flex flex-col relative overflow-hidden">
           <div className="flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 p-4">
@@ -4532,7 +5140,7 @@ function Workspace() {
       );
     }
 
-    if (activeTab.title === '[AI] 合肥100w学区房群') {
+    if (featureRouteTitle === '[AI] 合肥100w学区房群') {
       return (
         <div className="w-full h-full bg-white dark:bg-zinc-950 flex flex-col relative overflow-hidden">
           <div className="flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 p-4">
@@ -4670,7 +5278,7 @@ function Workspace() {
       );
     }
 
-    if (activeTab.title.includes('每日私聊推送_学区房名单')) {
+    if (featureRouteTitle.includes('每日私聊推送_学区房名单')) {
       return (
         <div className="w-full h-full bg-white dark:bg-zinc-950 flex flex-col overflow-y-auto">
           {/* Header */}
@@ -4700,7 +5308,7 @@ function Workspace() {
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">TASK_ID:</span><span className="text-zinc-900 dark:text-zinc-100">23448</span></div>
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">推送状态:</span><span className="text-zinc-900 dark:text-zinc-100">已推送</span></div>
 
-                <div className="flex"><span className="text-zinc-500 w-24 shrink-0">名称:</span><span className="text-zinc-900 dark:text-zinc-100">3.5 沉默用户二推 (mcp)</span></div>
+                <div className="flex"><span className="text-zinc-500 w-24 shrink-0">名称:</span><span className="text-zinc-900 dark:text-zinc-100">{activeTab.title}</span></div>
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">主题:</span><span className="text-zinc-900 dark:text-zinc-100">新房</span></div>
 
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">推送时间:</span><span className="text-zinc-900 dark:text-zinc-100">即时推送 2026-03-12 10:43:26</span></div>
@@ -4777,7 +5385,7 @@ function Workspace() {
       );
     }
 
-    if (activeTab.title.includes('群推送_映象星潮')) {
+    if (featureRouteTitle.includes('群推送_映象星潮')) {
       return (
         <div className="w-full h-full bg-white dark:bg-zinc-950 flex flex-col overflow-y-auto">
           {/* Header */}
@@ -4807,7 +5415,7 @@ function Workspace() {
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">TASK_ID:</span><span className="text-zinc-900 dark:text-zinc-100">24581</span></div>
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">推送状态:</span><span className="text-zinc-900 dark:text-zinc-100">已推送</span></div>
 
-                <div className="flex"><span className="text-zinc-500 w-24 shrink-0">名称:</span><span className="text-zinc-900 dark:text-zinc-100">0331-全群-映象星潮</span></div>
+                <div className="flex"><span className="text-zinc-500 w-24 shrink-0">名称:</span><span className="text-zinc-900 dark:text-zinc-100">{activeTab.title}</span></div>
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">主题:</span><span className="text-zinc-900 dark:text-zinc-100">新房</span></div>
 
                 <div className="flex"><span className="text-zinc-500 w-24 shrink-0">推送时间:</span><span className="text-zinc-900 dark:text-zinc-100">即时推送 2026-03-31 08:43:37</span></div>
@@ -5014,6 +5622,11 @@ function Workspace() {
 
   return (
     <div className="flex h-screen w-full bg-[#eaf4ff] text-zinc-900 dark:text-zinc-100 overflow-hidden text-sm relative" onClick={closeContextMenu}>
+      {customGroupNotice && (
+        <div className="fixed top-4 right-4 z-[80] max-w-[360px] rounded-lg border border-[#c9e3ff] bg-white px-4 py-3 text-xs text-[#31506f] shadow-[0_10px_30px_rgba(16,42,76,0.18)]">
+          {customGroupNotice}
+        </div>
+      )}
       {/* Thin Left Rail */}
       <div className="w-16 border-r border-[#dbe8f7] bg-[#f6fbff] flex flex-col items-center py-4 gap-4 z-10 shrink-0">
          <div className="w-10 h-10 rounded-xl bg-[#1683ff] items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20 mb-2 hidden">AI</div>
@@ -5096,7 +5709,7 @@ function Workspace() {
                     <ChevronDown size={14} className="text-[#7d96b2] rotate-180" />
                   </div>
                   <div className="flex flex-col py-1">
-                    {['待分配', '运营', 'AI', '业务专家', '线索承接'].map(item => (
+                    {['待分配', '运营', 'AI', '业务专家'].map(item => (
                       <div key={item} className="mx-3 pl-9 pr-3 py-1.5 rounded-md text-[#5f7892] hover:bg-[#eaf4ff] hover:text-[#1683ff] cursor-pointer text-sm transition-colors">
                         {item}
                       </div>
@@ -5157,7 +5770,7 @@ function Workspace() {
                     <FolderPlus size={16} className="text-orange-500" />
                     <span className="flex-1">自定义分组</span>
                     <button
-                      onClick={(e) => { e.stopPropagation(); setIsCreateGroupModalOpen(true); setIsOutputDropdownOpen(false); }}
+                      onClick={(e) => { e.stopPropagation(); openCreateCustomGroup(); }}
                       className="p-1 rounded opacity-0 group-hover/header:opacity-100 text-[#7d96b2] hover:text-orange-600 hover:bg-orange-50 transition-all"
                       title="新建自定义分组"
                     >
@@ -5166,15 +5779,38 @@ function Workspace() {
                   </div>
                   <div className="flex flex-col py-1">
                     {customGroups.map(group => (
-                      <div key={group.id} className="group/item mx-3 flex items-center justify-between pl-9 pr-3 py-1.5 rounded-md text-[#5f7892] hover:bg-[#eaf4ff] hover:text-orange-600 cursor-pointer text-sm transition-colors relative">
+                      <div
+                        key={group.id}
+                        onClick={() => setActiveChatFilter(`custom:${group.id}`)}
+                        className={`group/item mx-3 flex items-center justify-between pl-9 pr-3 py-1.5 rounded-md cursor-pointer text-sm transition-colors relative ${activeCustomGroupId === group.id ? 'text-orange-600 bg-orange-50' : 'text-[#5f7892] hover:bg-[#eaf4ff] hover:text-orange-600'}`}
+                      >
                         <span className="truncate flex-1">{group.name}</span>
-                        <div className="hidden group-hover/item:flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity absolute right-4">
+                        {group.status === 'recalculating' ? (
+                          <span className="ml-2 inline-flex items-center gap-1 text-[10px] text-orange-600 shrink-0">
+                            <Loader2 size={11} className="animate-spin" />
+                            重新计算中
+                          </span>
+                        ) : (
+                          <span className="ml-2 min-w-5 h-5 px-1.5 rounded-full bg-white border border-[#d8e5f4] text-[10px] text-[#7d96b2] flex items-center justify-center shrink-0 group-hover/item:hidden">
+                            {group.members.length}
+                          </span>
+                        )}
+                        {group.status === 'idle' && (
+                        <div className="hidden group-hover/item:flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity absolute right-3 bg-[#eaf4ff]">
                           <button
                             onClick={(e) => { e.stopPropagation(); setViewingLogicGroupId(group.id); }}
                             className="p-1 rounded text-zinc-400 hover:text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors"
                             title="查看逻辑"
                           >
                             <Eye size={12} />
+                          </button>
+                          <button
+                            data-testid="edit-custom-group"
+                            onClick={(e) => { e.stopPropagation(); openEditCustomGroup(group); }}
+                            className="p-1 rounded text-zinc-400 hover:text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors"
+                            title="编辑"
+                          >
+                            <Pencil size={12} />
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); setDeletingGroupId(group.id); }}
@@ -5184,6 +5820,7 @@ function Workspace() {
                             <Trash2 size={12} />
                           </button>
                         </div>
+                        )}
                       </div>
                     ))}
                     {customGroups.length === 0 && (
@@ -5344,16 +5981,162 @@ function Workspace() {
                   </div>
                 </div>
               )}
-              <div className="flex gap-2">
-                <div className="flex-1 h-8 flex items-center justify-between px-3 bg-white border border-[#cfd8e3] rounded text-xs cursor-pointer text-[#31506f]">
-                  <span>全国</span>
-                  <ChevronDown size={12} className="text-[#7d96b2]" />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="relative">
+                  <button
+                    type="button"
+                    data-testid="private-city-filter"
+                    onClick={() => {
+                      setIsPrivateCityFilterOpen(prev => !prev);
+                      setIsPrivateCustomerServiceFilterOpen(false);
+                      setIsPauseFollowupFilterOpen(false);
+                    }}
+                    className={`w-full h-9 flex items-center justify-between gap-2 px-2.5 border rounded text-xs transition-colors ${selectedPrivateCity ? 'border-[#9acbff] bg-[#f7fbff] text-[#1683ff]' : 'border-[#cfd8e3] bg-white text-[#9db4ca] hover:border-[#9acbff]'}`}
+                  >
+                    <span className="flex items-center min-w-0 flex-1">
+                      <span data-testid="private-city-filter-label" className="shrink-0 pr-2 mr-2 border-r border-[#dbe8f7] text-[11px] text-[#7d96b2]">城市</span>
+                      <span className="truncate">{selectedPrivateCity || '请选择'}</span>
+                    </span>
+                    <ChevronDown size={12} className={`shrink-0 text-[#7d96b2] transition-transform ${isPrivateCityFilterOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isPrivateCityFilterOpen && (
+                    <div className="absolute left-0 top-full mt-1 w-full rounded-md border border-[#d8e5f4] bg-white shadow-[0_8px_24px_rgba(16,42,76,0.14)] z-40 py-1">
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedPrivateCity(''); setIsPrivateCityFilterOpen(false); }}
+                        className={`w-full px-3 py-2 text-left text-xs ${!selectedPrivateCity ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#31506f] hover:bg-[#f4f9ff]'}`}
+                      >
+                        不限城市
+                      </button>
+                      {privateCityOptions.map(city => (
+                        <button
+                          key={city}
+                          type="button"
+                          onClick={() => { setSelectedPrivateCity(city); setIsPrivateCityFilterOpen(false); }}
+                          className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between ${selectedPrivateCity === city ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#31506f] hover:bg-[#f4f9ff]'}`}
+                        >
+                          <span>{city}</span>
+                          {selectedPrivateCity === city && <Check size={12} />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1 h-8 flex items-center justify-between px-3 bg-white border border-[#cfd8e3] rounded text-xs cursor-pointer text-[#31506f]">
-                  <span>张三</span>
-                  <ChevronDown size={12} className="text-[#7d96b2]" />
+                <div className="relative">
+                  <button
+                    type="button"
+                    data-testid="private-customer-service-filter"
+                    onClick={() => {
+                      setIsPrivateCustomerServiceFilterOpen(prev => !prev);
+                      setIsPrivateCityFilterOpen(false);
+                      setIsPauseFollowupFilterOpen(false);
+                    }}
+                    className={`w-full h-9 flex items-center justify-between gap-2 px-2.5 border rounded text-xs transition-colors ${selectedPrivateCustomerService ? 'border-[#9acbff] bg-[#f7fbff] text-[#1683ff]' : 'border-[#cfd8e3] bg-white text-[#9db4ca] hover:border-[#9acbff]'}`}
+                  >
+                    <span className="flex items-center min-w-0 flex-1">
+                      <span data-testid="private-customer-service-filter-label" className="shrink-0 pr-2 mr-2 border-r border-[#dbe8f7] text-[11px] text-[#7d96b2]">客服名称</span>
+                      <span className="truncate">{selectedPrivateCustomerService || '请选择'}</span>
+                    </span>
+                    <ChevronDown size={12} className={`shrink-0 text-[#7d96b2] transition-transform ${isPrivateCustomerServiceFilterOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isPrivateCustomerServiceFilterOpen && (
+                    <div className="absolute left-0 top-full mt-1 w-full rounded-md border border-[#d8e5f4] bg-white shadow-[0_8px_24px_rgba(16,42,76,0.14)] z-40 py-1">
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedPrivateCustomerService(''); setIsPrivateCustomerServiceFilterOpen(false); }}
+                        className={`w-full px-3 py-2 text-left text-xs ${!selectedPrivateCustomerService ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#31506f] hover:bg-[#f4f9ff]'}`}
+                      >
+                        不限客服
+                      </button>
+                      {privateCustomerServiceOptions.map(customerService => (
+                        <button
+                          key={customerService}
+                          type="button"
+                          onClick={() => { setSelectedPrivateCustomerService(customerService); setIsPrivateCustomerServiceFilterOpen(false); }}
+                          className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between ${selectedPrivateCustomerService === customerService ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#31506f] hover:bg-[#f4f9ff]'}`}
+                        >
+                          <span>{customerService}</span>
+                          {selectedPrivateCustomerService === customerService && <Check size={12} />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
+              {activeChatFilter === 'all' && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPauseFollowupFilterOpen(prev => !prev);
+                      setIsPrivateCityFilterOpen(false);
+                      setIsPrivateCustomerServiceFilterOpen(false);
+                    }}
+                    className={`w-full h-9 flex items-center justify-between gap-2 px-3 rounded border text-xs transition-colors ${selectedPauseFollowupTags.length > 0 ? 'border-[#9acbff] bg-[#e7f3ff] text-[#1683ff]' : 'border-[#cfd8e3] bg-white text-[#31506f] hover:border-[#9acbff]'}`}
+                  >
+                    <span className="flex items-center gap-2 min-w-0">
+                      <Tag size={14} className="shrink-0" />
+                      <span className="truncate">{pauseFollowupFilterLabel}</span>
+                    </span>
+                    <span className="flex items-center gap-1.5 shrink-0">
+                      {selectedPauseFollowupTags.length > 0 && (
+                        <span className="min-w-5 h-5 px-1.5 rounded-full bg-white border border-[#c9e3ff] text-[10px] flex items-center justify-center">
+                          {selectedPauseFollowupTags.length}
+                        </span>
+                      )}
+                      <ChevronDown size={12} className={`transition-transform ${isPauseFollowupFilterOpen ? 'rotate-180' : ''}`} />
+                    </span>
+                  </button>
+                  {isPauseFollowupFilterOpen && (
+                    <div className="absolute left-0 top-full mt-1 w-full rounded-lg border border-[#d8e5f4] bg-white shadow-[0_12px_28px_rgba(16,42,76,0.16)] z-40 overflow-hidden">
+                      <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#e5eef8] bg-[#f7fbff]">
+                        <div>
+                          <div className="text-xs font-semibold text-[#31506f]">暂停跟进用户</div>
+                          <div className="text-[10px] text-[#7d96b2] mt-0.5">支持选择多个标签</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPauseFollowupTags([])}
+                          disabled={selectedPauseFollowupTags.length === 0}
+                          className="text-[11px] text-[#1683ff] disabled:text-[#9db4ca] disabled:cursor-not-allowed"
+                        >
+                          清空
+                        </button>
+                      </div>
+                      <div className="py-1.5 max-h-[244px] overflow-y-auto">
+                        {pauseFollowupFilterOptions.map((option, index) => {
+                          const selected = selectedPauseFollowupTags.includes(option);
+                          return (
+                            <button
+                              key={option}
+                              type="button"
+                              onClick={() => togglePauseFollowupTag(option)}
+                              className={`w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs transition-colors ${selected ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#31506f] hover:bg-[#f4f9ff]'} ${index === 1 ? 'border-b border-[#e5eef8] mb-1.5 pb-2.5' : ''}`}
+                            >
+                              <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${selected ? 'bg-[#1683ff] border-[#1683ff] text-white' : 'bg-white border-[#b9cce0]'}`}>
+                                {selected && <Check size={11} strokeWidth={3} />}
+                              </span>
+                              <span className="flex-1">{option}</span>
+                              {option === '无异常' && <span className="text-[10px] text-[#7d96b2]">正常用户</span>}
+                              {option === '全部暂停跟进用户' && <span className="text-[10px] text-[#7d96b2]">汇总</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="flex items-center justify-between px-3 py-2 border-t border-[#e5eef8] bg-[#f7fbff]">
+                        <span className="text-[10px] text-[#7d96b2]">具体原因可多选，按任一条件匹配</span>
+                        <button
+                          type="button"
+                          onClick={() => setIsPauseFollowupFilterOpen(false)}
+                          className="h-7 px-3 rounded bg-[#1683ff] text-white text-xs hover:bg-[#0f6fd6]"
+                        >
+                          完成
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex items-center justify-between text-xs mt-1">
                 <div className="flex gap-2 text-[#5f7892]">
                   <span className="cursor-pointer px-3 py-1 rounded-full bg-[#e7f3ff] text-[#1683ff]">只看我的</span>
@@ -5365,6 +6148,15 @@ function Workspace() {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto bg-white p-3">
+              {visibleSessionList.length === 0 && (
+                <div className="h-full min-h-[240px] flex flex-col items-center justify-center text-center px-6">
+                  <div className="w-12 h-12 rounded-full bg-[#f4f9ff] text-[#9db4ca] flex items-center justify-center mb-3">
+                    <Search size={22} />
+                  </div>
+                  <div className="text-sm font-medium text-[#31506f]">暂无符合条件的会话</div>
+                  <div className="text-xs text-[#9db4ca] mt-1">可调整标签或其他筛选条件后查看</div>
+                </div>
+              )}
               {visibleSessionList.map((session, i) => (
                 <div key={`${session.customer788Id}-${i}`} onClick={() => {
                   const tabId = `chat-${session.customer788Id}`;
@@ -5375,37 +6167,36 @@ function Workspace() {
                     setTabs(prev => [...prev, { id: tabId, title: session.name, type: 'chat' }]);
                     setActiveTabId(tabId);
                   }
-                }} className={`flex gap-3 p-3 rounded-md cursor-pointer hover:bg-[#f4f9ff] transition-colors ${`chat-${session.customer788Id}` === activeTab.id ? 'bg-[#e7f3ff]' : ''}`}>
-                  <div className="relative w-10 h-10 rounded-full bg-[#e7f3ff] shrink-0 overflow-hidden border border-[#d8e5f4]">
+                }} className={`flex gap-3 px-3 py-3.5 rounded-lg cursor-pointer transition-colors ${`chat-${session.customer788Id}` === activeTab.id ? 'bg-[#e3f1ff]' : 'hover:bg-[#f4f9ff]'}`}>
+                  <div className="relative w-11 h-11 rounded-full bg-[#e7f3ff] shrink-0 overflow-hidden border border-[#d8e5f4]">
                     <img src={`https://picsum.photos/seed/${session.name}/40/40`} alt="avatar" className="w-full h-full object-cover opacity-80" referrerPolicy="no-referrer" />
                     {session.unread && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#ff5b5b] border border-white"></span>}
                   </div>
-                  <div className="flex-1 min-w-0 flex flex-col gap-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-[#31506f] truncate">{session.name}</span>
+                  <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
+                    <div className="flex justify-between items-center gap-3">
+                      <span className="text-sm font-semibold text-[#31506f] truncate">{session.name}</span>
                       <span className="text-xs text-[#9db4ca] shrink-0">{session.time}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-[#7d96b2] truncate flex-1">{session.msg}</span>
-                      {session.tag && (
-                        <span className={`text-[10px] px-1 rounded border shrink-0 ${session.tag === 'AI' ? 'text-pink-500 border-pink-200 bg-pink-50 dark:bg-pink-950/30 dark:border-pink-900' : 'text-blue-500 border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900'}`}>
-                          {session.tag}
-                        </span>
-                      )}
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[13px] text-[#7d96b2] truncate flex-1 min-w-0">{session.msg}</span>
+                      <span className={`h-5 px-1.5 rounded border text-[10px] shrink-0 inline-flex items-center ${getSessionReceptionBadgeClass(session.receptionStatus)}`}>
+                        {session.receptionStatus}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-zinc-400">
-                      <span className="truncate">{session.customer788Id}</span>
+                    {(session.abnormalTag || session.isBlacklisted) && (
+                      <div className="flex items-center gap-1.5 min-w-0">
                       {session.abnormalTag && (
-                        <span className="px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30">
-                          {session.abnormalTag}
+                          <span className="max-w-[120px] h-5 truncate px-1.5 rounded border border-amber-200 bg-amber-50 text-[10px] text-amber-600 shrink-0 inline-flex items-center" title={getPauseFollowupBadgeText(session.abnormalTag)}>
+                            {getPauseFollowupBadgeText(session.abnormalTag)}
                         </span>
                       )}
                       {session.isBlacklisted && (
-                        <span className="px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 border border-red-100 dark:border-red-900/30">
+                        <span className="h-5 px-1.5 rounded border border-red-200 bg-red-50 text-[10px] text-red-600 shrink-0 inline-flex items-center">
                           黑名单
                         </span>
                       )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -5661,6 +6452,7 @@ function Workspace() {
             <Sidebar
               onClose={() => setIsSidebarOpen(false)}
               onOpenTab={openTab}
+              onRenameOpenedTab={renameOpenedTab}
               pendingAction={pendingSidebarAction}
               isBlacklistModalOpen={isBlacklistModalOpen}
               setIsBlacklistModalOpen={setIsBlacklistModalOpen}
@@ -6035,10 +6827,10 @@ function Workspace() {
             >
               <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
                 <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <FolderPlus size={18} className="text-indigo-500" />
-                  新建自定义分组
+                  {editingGroupId ? <Pencil size={18} className="text-indigo-500" /> : <FolderPlus size={18} className="text-indigo-500" />}
+                  {editingGroupId ? '编辑自定义分组' : '新建自定义分组'}
                 </h3>
-                <button onClick={() => setIsCreateGroupModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
+                <button onClick={closeCustomGroupForm} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
                   <X size={18} />
                 </button>
               </div>
@@ -6140,21 +6932,27 @@ function Workspace() {
                     )}
                   </div>
                 </div>
+
+                {editingGroupId && (
+                  <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-300">
+                    保存后将仅重新计算当前分组内已有会话；符合新规则的保留，不符合的移出，不会补入分组外历史会话。
+                  </div>
+                )}
               </div>
 
               <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-3 bg-zinc-50/50 dark:bg-zinc-800/50">
                 <button
-                  onClick={() => setIsCreateGroupModalOpen(false)}
+                  onClick={closeCustomGroupForm}
                   className="px-5 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors border border-zinc-200 dark:border-zinc-700"
                 >
                   取消
                 </button>
                 <button
-                  onClick={handleCreateCustomGroup}
+                  onClick={handleSubmitCustomGroup}
                   className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!groupForm.name.trim() || groupForm.workflows.length === 0 || groupForm.outputs.length === 0}
                 >
-                  确认创建
+                  {editingGroupId ? '保存修改' : '确认创建'}
                 </button>
               </div>
             </motion.div>
@@ -6453,7 +7251,8 @@ function PrivateHouseMiniProgramCard({ onContextMenu }: { onContextMenu: (e: Rea
 
 interface SidebarProps {
   onClose: () => void;
-  onOpenTab: (tabName: string) => void;
+  onOpenTab: (tabName: string, displayName?: string) => void;
+  onRenameOpenedTab?: (tabName: string, displayName: string) => void;
   pendingAction?: { type: 'append', text: string, id: number } | null;
   isBlacklistModalOpen?: boolean;
   setIsBlacklistModalOpen?: (open: boolean) => void;
@@ -6475,7 +7274,186 @@ interface AssistantHistoryItem {
   isArchived: boolean;
 }
 
-function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setIsBlacklistModalOpen, blacklistReason, setBlacklistReason, isReasonDropdownOpen, setIsReasonDropdownOpen }: SidebarProps) {
+const audienceMetaByName: Record<string, Partial<AudienceResource>> = {
+  '合肥100w学区房': {
+    type: '湖仓541人群包',
+    source: 'AI生成',
+    status: '已生成',
+    audienceCount: 1285,
+    createdAt: '今天 10:42',
+    updatedAt: '今天 10:46',
+    updatedOrder: 202606261046,
+    relatedTaskCount: 1,
+    configSnapshot: ['城市：合肥市', '需求：学区房', '预算：100万以内']
+  },
+  '3.5沉寂用户 (二推)': {
+    type: '湖仓541人群包',
+    source: '引用已有',
+    status: '已生成',
+    audienceCount: 55,
+    createdAt: '03-12 09:52',
+    updatedAt: '03-12 09:52',
+    updatedOrder: 202603120952,
+    relatedTaskCount: 1,
+    configSnapshot: ['客户状态：沉寂用户', '触达轮次：二推', '主题：新房']
+  },
+  '南京改善高意向人群': {
+    type: 'CDP人群包',
+    source: 'CDP导入',
+    status: '已生成',
+    audienceCount: 864,
+    createdAt: '03-30 18:20',
+    updatedAt: '03-31 08:10',
+    updatedOrder: 202603310810,
+    relatedTaskCount: 0,
+    configSnapshot: ['城市：南京', '意向：改善', '活跃度：近30天']
+  }
+};
+
+const taskMetaByName: Record<string, Partial<PushTaskResource>> = {
+  '每日私聊推送_学区房名单': {
+    pushType: '私聊推送',
+    status: '已完成',
+    relatedAudienceName: '合肥100w学区房',
+    estimatedReach: 1285,
+    pushTime: '每日 11:30',
+    createdAt: '今天 11:24',
+    updatedAt: '今天 11:30',
+    updatedOrder: 202606261130,
+    creator: 'AI助手',
+    configSnapshot: ['发送账号：C端客服', '黑名单过滤：未设置', '推送间隔：每天'],
+    executionResult: '已排期成功'
+  },
+  '0331-全群-映象星潮': {
+    pushType: '群聊推送',
+    status: '已完成',
+    relatedAudienceName: '合肥100w学区房群',
+    estimatedReach: 3,
+    pushTime: '即时推送',
+    createdAt: '03-31 08:43',
+    updatedAt: '03-31 08:43',
+    updatedOrder: 202603310843,
+    creator: 'AI助手',
+    configSnapshot: ['发送账号：365房博士好好', '发送内容：文本 + 淘房小程序', '推送间隔：0-0'],
+    executionResult: '已推送'
+  },
+  '沉寂用户二推测试': {
+    pushType: '私聊推送',
+    status: '已失败',
+    relatedAudienceName: '3.5沉寂用户 (二推)',
+    estimatedReach: 55,
+    pushTime: '即时推送',
+    createdAt: '03-12 10:43',
+    updatedAt: '03-12 10:46',
+    updatedOrder: 202603121046,
+    creator: 'AI助手',
+    configSnapshot: ['发送账号：选房分析师合合', '黑名单过滤：中介同行 / 无购房需求', '推送间隔：10-20'],
+    executionResult: '部分账号不可用'
+  }
+};
+
+const groupMetaByName: Record<string, Partial<GroupResource>> = {
+  '合肥100w学区房群': {
+    status: '已生成',
+    groupCount: 3,
+    customerCount: 1001,
+    createdAt: '今天 10:48',
+    updatedAt: '今天 10:48',
+    updatedOrder: 202606261048,
+    relatedTaskCount: 1,
+    configSnapshot: ['城市：合肥市', '需求：学区房', '预算：100万以内', '群类型：运营群']
+  },
+  '南京改善高意向群聊包': {
+    status: '已生成',
+    groupCount: 12,
+    customerCount: 386,
+    createdAt: '03-31 09:10',
+    updatedAt: '03-31 09:10',
+    updatedOrder: 202603310910,
+    relatedTaskCount: 1,
+    configSnapshot: ['城市：南京', '客户意向：改善', '活跃度：近30天', '群类型：交付群']
+  }
+};
+
+const makeAudienceResource = (item: { id: string; name: string; tabName: string }, patch: Partial<AudienceResource> = {}): AudienceResource => {
+  const meta = audienceMetaByName[item.name] || {};
+  return {
+    id: item.id,
+    name: item.name,
+    originalName: item.name,
+    tabName: item.tabName,
+    type: meta.type || 'AI人群包',
+    source: meta.source || 'AI生成',
+    status: (meta.status as AudienceResourceStatus) || '已生成',
+    audienceCount: meta.audienceCount || 0,
+    createdAt: meta.createdAt || '刚刚',
+    updatedAt: meta.updatedAt || '刚刚',
+    updatedOrder: meta.updatedOrder || Date.now(),
+    relatedTaskCount: meta.relatedTaskCount || 0,
+    configSnapshot: meta.configSnapshot || ['来源：AI会话生成', '状态：待确认'],
+    ...patch
+  };
+};
+
+const makeGroupResource = (item: { id: string; name: string; tabName: string }, patch: Partial<GroupResource> = {}): GroupResource => {
+  const meta = groupMetaByName[item.name] || {};
+  return {
+    id: item.id,
+    name: item.name,
+    originalName: item.name,
+    tabName: item.tabName,
+    status: (meta.status as GroupResourceStatus) || '已生成',
+    groupCount: meta.groupCount || 0,
+    customerCount: meta.customerCount || 0,
+    createdAt: meta.createdAt || '刚刚',
+    updatedAt: meta.updatedAt || '刚刚',
+    updatedOrder: meta.updatedOrder || Date.now(),
+    relatedTaskCount: meta.relatedTaskCount || 0,
+    configSnapshot: meta.configSnapshot || ['来源：AI会话生成', '群聊包状态：待确认'],
+    ...patch
+  };
+};
+
+const makePushTaskResource = (item: { id: string; name: string; tabName: string }, patch: Partial<PushTaskResource> = {}): PushTaskResource => {
+  const meta = taskMetaByName[item.name] || {};
+  return {
+    id: item.id,
+    name: item.name,
+    originalName: item.name,
+    tabName: item.tabName,
+    pushType: meta.pushType || '私聊推送',
+    status: (meta.status as PushTaskStatus) || '待执行',
+    relatedAudienceName: meta.relatedAudienceName || '未关联',
+    estimatedReach: meta.estimatedReach || 0,
+    pushTime: meta.pushTime || '待设置',
+    createdAt: meta.createdAt || '刚刚',
+    updatedAt: meta.updatedAt || '刚刚',
+    updatedOrder: meta.updatedOrder || Date.now(),
+    creator: meta.creator || 'AI助手',
+    configSnapshot: meta.configSnapshot || ['配置来源：AI会话', '推送时间：待设置'],
+    executionResult: meta.executionResult || '待执行',
+    ...patch
+  };
+};
+
+const initialAudienceResources: AudienceResource[] = [
+  makeAudienceResource({ id: 'i1', name: '合肥100w学区房', tabName: '[AI] 合肥100w学区房' }),
+  makeAudienceResource({ id: 'aud-global-2', name: '3.5沉寂用户 (二推)', tabName: '[AI] 合肥100w学区房' }),
+  makeAudienceResource({ id: 'aud-global-3', name: '南京改善高意向人群', tabName: '[AI] 合肥100w学区房' })
+];
+
+const initialGroupResources: GroupResource[] = [
+  makeGroupResource({ id: 'i3', name: '合肥100w学区房群', tabName: '[AI] 合肥100w学区房群' }),
+  makeGroupResource({ id: 'group-global-2', name: '南京改善高意向群聊包', tabName: '[AI] 合肥100w学区房群' })
+];
+
+const initialPushTaskResources: PushTaskResource[] = [
+  makePushTaskResource({ id: 'i2', name: '每日私聊推送_学区房名单', tabName: '[AI] 每日私聊推送_学区房名单' }),
+  makePushTaskResource({ id: 'i4', name: '0331-全群-映象星潮', tabName: '[AI] 群推送_映象星潮' }),
+  makePushTaskResource({ id: 'task-global-3', name: '沉寂用户二推测试', tabName: '[AI] 每日私聊推送_学区房名单' })
+];
+
+function Sidebar({ onClose, onOpenTab, onRenameOpenedTab, pendingAction, isBlacklistModalOpen, setIsBlacklistModalOpen, blacklistReason, setBlacklistReason, isReasonDropdownOpen, setIsReasonDropdownOpen }: SidebarProps) {
   const [messages, setMessages] = useState<Message[]>([
     { id: 'init', role: 'ai', content: '你好！我是你的 AI 私域助手。你可以让我帮你圈选人群，或者创建推送任务。' },
     {
@@ -6492,6 +7470,16 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
     }
   ]);
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
+  const [resourceView, setResourceView] = useState<AssistantResourceView>('chat');
+  const [resourceSearch, setResourceSearch] = useState('');
+  const [audienceResources, setAudienceResources] = useState<AudienceResource[]>(initialAudienceResources);
+  const [groupResources, setGroupResources] = useState<GroupResource[]>(initialGroupResources);
+  const [pushTaskResources, setPushTaskResources] = useState<PushTaskResource[]>(initialPushTaskResources);
+  const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
+  const [renamingResource, setRenamingResource] = useState<{ type: 'audience' | 'group' | 'task'; id: string } | null>(null);
+  const [resourceRenameValue, setResourceRenameValue] = useState('');
+  const [resourceRenameError, setResourceRenameError] = useState('');
+  const [resourceToast, setResourceToast] = useState('');
   const [mode, setMode] = useState<'圈选模式' | '执行模式'>('圈选模式');
   const [inputValue, setInputValue] = useState('');
 
@@ -6757,10 +7745,34 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
           break;
         case 'ADD_BUBBLE':
           setBubbles(prev => [...prev, step.payload as Bubble]);
+          if ((step.payload as Bubble).type === 'audience') {
+            upsertAudienceResourcesFromItems((step.payload as Bubble).items);
+            setResourceView('audience');
+          }
+          if ((step.payload as Bubble).type === 'group') {
+            upsertGroupResourcesFromItems((step.payload as Bubble).items);
+            setResourceView('group');
+          }
+          if ((step.payload as Bubble).type === 'task') {
+            upsertPushTaskResourcesFromItems((step.payload as Bubble).items);
+            setResourceView('task');
+          }
           setDemoStep(s => s + 1);
           break;
         case 'UPDATE_BUBBLE':
           setBubbles(prev => prev.map(b => b.id === (step.payload as Bubble).id ? step.payload as Bubble : b));
+          if ((step.payload as Bubble).type === 'audience') {
+            upsertAudienceResourcesFromItems((step.payload as Bubble).items);
+            setResourceView('audience');
+          }
+          if ((step.payload as Bubble).type === 'group') {
+            upsertGroupResourcesFromItems((step.payload as Bubble).items);
+            setResourceView('group');
+          }
+          if ((step.payload as Bubble).type === 'task') {
+            upsertPushTaskResourcesFromItems((step.payload as Bubble).items);
+            setResourceView('task');
+          }
           setDemoStep(s => s + 1);
           break;
         case 'TOGGLE_BUBBLE':
@@ -6804,6 +7816,213 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
     if (demoTimeoutRef.current) clearTimeout(demoTimeoutRef.current);
   };
 
+  const upsertAudienceResourcesFromItems = (items: { id: string; name: string; tabName: string }[]) => {
+    setAudienceResources(prev => {
+      const next = [...prev];
+      items.forEach(item => {
+        const existingIndex = next.findIndex(resource => resource.id === item.id);
+        if (existingIndex >= 0) {
+          next[existingIndex] = { ...next[existingIndex], name: item.name, tabName: item.tabName };
+        } else {
+          next.push(makeAudienceResource(item));
+        }
+      });
+      return next;
+    });
+    if (items[0]) setSelectedResourceId(items[0].id);
+  };
+
+  const upsertPushTaskResourcesFromItems = (items: { id: string; name: string; tabName: string }[]) => {
+    setPushTaskResources(prev => {
+      const next = [...prev];
+      items.forEach(item => {
+        const existingIndex = next.findIndex(resource => resource.id === item.id);
+        if (existingIndex >= 0) {
+          next[existingIndex] = { ...next[existingIndex], name: item.name, tabName: item.tabName };
+        } else {
+          next.push(makePushTaskResource(item));
+        }
+      });
+      return next;
+    });
+    if (items[0]) setSelectedResourceId(items[0].id);
+  };
+
+  const upsertGroupResourcesFromItems = (items: { id: string; name: string; tabName: string }[]) => {
+    setGroupResources(prev => {
+      const next = [...prev];
+      items.forEach(item => {
+        const existingIndex = next.findIndex(resource => resource.id === item.id);
+        if (existingIndex >= 0) {
+          next[existingIndex] = { ...next[existingIndex], name: item.name, tabName: item.tabName };
+        } else {
+          next.push(makeGroupResource(item));
+        }
+      });
+      return next;
+    });
+    if (items[0]) setSelectedResourceId(items[0].id);
+  };
+
+  const syncBubbleItems = (type: 'audience' | 'group' | 'task', resources: Array<AudienceResource | GroupResource | PushTaskResource>) => {
+    setBubbles(prev => {
+      const bubbleId = type === 'audience' ? 'b1' : type === 'group' ? 'b3' : 'b2';
+      const bubbleText = type === 'audience' ? `人群包(${resources.length})` : type === 'group' ? `群聊包(${resources.length})` : `推送任务(${resources.length})`;
+      const nextItems = resources.map(resource => ({ id: resource.id, name: resource.name, tabName: resource.tabName }));
+      const existing = prev.find(bubble => bubble.id === bubbleId || bubble.type === type);
+      if (!existing) {
+        return [
+          ...prev,
+          { id: bubbleId, type, text: bubbleText, items: nextItems }
+        ];
+      }
+      return prev.map(bubble => (bubble.id === existing.id ? { ...bubble, text: bubbleText, items: nextItems } : bubble));
+    });
+  };
+
+  const openRenameResource = (type: 'audience' | 'group' | 'task', id: string, name: string) => {
+    setRenamingResource({ type, id });
+    setResourceRenameValue(name);
+    setResourceRenameError('');
+  };
+
+  const hasDuplicateResourceName = (type: 'audience' | 'group' | 'task', id: string, name: string) => {
+    const normalizedName = name.trim();
+    if (!normalizedName) return false;
+    if (type === 'audience') return audienceResources.some(resource => resource.id !== id && resource.name === normalizedName);
+    if (type === 'group') return groupResources.some(resource => resource.id !== id && resource.name === normalizedName);
+    return pushTaskResources.some(resource => resource.id !== id && resource.name === normalizedName);
+  };
+
+  const confirmRenameResource = () => {
+    const nextName = resourceRenameValue.trim();
+    if (!renamingResource || !nextName) return;
+
+    if (hasDuplicateResourceName(renamingResource.type, renamingResource.id, nextName)) {
+      setResourceRenameError('名称已存在，请调整');
+      setResourceToast('名称已存在，请调整');
+      setTimeout(() => setResourceToast(''), 1800);
+      return;
+    }
+
+    if (renamingResource.type === 'audience') {
+      const current = audienceResources.find(resource => resource.id === renamingResource.id);
+      const oldName = current?.name;
+      const next = audienceResources.map(resource => resource.id === renamingResource.id ? { ...resource, name: nextName, updatedAt: '刚刚', updatedOrder: Date.now() } : resource);
+      setAudienceResources(next);
+      if (oldName) {
+        setPushTaskResources(prev => prev.map(resource => resource.relatedAudienceName === oldName ? { ...resource, relatedAudienceName: nextName } : resource));
+      }
+      syncBubbleItems('audience', next);
+      if (current) onRenameOpenedTab?.(current.tabName, `[AI] ${nextName}`);
+    } else if (renamingResource.type === 'group') {
+      const current = groupResources.find(resource => resource.id === renamingResource.id);
+      const oldName = current?.name;
+      const next = groupResources.map(resource => resource.id === renamingResource.id ? { ...resource, name: nextName, updatedAt: '刚刚', updatedOrder: Date.now() } : resource);
+      setGroupResources(next);
+      if (oldName) {
+        setPushTaskResources(prev => prev.map(resource => resource.relatedAudienceName === oldName ? { ...resource, relatedAudienceName: nextName } : resource));
+      }
+      syncBubbleItems('group', next);
+      if (current) onRenameOpenedTab?.(current.tabName, `[AI] ${nextName}`);
+    } else {
+      const current = pushTaskResources.find(resource => resource.id === renamingResource.id);
+      const next = pushTaskResources.map(resource => resource.id === renamingResource.id ? { ...resource, name: nextName, updatedAt: '刚刚', updatedOrder: Date.now() } : resource);
+      setPushTaskResources(next);
+      syncBubbleItems('task', next);
+      if (current) onRenameOpenedTab?.(current.tabName, nextName);
+    }
+
+    setRenamingResource(null);
+    setResourceRenameValue('');
+    setResourceRenameError('');
+  };
+
+  const copyTextForDemo = async (text: string) => {
+    const legacyCopy = () => {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '0';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+      let copied = false;
+      try {
+        copied = document.execCommand('copy');
+      } catch (error) {
+        copied = false;
+      } finally {
+        document.body.removeChild(textarea);
+      }
+      return copied;
+    };
+
+    if (legacyCopy()) return true;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (error) {
+      // Some embedded preview browsers block the async clipboard API.
+    }
+
+    try {
+      window.localStorage.setItem('aiAssistantCopiedConditions', text);
+      (window as any).__aiAssistantCopiedConditions = text;
+    } catch (error) {
+      (window as any).__aiAssistantCopiedConditions = text;
+    }
+
+    return true;
+  };
+
+  const showCopySuccessToast = () => {
+    setResourceToast('复制成功，可粘贴到对话框使用');
+    setTimeout(() => setResourceToast(''), 1800);
+  };
+
+  const copyAudienceConditions = async (resource: AudienceResource) => {
+    const text = [`人群包：${resource.name}`, ...resource.configSnapshot].join('\n');
+    try {
+      await copyTextForDemo(text);
+      showCopySuccessToast();
+    } catch (error) {
+      setResourceToast('复制成功，可粘贴到对话框使用');
+      setTimeout(() => setResourceToast(''), 1800);
+    }
+  };
+
+  const copyGroupConditions = async (resource: GroupResource) => {
+    const text = [`群聊包：${resource.name}`, ...resource.configSnapshot].join('\n');
+    try {
+      await copyTextForDemo(text);
+      showCopySuccessToast();
+    } catch (error) {
+      setResourceToast('复制成功，可粘贴到对话框使用');
+      setTimeout(() => setResourceToast(''), 1800);
+    }
+  };
+
+  const useAudienceForPush = (resource: AudienceResource) => {
+    setResourceView('chat');
+    setMode('执行模式');
+    setInputValue(`基于 @${resource.name} 创建一次私聊推送 `);
+    inputValueRef.current = `基于 @${resource.name} 创建一次私聊推送 `;
+  };
+
+  const useGroupForPush = (resource: GroupResource) => {
+    setResourceView('chat');
+    setMode('执行模式');
+    setInputValue(`基于 @${resource.name} 创建一次群聊推送 `);
+    inputValueRef.current = `基于 @${resource.name} 创建一次群聊推送 `;
+  };
+
   const handleSendMessage = (text: string, images?: string[]) => {
     if ((!text.trim() && (!images || images.length === 0)) || inputLocked) return;
 
@@ -6821,6 +8040,10 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
   const handleNewChat = () => {
     setMessages([{ id: Date.now().toString(), role: 'ai', content: '你好！我是你的 AI 私域助手。有什么我可以帮你的？' }]);
     setBubbles([]);
+    setResourceView('chat');
+    setResourceSearch('');
+    setSelectedResourceId(null);
+    setRenamingResource(null);
     setInputValue('');
     inputValueRef.current = '';
     setSlideOverUser(null);
@@ -6938,6 +8161,16 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
         { id: 'i4', name: '0331-全群-映象星潮', tabName: '[AI] 群推送_映象星潮' }
       ] }
     ]);
+    upsertAudienceResourcesFromItems([{ id: 'i1', name: '合肥100w学区房', tabName: '[AI] 合肥100w学区房' }]);
+    upsertGroupResourcesFromItems([{ id: 'i3', name: '合肥100w学区房群', tabName: '[AI] 合肥100w学区房群' }]);
+    upsertPushTaskResourcesFromItems([
+      { id: 'i2', name: '每日私聊推送_学区房名单', tabName: '[AI] 每日私聊推送_学区房名单' },
+      { id: 'i4', name: '0331-全群-映象星潮', tabName: '[AI] 群推送_映象星潮' }
+    ]);
+    setResourceView('task');
+    setResourceSearch('');
+    setSelectedResourceId('i2');
+    setRenamingResource(null);
     setMode('执行模式');
     setShowHistory(false);
   };
@@ -6976,51 +8209,275 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
     }
   };
 
-  return (
-    <div className="flex flex-col h-full w-full relative overflow-hidden">
-      {/* Header */}
-      <div className="h-12 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-2 font-medium text-zinc-800 dark:text-zinc-200">
-          <Bot size={18} className="text-indigo-500" />
-          <span>365AI私域助手</span>
+  const visibleAudienceResources = audienceResources.filter(resource => resource.status === '已生成');
+  const visibleGroupResources = groupResources.filter(resource => resource.status === '已生成');
+  const visiblePushTaskResources = pushTaskResources.filter(resource => resource.status === '待执行' || resource.status === '执行中' || resource.status === '已完成');
+  const searchKeyword = resourceSearch.trim().toLowerCase();
+  const sortByUpdatedOrder = <T extends { updatedOrder: number },>(resources: T[]) => [...resources].sort((a, b) => b.updatedOrder - a.updatedOrder);
+  const filteredAudienceResources = sortByUpdatedOrder(visibleAudienceResources.filter(resource => resource.name.toLowerCase().includes(searchKeyword)));
+  const filteredGroupResources = sortByUpdatedOrder(visibleGroupResources.filter(resource => resource.name.toLowerCase().includes(searchKeyword)));
+  const filteredPushTaskResources = sortByUpdatedOrder(visiblePushTaskResources.filter(resource => resource.name.toLowerCase().includes(searchKeyword)));
+
+  const renderResourceManager = () => {
+    const isAudienceView = resourceView === 'audience';
+    const isGroupView = resourceView === 'group';
+    const list = isAudienceView ? filteredAudienceResources : isGroupView ? filteredGroupResources : filteredPushTaskResources;
+    const emptyText = isAudienceView ? '暂无人群包' : isGroupView ? '暂无群聊包' : '暂无推送任务';
+    const searchPlaceholder = isAudienceView ? '请搜索人群包名称' : isGroupView ? '请搜索群聊包名称' : '请搜索推送任务名称';
+
+    return (
+      <div className="flex-1 overflow-hidden flex flex-col bg-[#f7f8fa] dark:bg-zinc-950">
+        <div className="px-4 pt-3 pb-2 bg-[#f7f8fa] dark:bg-zinc-950 shrink-0">
+          <div className="relative">
+            <Search size={17} className="absolute left-4 top-3.5 text-[#aeb7c3]" />
+            <input
+              value={resourceSearch}
+              onChange={(e) => setResourceSearch(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full h-12 pl-11 pr-4 rounded-lg border border-[#edf0f4] bg-white dark:bg-zinc-900 text-sm text-[#1f2d3d] dark:text-zinc-100 placeholder:text-[#aeb7c3] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1f8fff]/20 focus:border-[#1f8fff]"
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <button onClick={handleNewChat} className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500" title="新建对话">
-            <Plus size={16} />
+
+        <div className="flex-1 overflow-y-auto px-4 pb-4 pt-1">
+          {list.length === 0 ? (
+            <div className="h-full min-h-[260px] flex flex-col items-center justify-center text-center text-[#9aa6b2]">
+              {isAudienceView || isGroupView ? <Users size={30} strokeWidth={1.5} /> : <Zap size={30} strokeWidth={1.5} />}
+              <div className="mt-3 text-sm font-medium">{emptyText}</div>
+              <div className="mt-1 text-xs">可通过 AI 对话创建后在这里管理</div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {isAudienceView ? (
+                filteredAudienceResources.map(resource => (
+                  <div
+                    key={resource.id}
+                    onClick={() => setSelectedResourceId(resource.id)}
+                    className={`rounded-xl border border-[#edf0f4] bg-white dark:bg-zinc-900 shadow-sm overflow-hidden cursor-pointer transition-all ${selectedResourceId === resource.id ? 'ring-1 ring-[#1f8fff]/40 border-[#b8dcff]' : 'hover:border-[#dce5ef] hover:shadow-md'}`}
+                  >
+                    <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        {renamingResource?.type === 'audience' && renamingResource.id === resource.id ? (
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <input
+                                value={resourceRenameValue}
+                                onChange={(e) => {
+                                  setResourceRenameValue(e.target.value);
+                                  setResourceRenameError('');
+                                }}
+                                className="min-w-0 flex-1 h-9 px-2 rounded-md border border-[#1f8fff] bg-white dark:bg-zinc-950 text-sm font-semibold text-[#1f2d3d] dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#1f8fff]/15"
+                                autoFocus
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <button onClick={(e) => { e.stopPropagation(); confirmRenameResource(); }} disabled={!resourceRenameValue.trim()} className="w-8 h-8 rounded-full text-[#1f8fff] hover:bg-[#eef7ff] disabled:opacity-40 flex items-center justify-center" title="确认重命名"><Check size={16} /></button>
+                              <button onClick={(e) => { e.stopPropagation(); setRenamingResource(null); setResourceRenameError(''); }} className="w-8 h-8 rounded-full text-[#6f7d8c] hover:bg-[#f2f4f7] flex items-center justify-center" title="取消重命名"><X size={16} /></button>
+                            </div>
+                            {resourceRenameError && <div className="text-[11px] text-red-500">{resourceRenameError}</div>}
+                          </div>
+                        ) : (
+                          <div className="text-base font-semibold text-[#1f2d3d] dark:text-zinc-100 truncate">{resource.name}</div>
+                        )}
+                        <div className="mt-2 text-xs text-[#a1abb6]">创建 {resource.createdAt} · 关联任务 {resource.relatedTaskCount}</div>
+                      </div>
+                      <div className="shrink-0 pt-0.5 text-sm text-[#7d8794]">{resource.audienceCount.toLocaleString()}人</div>
+                    </div>
+                    <div className="grid grid-cols-4 border-t border-[#edf0f4] text-sm font-medium">
+                      <button onClick={(e) => { e.stopPropagation(); onOpenTab(resource.tabName, `[AI] ${resource.name}`); onClose(); }} className="h-10 text-[#1f8fff] hover:bg-[#f5fbff] border-r border-[#edf0f4]">查看</button>
+                      <button onClick={(e) => { e.stopPropagation(); openRenameResource('audience', resource.id, resource.name); }} className="h-10 text-[#5f6875] hover:bg-[#f8fafc] border-r border-[#edf0f4]">重命名</button>
+                      <button onClick={(e) => { e.stopPropagation(); copyAudienceConditions(resource); }} className="h-10 text-[#5f6875] hover:bg-[#f8fafc] border-r border-[#edf0f4]">复制条件</button>
+                      <button onClick={(e) => { e.stopPropagation(); useAudienceForPush(resource); }} className="h-10 text-[#22b36a] hover:bg-[#f3fbf7]">用于推送</button>
+                    </div>
+                  </div>
+                ))
+              ) : isGroupView ? (
+                filteredGroupResources.map(resource => (
+                  <div
+                    key={resource.id}
+                    onClick={() => setSelectedResourceId(resource.id)}
+                    className={`rounded-xl border border-[#edf0f4] bg-white dark:bg-zinc-900 shadow-sm overflow-hidden cursor-pointer transition-all ${selectedResourceId === resource.id ? 'ring-1 ring-[#1f8fff]/40 border-[#b8dcff]' : 'hover:border-[#dce5ef] hover:shadow-md'}`}
+                  >
+                    <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        {renamingResource?.type === 'group' && renamingResource.id === resource.id ? (
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <input
+                                value={resourceRenameValue}
+                                onChange={(e) => {
+                                  setResourceRenameValue(e.target.value);
+                                  setResourceRenameError('');
+                                }}
+                                className="min-w-0 flex-1 h-9 px-2 rounded-md border border-[#1f8fff] bg-white dark:bg-zinc-950 text-sm font-semibold text-[#1f2d3d] dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#1f8fff]/15"
+                                autoFocus
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <button onClick={(e) => { e.stopPropagation(); confirmRenameResource(); }} disabled={!resourceRenameValue.trim()} className="w-8 h-8 rounded-full text-[#1f8fff] hover:bg-[#eef7ff] disabled:opacity-40 flex items-center justify-center" title="确认重命名"><Check size={16} /></button>
+                              <button onClick={(e) => { e.stopPropagation(); setRenamingResource(null); setResourceRenameError(''); }} className="w-8 h-8 rounded-full text-[#6f7d8c] hover:bg-[#f2f4f7] flex items-center justify-center" title="取消重命名"><X size={16} /></button>
+                            </div>
+                            {resourceRenameError && <div className="text-[11px] text-red-500">{resourceRenameError}</div>}
+                          </div>
+                        ) : (
+                          <div className="text-base font-semibold text-[#1f2d3d] dark:text-zinc-100 truncate">{resource.name}</div>
+                        )}
+                        <div className="mt-2 text-xs text-[#a1abb6]">创建 {resource.createdAt} · 关联任务 {resource.relatedTaskCount}</div>
+                      </div>
+                      <div className="shrink-0 pt-0.5 text-sm text-[#7d8794]">{resource.groupCount}个群</div>
+                    </div>
+                    <div className="grid grid-cols-4 border-t border-[#edf0f4] text-sm font-medium">
+                      <button onClick={(e) => { e.stopPropagation(); onOpenTab(resource.tabName, `[AI] ${resource.name}`); onClose(); }} className="h-10 text-[#1f8fff] hover:bg-[#f5fbff] border-r border-[#edf0f4]">查看</button>
+                      <button onClick={(e) => { e.stopPropagation(); openRenameResource('group', resource.id, resource.name); }} className="h-10 text-[#5f6875] hover:bg-[#f8fafc] border-r border-[#edf0f4]">重命名</button>
+                      <button onClick={(e) => { e.stopPropagation(); copyGroupConditions(resource); }} className="h-10 text-[#5f6875] hover:bg-[#f8fafc] border-r border-[#edf0f4]">复制条件</button>
+                      <button onClick={(e) => { e.stopPropagation(); useGroupForPush(resource); }} className="h-10 text-[#22b36a] hover:bg-[#f3fbf7]">用于推送</button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                filteredPushTaskResources.map(resource => {
+                  return (
+                    <div
+                      key={resource.id}
+                      onClick={() => setSelectedResourceId(resource.id)}
+                      className={`rounded-xl border border-[#edf0f4] bg-white dark:bg-zinc-900 shadow-sm overflow-hidden cursor-pointer transition-all ${selectedResourceId === resource.id ? 'ring-1 ring-[#1f8fff]/40 border-[#b8dcff]' : 'hover:border-[#dce5ef] hover:shadow-md'}`}
+                    >
+                      <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          {renamingResource?.type === 'task' && renamingResource.id === resource.id ? (
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  value={resourceRenameValue}
+                                  onChange={(e) => {
+                                    setResourceRenameValue(e.target.value);
+                                    setResourceRenameError('');
+                                  }}
+                                  className="min-w-0 flex-1 h-9 px-2 rounded-md border border-[#1f8fff] bg-white dark:bg-zinc-950 text-sm font-semibold text-[#1f2d3d] dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#1f8fff]/15"
+                                  autoFocus
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                                <button onClick={(e) => { e.stopPropagation(); confirmRenameResource(); }} disabled={!resourceRenameValue.trim()} className="w-8 h-8 rounded-full text-[#1f8fff] hover:bg-[#eef7ff] disabled:opacity-40 flex items-center justify-center" title="确认重命名"><Check size={16} /></button>
+                                <button onClick={(e) => { e.stopPropagation(); setRenamingResource(null); setResourceRenameError(''); }} className="w-8 h-8 rounded-full text-[#6f7d8c] hover:bg-[#f2f4f7] flex items-center justify-center" title="取消重命名"><X size={16} /></button>
+                              </div>
+                              {resourceRenameError && <div className="text-[11px] text-red-500">{resourceRenameError}</div>}
+                            </div>
+                          ) : (
+                          <div className="text-base font-semibold text-[#1f2d3d] dark:text-zinc-100 truncate">{resource.name}</div>
+                          )}
+                          <div className="mt-2 text-xs text-[#5f6875]">{resource.relatedAudienceName} | {resource.estimatedReach.toLocaleString()}人</div>
+                          <div className="mt-1 text-xs text-[#a1abb6]">推送 {resource.pushTime} · 创建 {resource.createdAt}</div>
+                        </div>
+                        <span className="shrink-0 rounded-md bg-[#eaf2ff] px-2 py-1 text-[11px] font-medium text-[#1f8fff]">{resource.pushType}</span>
+                      </div>
+                      <div className="grid grid-cols-2 border-t border-[#edf0f4] text-sm font-medium">
+                        <button onClick={(e) => { e.stopPropagation(); onOpenTab(resource.tabName, resource.name); onClose(); }} className="h-10 text-[#1f8fff] hover:bg-[#f5fbff] border-r border-[#edf0f4]">查看</button>
+                        <button onClick={(e) => { e.stopPropagation(); openRenameResource('task', resource.id, resource.name); }} className="h-10 text-[#5f6875] hover:bg-[#f8fafc]">重命名</button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col h-full w-full relative overflow-hidden bg-white dark:bg-zinc-950">
+      {/* Header */}
+      <div className="h-[58px] border-b border-[#e9edf2] dark:border-zinc-800 flex items-center justify-between px-5 shrink-0 bg-white dark:bg-zinc-950">
+        <div className="flex items-center gap-2 font-semibold text-[#1f2d3d] dark:text-zinc-100 min-w-0">
+          <span className="w-5 h-5 rounded-md bg-[#eef7ff] text-[#1f8fff] flex items-center justify-center shrink-0">
+            <Bot size={15} />
+          </span>
+          <span className="text-[15px]">365AI私域助手</span>
+          <button onClick={handleNewChat} className="h-6 px-2 rounded-full border border-[#d8eaff] bg-[#f4f9ff] text-[#1f8fff] hover:bg-[#eaf5ff] text-xs font-medium flex items-center gap-1 shrink-0" title="新建对话">
+            <span>+ 新对话</span>
           </button>
-          <button onClick={openHistoryPanel} className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500" title="历史对话">
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            data-testid="assistant-resource-toggle"
+            onClick={() => setResourceView(resourceView === 'chat' ? 'audience' : 'chat')}
+            className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors ${
+              resourceView === 'chat'
+                ? 'text-[#8b96a3] hover:bg-[#f4f6f8] dark:hover:bg-zinc-800'
+                : 'bg-[#eef7ff] text-[#1f8fff]'
+            }`}
+            title="资料"
+          >
+            <FolderOpen size={17} />
+          </button>
+          <button onClick={openHistoryPanel} className="w-8 h-8 rounded-md hover:bg-[#f4f6f8] dark:hover:bg-zinc-800 text-[#8b96a3] flex items-center justify-center" title="历史对话">
             <History size={16} />
           </button>
-          <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
-          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500" title="关闭">
-            <X size={16} />
+          <button onClick={onClose} className="w-8 h-8 rounded-md hover:bg-[#f4f6f8] dark:hover:bg-zinc-800 text-[#8b96a3] flex items-center justify-center" title="关闭">
+            <X size={17} />
           </button>
         </div>
       </div>
 
-      {/* Demo Controls */}
-      <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 shrink-0 flex flex-col gap-2">
-        <div className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Demo Scenarios</div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => isPlaying && currentScenario === 1 ? stopDemo() : startDemo(1)}
-            className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded text-xs font-medium transition-colors ${isPlaying && currentScenario === 1 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-900/50'}`}
-          >
-            {isPlaying && currentScenario === 1 ? <Square size={12} /> : <Play size={12} />}
-            场景1: 圈选
-          </button>
-          <button
-            onClick={() => isPlaying && currentScenario === 2 ? stopDemo() : startDemo(2)}
-            className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded text-xs font-medium transition-colors ${isPlaying && currentScenario === 2 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'}`}
-          >
-            {isPlaying && currentScenario === 2 ? <Square size={12} /> : <Play size={12} />}
-            场景2: 执行
-          </button>
+      {/* Resource Tabs */}
+      {resourceView !== 'chat' && (
+      <div className="px-4 py-3 border-b border-[#edf0f4] dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0">
+        <div className="grid grid-cols-3 rounded-lg bg-[#f0f0f0] dark:bg-zinc-800 p-1">
+          {[
+            { key: 'audience' as const, label: '人群包', count: visibleAudienceResources.length, icon: <Users size={15} /> },
+            { key: 'group' as const, label: '群聊包', count: visibleGroupResources.length, icon: <MessageSquare size={15} /> },
+            { key: 'task' as const, label: '推送任务', count: visiblePushTaskResources.length, icon: <Zap size={15} /> }
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => {
+                setResourceView(tab.key);
+                setResourceSearch('');
+                setRenamingResource(null);
+              }}
+              className={`h-10 rounded-md text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+                resourceView === tab.key
+                  ? 'bg-white dark:bg-zinc-700 text-[#1f8fff] dark:text-blue-300 shadow-sm'
+                  : 'text-[#5f6875] dark:text-zinc-400 hover:text-[#1f2d3d] dark:hover:text-zinc-200'
+              }`}
+            >
+              {tab.icon}
+              <span>{tab.label}({tab.count})</span>
+            </button>
+          ))}
         </div>
       </div>
+      )}
 
       {/* Chat Area */}
+      {resourceView === 'chat' ? (
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 p-3">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="text-xs font-medium text-zinc-500">快速体验</div>
+            {isPlaying && (
+              <button onClick={stopDemo} className="text-[11px] text-red-600 hover:text-red-700 inline-flex items-center gap-1">
+                <Square size={11} fill="currentColor" />
+                停止
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => isPlaying && currentScenario === 1 ? stopDemo() : startDemo(1)}
+              className={`h-8 flex items-center justify-center gap-1 rounded-md text-xs font-medium transition-colors ${isPlaying && currentScenario === 1 ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-white dark:bg-zinc-950 text-indigo-600 border border-indigo-100 dark:border-indigo-900/40 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'}`}
+            >
+              <Play size={12} />
+              圈选人群包
+            </button>
+            <button
+              onClick={() => isPlaying && currentScenario === 2 ? stopDemo() : startDemo(2)}
+              className={`h-8 flex items-center justify-center gap-1 rounded-md text-xs font-medium transition-colors ${isPlaying && currentScenario === 2 ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-white dark:bg-zinc-950 text-emerald-600 border border-emerald-100 dark:border-emerald-900/40 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'}`}
+            >
+              <Play size={12} />
+              创建推送任务
+            </button>
+          </div>
+        </div>
         {messages.map((msg) => (
           <motion.div
             key={msg.id}
@@ -7047,11 +8504,11 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
                 </div>
               )}
               {msg.taskPlan && <TaskPlan tasks={msg.taskPlan} />}
-              {msg.card && msg.card.type === 'audience' && <AudienceCard data={msg.card} onUserClick={(u, l) => { setSlideOverUser(u); setSlideOverList(l || []); }} onConfirm={() => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, card: { ...m.card, confirmed: true } as CardData } : m))} />}
-            {msg.card && msg.card.type === 'group_package' && <GroupPackageCard data={msg.card} onGroupClick={(u, l) => { setSlideOverUser(u); setSlideOverList(l || []); }} onUserClick={(u, l) => { setSlideOverUser(u); setSlideOverList(l || []); }} onConfirm={() => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, card: { ...m.card, confirmed: true } as CardData } : m))} />}
+              {msg.card && msg.card.type === 'audience' && <AudienceCard data={msg.card} onUserClick={(u, l) => { setSlideOverUser(u); setSlideOverList(l || []); }} onConfirm={(name) => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, card: { ...m.card, name, confirmed: true } as CardData } : m))} />}
+            {msg.card && msg.card.type === 'group_package' && <GroupPackageCard data={msg.card} onGroupClick={(u, l) => { setSlideOverUser(u); setSlideOverList(l || []); }} onUserClick={(u, l) => { setSlideOverUser(u); setSlideOverList(l || []); }} onConfirm={(name) => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, card: { ...m.card, name, confirmed: true } as CardData } : m))} />}
               {msg.card && msg.card.type === 'config' && <ConfigCard data={msg.card} onConfirm={() => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, card: { ...m.card, confirmed: true } as CardData } : m))} />}
               {msg.card && msg.card.type === 'content_preview' && <ContentPreviewCard data={msg.card} />}
-              {msg.card && msg.card.type === 'task_summary' && <TaskSummaryCard data={msg.card} onConfirm={() => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, card: { ...m.card, confirmed: true } as CardData } : m))} />}
+              {msg.card && msg.card.type === 'task_summary' && <TaskSummaryCard data={msg.card} onConfirm={(taskName) => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, card: { ...m.card, taskName, confirmed: true } as CardData } : m))} />}
               {msg.progress !== undefined && (
                 <div className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm">
                   <div className="flex justify-between text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-2">
@@ -7084,8 +8541,25 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
         ))}
         <div ref={messagesEndRef} />
       </div>
+      ) : (
+        renderResourceManager()
+      )}
+
+      <AnimatePresence>
+        {resourceToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className="absolute left-1/2 bottom-24 z-50 -translate-x-1/2 rounded-md bg-zinc-900 px-3 py-2 text-xs text-white shadow-lg"
+          >
+            {resourceToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Input Area */}
+      {resourceView === 'chat' && (
       <div className="p-4 pt-0 shrink-0">
         <SmartInput
           mode={mode}
@@ -7105,6 +8579,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setI
           pendingAction={pendingAction}
         />
       </div>
+      )}
 
       {/* History Panel */}
       <AnimatePresence>
