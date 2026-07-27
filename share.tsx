@@ -3234,6 +3234,34 @@ interface DeliveryGroupOperationLog {
   time: string;
 }
 
+type PrivateMatchRecordLoadState = 'loading' | 'ready' | 'error';
+
+interface PrivateMatchProperty {
+  id: string;
+  source: string;
+  title: string;
+  community: string;
+  layout: string;
+  area: string;
+  totalPrice: string;
+  unitPrice: string;
+  cover: string;
+  isSatisfied?: boolean;
+  propertyType?: string;
+  ownership?: string;
+  orientation?: string;
+  elevator?: string;
+  floor?: string;
+  mortgage?: string;
+}
+
+interface PrivateMatchRecord {
+  id: string;
+  time: string;
+  agentName: string;
+  properties: PrivateMatchProperty[];
+}
+
 interface CustomGroupMember {
   customer788Id: string;
   workflow: string;
@@ -3887,6 +3915,9 @@ function Workspace() {
   const [activeTabId, setActiveTabId] = useState('chat-7881301319959329');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [activeRightPanelTab, setActiveRightPanelTab] = useState('客户档案');
+  const [selectedPrivateMatchProperty, setSelectedPrivateMatchProperty] = useState<PrivateMatchProperty | null>(null);
+  const [isPrivateMatchImagePreviewOpen, setIsPrivateMatchImagePreviewOpen] = useState(false);
+  const [privateMatchRecordLoadStateOverrides, setPrivateMatchRecordLoadStateOverrides] = useState<Record<string, PrivateMatchRecordLoadState>>({});
   const [isFriendRelationOpen, setIsFriendRelationOpen] = useState(false);
   const [activeModule, setActiveModule] = useState<'chat' | 'groups' | 'moments'>('chat');
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(MOCK_MOMENTS[0].id);
@@ -4122,7 +4153,19 @@ function Workspace() {
     }
   });
 
-  const privateRightPanelTabs = ['客户档案', '客户画像', '客户行为', '快捷话术', '沟通记录', '需求记录'];
+  // V4.6：由权限服务返回。当前原型模拟“运营”已获配房记录查看权限。
+  const canViewPrivateMatchRecords = true;
+  // 运营调研后的固定顺序：两行四列；快捷话术只保留在输入框旁，不再占用右侧栏入口。
+  const privateRightPanelTabs = [
+    { id: '客户档案', label: '档案', title: '客户档案' },
+    { id: '用户记忆', label: '记忆', title: '用户记忆' },
+    { id: '客户画像', label: '画像', title: '客户画像' },
+    { id: '客户行为', label: '行为', title: '客户行为' },
+    { id: '追问任务', label: '追问', title: '追问任务', hasNotice: true },
+    { id: '流转记录', label: '流转', title: '流转记录' },
+    ...(canViewPrivateMatchRecords ? [{ id: '配房记录', label: '配房', title: '配房记录' }] : []),
+    { id: '聊天记录', label: '会话', title: '聊天记录' }
+  ];
 
   const privateArchiveFields = [
     { label: '意向价格', value: '200万以内', tag: '固定', time: '2026-03-04 10:18:35' },
@@ -4196,10 +4239,23 @@ function Workspace() {
     { title: '进入人工跟进', time: '2026-03-04 10:06:22', desc: '由运营接手继续沟通，适合发送对比房源。' }
   ];
 
-  const privateQuickReplies = [
-    '这边先给您筛一版柏堰湖附近120平左右、总价200万内的房源，您更偏向新房还是二手房？',
-    '如果您方便，我可以把高性价比三居整理成一页对比，包含总价、首付和学区信息。',
-    '柏堰湖这边近期有几套调价房源，您更看重通勤还是学区，我按优先级给您排序。'
+  const privateUserMemory = {
+    stage: '观望期',
+    longTermItems: [
+      { label: '配套倾斜需求', value: '不要地下室' },
+      { label: '小区排除', value: '金科东方水榭、阳光城市花园C区' },
+      { label: '楼层要求', value: '一楼带院子' }
+    ],
+    candidateItems: [
+      { label: '房产需求', value: '买房' },
+      { label: '物业类型', value: '住宅' },
+      { label: '外部环境需求', value: '带院子' },
+      { label: '楼层要求', value: '1层' }
+    ]
+  };
+
+  const privateFollowUpTasks = [
+    { title: '人工介入前二次确认', time: '待处理 · 2026-07-24 10:30', text: '确认本次推荐房源是否继续发送；不合适可取消后手动回复。' }
   ];
 
   const privateCommunicationRecords = [
@@ -4208,12 +4264,84 @@ function Workspace() {
     { role: '运营-查妍碧', time: '2026-03-04 10:06:22', text: '已转人工接手，准备发送精准筛选结果。' }
   ];
 
-  const privateRequirementRecords = [
-    { label: '预算', value: '200万以内' },
-    { label: '面积', value: '120平左右' },
-    { label: '区域', value: '柏堰湖优先' },
-    { label: '户型', value: '三居优先' }
+  const privateFlowRecords = [
+    { time: '2026-07-21 15:05:25', receiver: '-', operator: '系统', reason: '24小时没有用户新消息' },
+    { time: '2026-07-20 15:05:06', receiver: '夏艺心', operator: '夏艺心', reason: '运营主动发消息' },
+    { time: '2026-04-29 16:47:36', receiver: '-', operator: '系统', reason: '24小时没有用户新消息' },
+    { time: '2026-04-28 16:47:20', receiver: '夏艺心', operator: '夏艺心', reason: '运营主动发消息' },
+    { time: '2026-02-27 10:22:09', receiver: '-', operator: '系统', reason: '未绑定业务板块智能体' }
   ];
+
+  // V4.6 mock：仅模拟配房 Skill 成功返回的独立记录，不从会话消息解析生成。
+  const privateMatchRecordsBySession: Record<string, PrivateMatchRecord[]> = {
+    'chat-7881301319959329': [
+      {
+        id: 'match-202607231020',
+        time: '2026-07-23 10:20:18',
+        agentName: '365Claw 智能配房',
+        properties: [
+          {
+            id: 'house-365-10086',
+            source: '365淘房',
+            title: '政务区地铁口三房，南北通透采光好',
+            community: '琥珀御熙府',
+            layout: '3室2厅1卫',
+            area: '119.12㎡',
+            totalPrice: '198万',
+            unitPrice: '16622元/㎡',
+            cover: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=720&q=80',
+            isSatisfied: true,
+            propertyType: '住宅',
+            ownership: '商品房',
+            orientation: '南北',
+            elevator: '有电梯（两梯四户）',
+            floor: '中楼层（共26层）',
+            mortgage: '无抵押'
+          },
+          {
+            id: 'house-qiaofang-26831',
+            source: '巧房',
+            title: '天鹅湖旁改善三居，近学校和地铁',
+            community: '天鹅湖畔',
+            layout: '3室2厅2卫',
+            area: '126㎡',
+            totalPrice: '215万',
+            unitPrice: '17063元/㎡',
+            cover: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=720&q=80',
+            propertyType: '住宅',
+            ownership: '商品房',
+            orientation: '南',
+            elevator: '有电梯',
+            floor: '高楼层（共18层）'
+          }
+        ]
+      },
+      {
+        id: 'match-202607211545',
+        time: '2026-07-21 15:45:36',
+        agentName: '365Claw 智能配房',
+        properties: [
+          {
+            id: 'house-lewu-87006',
+            source: '乐屋',
+            title: '柏堰湖低密三居，带双阳台',
+            community: '保利西山林语',
+            layout: '3室2厅2卫',
+            area: '120㎡',
+            totalPrice: '205万',
+            unitPrice: '17083元/㎡',
+            cover: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=720&q=80',
+            propertyType: '住宅',
+            ownership: '商品房',
+            orientation: '南北',
+            elevator: '有电梯',
+            floor: '低楼层（共11层）',
+            mortgage: '有抵押'
+          }
+        ]
+      }
+    ]
+  };
 
   const availableWorkflows = [
     '测试勿用-ai自主追问', '【勿选】微客3.0', '(仅合肥)【新推送】沉...',
@@ -4325,6 +4453,24 @@ function Workspace() {
   const activeChatProfile = activeTab.type === 'chat'
     ? (chatCustomerProfiles[activeTab.title] || getDefaultChatCustomerProfile(activeTab.title))
     : null;
+  const activePrivateMatchRecords = [...(privateMatchRecordsBySession[activeTab.id] || [])]
+    .sort((a, b) => b.time.localeCompare(a.time));
+  const activePrivateMatchProperties = activePrivateMatchRecords.flatMap(record => record.properties);
+  const selectedPrivateMatchPropertyIndex = selectedPrivateMatchProperty
+    ? activePrivateMatchProperties.findIndex(property => property.id === selectedPrivateMatchProperty.id)
+    : -1;
+  const hasPreviousPrivateMatchProperty = selectedPrivateMatchPropertyIndex > 0;
+  const hasNextPrivateMatchProperty = selectedPrivateMatchPropertyIndex >= 0 && selectedPrivateMatchPropertyIndex < activePrivateMatchProperties.length - 1;
+  const defaultPrivateMatchRecordState: PrivateMatchRecordLoadState = activeTab.id === 'chat-7881301319959306' ? 'error' : 'ready';
+  const activePrivateMatchRecordState = privateMatchRecordLoadStateOverrides[activeTab.id] || defaultPrivateMatchRecordState;
+  const formatPrivateMatchValue = (value?: string) => value || '—';
+
+  const refreshPrivateMatchRecords = () => {
+    setPrivateMatchRecordLoadStateOverrides(prev => ({ ...prev, [activeTab.id]: 'loading' }));
+    window.setTimeout(() => {
+      setPrivateMatchRecordLoadStateOverrides(prev => ({ ...prev, [activeTab.id]: 'ready' }));
+    }, 550);
+  };
 
   const sessionUsers = sessionList.map(session => {
     const profile = chatCustomerProfiles[session.tabTitle] || Object.values(chatCustomerProfiles).find(item => item.id788 === session.customer788Id) || null;
@@ -4534,7 +4680,7 @@ function Workspace() {
   };
 
   useEffect(() => {
-    if (activeTab.type === 'chat' && !privateRightPanelTabs.includes(activeRightPanelTab)) {
+    if (activeTab.type === 'chat' && !privateRightPanelTabs.some(tab => tab.id === activeRightPanelTab)) {
       setActiveRightPanelTab('客户档案');
     }
   }, [activeTab.type, activeRightPanelTab]);
@@ -4719,15 +4865,20 @@ function Workspace() {
 
            {/* Right Panel: Private Chat Tools */}
           <div className="hidden lg:flex w-[280px] border-l border-zinc-200 dark:border-zinc-800 flex-col shrink-0 bg-white dark:bg-zinc-950 overflow-y-auto">
-            <div className="flex flex-wrap gap-x-4 gap-y-2 p-3 border-b border-zinc-200 dark:border-zinc-800 text-xs bg-zinc-50 dark:bg-zinc-900/50">
+            <div className="grid grid-cols-4 gap-1.5 p-2.5 border-b border-[#e7eff7] dark:border-zinc-800 bg-[#f3f8fc] dark:bg-zinc-900/50" aria-label="私聊右侧工具栏">
               {privateRightPanelTabs.map(tab => (
-                <span
-                  key={tab}
-                  onClick={() => setActiveRightPanelTab(tab)}
-                  className={`cursor-pointer px-2 py-1 rounded ${activeRightPanelTab === tab ? 'bg-white border border-blue-200 text-blue-600 dark:bg-zinc-800 dark:border-blue-800 dark:text-blue-400' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 bg-zinc-100 dark:bg-zinc-800/50'}`}
+                <button
+                  key={tab.id}
+                  type="button"
+                  title={tab.title}
+                  aria-label={tab.title}
+                  aria-pressed={activeRightPanelTab === tab.id}
+                  onClick={() => setActiveRightPanelTab(tab.id)}
+                  className={`relative h-7 rounded-sm text-xs font-medium transition-colors ${activeRightPanelTab === tab.id ? 'bg-white border border-blue-300 text-blue-600 shadow-[0_1px_2px_rgba(37,99,235,0.06)] dark:bg-zinc-800 dark:border-blue-800 dark:text-blue-400' : 'bg-zinc-100/90 text-zinc-700 hover:text-zinc-900 hover:bg-zinc-200/80 dark:bg-zinc-800/60 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800'}`}
                 >
-                  {tab}
-                </span>
+                  {tab.label}
+                  {tab.hasNotice && <span className="absolute top-1 right-2 h-1.5 w-1.5 rounded-full bg-orange-500" aria-label="有待处理追问任务" />}
+                </button>
               ))}
             </div>
 
@@ -4980,60 +5131,282 @@ function Workspace() {
               </div>
             )}
 
+            {activeRightPanelTab === '用户记忆' && (
+              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-4 bg-[#f1f8fd] dark:bg-zinc-900/50">
+                <button className="self-end -mb-1 flex items-center gap-1 text-xs text-[#4b89c8] hover:text-blue-600"><RefreshCw size={13} /> 刷新</button>
+                <div>
+                  <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-800 dark:text-zinc-100 mb-2"><span className="w-1.5 h-4 rounded-full bg-blue-500" /> 用户阶段</div>
+                  <div className="rounded-md bg-white dark:bg-zinc-950 px-3 py-3 shadow-sm">
+                    <div className="flex items-center justify-between text-sm font-semibold text-zinc-800 dark:text-zinc-100"><span>当前阶段</span><ChevronDown size={15} className="rotate-180 text-zinc-400" /></div>
+                    <span className="inline-flex mt-2 px-2 py-0.5 rounded-full text-xs text-blue-600 bg-blue-50">{privateUserMemory.stage}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-800 dark:text-zinc-100 mb-2"><span className="w-1.5 h-4 rounded-full bg-blue-500" /> 长期记忆</div>
+                  <div className="rounded-md bg-white dark:bg-zinc-950 px-3 py-3 shadow-sm">
+                    <div className="flex items-center justify-between text-sm font-semibold text-zinc-800 dark:text-zinc-100 mb-2"><span>硬约束</span><ChevronDown size={15} className="rotate-180 text-zinc-400" /></div>
+                    <div className="space-y-1.5">
+                      {privateUserMemory.longTermItems.map(item => <div key={item.label} className="rounded bg-zinc-50 px-2.5 py-2"><div className="text-[11px] text-zinc-400">{item.label}</div><div className="text-sm text-zinc-700 dark:text-zinc-300 mt-0.5">{item.value}</div></div>)}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-800 dark:text-zinc-100 mb-2"><span className="w-1.5 h-4 rounded-full bg-blue-500" /> 候选记忆</div>
+                  <div className="rounded-md bg-white dark:bg-zinc-950 px-3 py-3 shadow-sm">
+                    <div className="flex items-center justify-between text-sm font-semibold text-zinc-800 dark:text-zinc-100 mb-2"><span>当前购房需求</span><ChevronDown size={15} className="rotate-180 text-zinc-400" /></div>
+                    <div className="space-y-1.5">
+                      {privateUserMemory.candidateItems.map(item => <div key={item.label} className="rounded bg-zinc-50 px-2.5 py-2"><div className="text-[11px] text-zinc-400">{item.label}</div><div className="text-sm text-zinc-700 dark:text-zinc-300 mt-0.5">{item.value}</div></div>)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {activeRightPanelTab === '客户行为' && (
-              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 bg-zinc-50 dark:bg-zinc-900/50">
-                {privateBehaviorItems.map((item, i) => (
-                  <div key={i} className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm border border-zinc-100 dark:border-zinc-800">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{item.title}</div>
-                      <span className="text-[10px] text-zinc-400 shrink-0">{item.time}</span>
+              <div className="flex-1 overflow-y-auto p-3 bg-[#f1f8fd] dark:bg-zinc-900/50">
+                <div className="relative pl-5 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-px before:bg-[#d8e6f3]">
+                  {privateBehaviorItems.concat([
+                    { title: '页面浏览-户型解析详情页-5秒', time: '2026-05-29 06:23:46', desc: '中交九宸，包河区/淝河板块，224.0万-479.0万/108.0㎡-189.0㎡' },
+                    { title: '页面浏览-楼盘详情页-1秒', time: '2026-05-29 06:23:47', desc: '中交九宸，包河区/淝河板块，224.0万-479.0万/108.0㎡-189.0㎡' }
+                  ]).map((item, i) => (
+                    <div key={`${item.time}-${i}`} className="relative pb-4 last:pb-1">
+                      <span className="absolute -left-5 top-1.5 w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-blue-100" />
+                      <div className="text-xs text-zinc-400">{item.time}</div>
+                      <div className="text-sm font-medium text-zinc-800 dark:text-zinc-100 mt-1 leading-5">{item.title}</div>
+                      <div className="text-xs text-zinc-400 mt-1 leading-5">{item.desc}</div>
                     </div>
-                    <div className="text-xs text-zinc-500 mt-2 leading-5">{item.desc}</div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeRightPanelTab === '追问任务' && (
+              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 bg-[#f1f8fd] dark:bg-zinc-900/50">
+                {privateFollowUpTasks.map((item, i) => (
+                  <div key={i} className="bg-white dark:bg-zinc-950 p-3.5 rounded-lg shadow-sm border border-zinc-100 dark:border-zinc-800">
+                    <div className="flex items-center justify-between gap-2 text-sm text-orange-500"><span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-orange-400 ring-4 ring-orange-50" /> 待发送</span><Copy size={16} className="text-zinc-500" /></div>
+                    <div className="mt-3 rounded-md bg-[#f1f7fe] p-3 text-sm leading-5 text-zinc-700 dark:text-zinc-300">{item.text}</div>
+                    <div className="mt-2 rounded-md bg-[#f1f7fe] p-3"><div className="flex items-center gap-1 text-xs text-blue-500"><Clock size={13} /> 预计发送时间</div><div className="text-sm text-blue-600 mt-1">2026-07-27 15:13:41</div></div>
+                    <div className="mt-3 flex items-center justify-between text-xs text-zinc-400"><span>生成于 14:33</span><button className="px-2.5 py-1 rounded border border-red-400 text-red-500 hover:bg-red-50">取消发送</button></div>
+                    <div className="sr-only">{item.title} {item.time}</div>
                   </div>
                 ))}
               </div>
             )}
 
-            {activeRightPanelTab === '快捷话术' && (
-              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 bg-zinc-50 dark:bg-zinc-900/50">
-                {privateQuickReplies.map((item, i) => (
-                  <div key={i} className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm border border-zinc-100 dark:border-zinc-800">
-                    <div className="flex items-start gap-2">
-                      <div className="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 p-1 rounded">
-                        <MessageSquare size={14} />
-                      </div>
-                      <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-6">{item}</p>
-                    </div>
-                  </div>
-                ))}
+            {activeRightPanelTab === '聊天记录' && (
+              <div className="flex-1 overflow-y-auto p-3 bg-[#f8fafc] dark:bg-zinc-900/50">
+                <div className="grid grid-cols-[64px_minmax(0,1fr)] gap-x-2 gap-y-3 items-center text-xs text-zinc-500">
+                  <label htmlFor="chat-keyword" className="text-right">聊天关键词：</label>
+                  <input id="chat-keyword" className="h-7 w-full rounded-sm border border-[#d8dee8] bg-white px-2 text-xs text-zinc-700 outline-none focus:border-blue-400" />
+                  <label htmlFor="chat-start" className="text-right">开始时间：</label>
+                  <div className="relative"><Clock size={13} className="absolute left-2 top-2 text-zinc-400" /><input id="chat-start" className="h-7 w-full rounded-sm border border-[#d8dee8] bg-white pl-7 pr-2 text-xs text-zinc-700 outline-none focus:border-blue-400" /></div>
+                  <label htmlFor="chat-end" className="text-right">结束时间：</label>
+                  <div className="relative"><Clock size={13} className="absolute left-2 top-2 text-zinc-400" /><input id="chat-end" className="h-7 w-full rounded-sm border border-[#d8dee8] bg-white pl-7 pr-2 text-xs text-zinc-700 outline-none focus:border-blue-400" /></div>
+                  <div />
+                  <button className="justify-self-end h-8 rounded-sm bg-blue-600 px-5 text-sm font-medium text-white hover:bg-blue-700">查询</button>
+                </div>
               </div>
             )}
 
-            {activeRightPanelTab === '沟通记录' && (
-              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 bg-zinc-50 dark:bg-zinc-900/50">
-                {privateCommunicationRecords.map((item, i) => (
-                  <div key={i} className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm border border-zinc-100 dark:border-zinc-800">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{item.role}</div>
-                      <span className="text-[10px] text-zinc-400 shrink-0">{item.time}</span>
+            {activeRightPanelTab === '流转记录' && (
+              <div className="flex-1 overflow-y-auto p-3 bg-[#f8fafc] dark:bg-zinc-900/50">
+                <div className="relative pl-5 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-px before:bg-[#d8e0ea]">
+                  {privateFlowRecords.map((item, i) => (
+                    <div key={i} className="relative pb-4 last:pb-1">
+                      <span className="absolute -left-5 top-1.5 w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-blue-100" />
+                      <div className="text-xs text-zinc-400">{item.time}</div>
+                      <div className="mt-2 space-y-1 text-sm text-zinc-800 dark:text-zinc-100"><div>接待人：{item.receiver}</div><div>操作人：{item.operator}</div></div>
+                      <div className="mt-1 text-xs text-zinc-400">流转原因：{item.reason}</div>
                     </div>
-                    <div className="text-xs text-zinc-500 mt-2 leading-5">{item.text}</div>
-                  </div>
                 ))}
+              </div>
               </div>
             )}
 
-            {activeRightPanelTab === '需求记录' && (
-              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 bg-zinc-50 dark:bg-zinc-900/50">
-                {privateRequirementRecords.map((item, i) => (
-                  <div key={i} className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm border border-zinc-100 dark:border-zinc-800">
-                    <div className="text-xs text-zinc-500 mb-2">{item.label}</div>
-                    <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{item.value}</div>
+            {activeRightPanelTab === '配房记录' && canViewPrivateMatchRecords && (
+              <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-zinc-900/50 flex flex-col">
+                {activePrivateMatchRecordState === 'loading' && (
+                  <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center">
+                    <Loader2 size={24} className="animate-spin text-blue-500" />
+                    <div className="text-xs text-zinc-500">正在加载配房记录…</div>
                   </div>
-                ))}
+                )}
+
+                {activePrivateMatchRecordState === 'error' && (
+                  <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center">
+                    <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-500 dark:bg-rose-900/20 dark:text-rose-400 flex items-center justify-center">
+                      <AlertCircle size={20} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-zinc-800 dark:text-zinc-100">配房记录加载失败</div>
+                      <div className="text-xs text-zinc-500 mt-1">暂时无法获取配房 Skill 的记录，请稍后重试</div>
+                    </div>
+                    <button onClick={refreshPrivateMatchRecords} className="px-3 py-1.5 text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700">重新加载</button>
+                  </div>
+                )}
+
+                {activePrivateMatchRecordState === 'ready' && activePrivateMatchRecords.length === 0 && (
+                  <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center">
+                    <div className="w-10 h-10 rounded-full bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500 flex items-center justify-center">
+                      <FileText size={20} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-zinc-800 dark:text-zinc-100">暂无成功配房记录</div>
+                      <div className="text-xs text-zinc-500 mt-1">配房 Skill 返回房源后，会在这里按时间沉淀</div>
+                    </div>
+                  </div>
+                )}
+
+                {activePrivateMatchRecordState === 'ready' && activePrivateMatchRecords.length > 0 && (
+                  <div className="p-3 flex flex-col gap-3">
+                    {activePrivateMatchRecords.map(record => (
+                      <section key={record.id} className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden">
+                        <div className="px-2.5 pt-2 text-[10px] text-zinc-400">配房时间：{record.time}</div>
+                        <div className="p-2.5 flex flex-col gap-2.5">
+                          {record.properties.map(property => (
+                            <article
+                              key={property.id}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => {
+                                setIsPrivateMatchImagePreviewOpen(false);
+                                setSelectedPrivateMatchProperty(property);
+                              }}
+                              onKeyDown={event => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  setIsPrivateMatchImagePreviewOpen(false);
+                                  setSelectedPrivateMatchProperty(property);
+                                }
+                              }}
+                              className="rounded-md border border-zinc-100 dark:border-zinc-800 p-2 cursor-pointer hover:border-blue-200 hover:bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-400/50 dark:hover:border-blue-800 dark:hover:bg-blue-900/10 transition-colors"
+                            >
+                              <div className="flex items-start gap-2">
+                                <img src={property.cover} alt="" className="w-10 h-10 rounded object-cover shrink-0 bg-zinc-100" />
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-xs font-semibold text-zinc-800 dark:text-zinc-100 leading-4 line-clamp-2">{property.title}</div>
+                                  <div className="flex items-center gap-1.5 mt-1">
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">{property.source}</span>
+                                    {property.isSatisfied && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">满意</span>}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 text-[10px]">
+                                <span className="text-zinc-500 truncate">{formatPrivateMatchValue(property.community)}</span>
+                                <span className="text-zinc-500 text-right truncate">{formatPrivateMatchValue(property.layout)} · {formatPrivateMatchValue(property.area)}</span>
+                                <span className="font-semibold text-rose-500">{formatPrivateMatchValue(property.totalPrice)}</span>
+                                <span className="text-zinc-500 text-right">{formatPrivateMatchValue(property.unitPrice)}</span>
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
+
+          <AnimatePresence>
+            {selectedPrivateMatchProperty && canViewPrivateMatchRecords && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[90] bg-black/35 flex justify-end" onClick={() => {
+                setIsPrivateMatchImagePreviewOpen(false);
+                setSelectedPrivateMatchProperty(null);
+              }}>
+                <motion.aside initial={{ x: 380 }} animate={{ x: 0 }} exit={{ x: 380 }} transition={{ type: 'spring', damping: 28, stiffness: 260 }} className="w-full max-w-[380px] h-full bg-white dark:bg-zinc-950 shadow-2xl flex flex-col" onClick={event => event.stopPropagation()}>
+                  <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                    <div>
+                      <div className="text-base font-semibold text-zinc-900 dark:text-zinc-100">房源详情</div>
+                      <div className="text-[10px] text-zinc-400 mt-1">{selectedPrivateMatchPropertyIndex + 1} / {activePrivateMatchProperties.length}</div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => {
+                          if (hasPreviousPrivateMatchProperty) {
+                            setIsPrivateMatchImagePreviewOpen(false);
+                            setSelectedPrivateMatchProperty(activePrivateMatchProperties[selectedPrivateMatchPropertyIndex - 1]);
+                          }
+                        }}
+                        disabled={!hasPreviousPrivateMatchProperty}
+                        className="p-1.5 rounded text-zinc-500 hover:bg-zinc-100 disabled:text-zinc-300 disabled:hover:bg-transparent dark:hover:bg-zinc-800 dark:disabled:text-zinc-700"
+                        title="查看上一套房源"
+                        aria-label="查看上一套房源"
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (hasNextPrivateMatchProperty) {
+                            setIsPrivateMatchImagePreviewOpen(false);
+                            setSelectedPrivateMatchProperty(activePrivateMatchProperties[selectedPrivateMatchPropertyIndex + 1]);
+                          }
+                        }}
+                        disabled={!hasNextPrivateMatchProperty}
+                        className="p-1.5 rounded text-zinc-500 hover:bg-zinc-100 disabled:text-zinc-300 disabled:hover:bg-transparent dark:hover:bg-zinc-800 dark:disabled:text-zinc-700"
+                        title="查看下一套房源"
+                        aria-label="查看下一套房源"
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                      <button onClick={() => {
+                        setIsPrivateMatchImagePreviewOpen(false);
+                        setSelectedPrivateMatchProperty(null);
+                      }} className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500" title="关闭详情" aria-label="关闭详情"><X size={18} /></button>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4">
+                    <button onClick={() => setIsPrivateMatchImagePreviewOpen(true)} className="group relative block w-full rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-400" title="查看大图" aria-label="查看房源大图">
+                      <img src={selectedPrivateMatchProperty.cover} alt="房源封面" className="w-full h-48 object-cover bg-zinc-100 transition-transform duration-200 group-hover:scale-[1.02]" />
+                      <span className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-end justify-end p-3">
+                        <span className="opacity-0 group-hover:opacity-100 text-[11px] text-white bg-black/55 rounded px-2 py-1 transition-opacity">点击查看大图</span>
+                      </span>
+                    </button>
+                    <div className="mt-4 flex items-center gap-2">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">{selectedPrivateMatchProperty.source}</span>
+                      {selectedPrivateMatchProperty.isSatisfied && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">满意</span>}
+                    </div>
+                    <h3 className="mt-2 text-lg font-semibold leading-7 text-zinc-900 dark:text-zinc-100">{selectedPrivateMatchProperty.title}</h3>
+                    <div className="grid grid-cols-3 gap-2 mt-4 p-3 rounded-lg bg-rose-50 dark:bg-rose-900/10">
+                      <div><div className="text-lg font-bold text-rose-500">{formatPrivateMatchValue(selectedPrivateMatchProperty.totalPrice)}</div><div className="text-[10px] text-zinc-500 mt-1">总价</div></div>
+                      <div><div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{formatPrivateMatchValue(selectedPrivateMatchProperty.layout)}</div><div className="text-[10px] text-zinc-500 mt-1">户型</div></div>
+                      <div><div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{formatPrivateMatchValue(selectedPrivateMatchProperty.area)}</div><div className="text-[10px] text-zinc-500 mt-1">面积</div></div>
+                    </div>
+                    <div className="mt-5 rounded-lg border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
+                      {[
+                        ['单价', selectedPrivateMatchProperty.unitPrice],
+                        ['小区', selectedPrivateMatchProperty.community],
+                        ['类型', selectedPrivateMatchProperty.propertyType],
+                        ['产权', selectedPrivateMatchProperty.ownership],
+                        ['朝向', selectedPrivateMatchProperty.orientation],
+                        ['电梯', selectedPrivateMatchProperty.elevator],
+                        ['楼层', selectedPrivateMatchProperty.floor],
+                        ['抵押', selectedPrivateMatchProperty.mortgage]
+                      ].map(([label, value]) => (
+                        <div key={label} className="px-3 py-3 flex items-start justify-between gap-4 text-xs">
+                          <span className="text-zinc-500 shrink-0">{label}</span>
+                          <span className="text-right text-zinc-800 dark:text-zinc-100">{formatPrivateMatchValue(value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.aside>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <AnimatePresence>
+            {isPrivateMatchImagePreviewOpen && selectedPrivateMatchProperty && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-8" onClick={() => setIsPrivateMatchImagePreviewOpen(false)}>
+                <motion.div initial={{ scale: 0.96 }} animate={{ scale: 1 }} exit={{ scale: 0.96 }} className="relative max-w-5xl max-h-full" onClick={event => event.stopPropagation()}>
+                  <img src={selectedPrivateMatchProperty.cover} alt="房源大图" className="max-h-[85vh] max-w-[88vw] rounded-lg object-contain shadow-2xl" />
+                  <button onClick={() => setIsPrivateMatchImagePreviewOpen(false)} className="absolute -top-3 -right-3 h-8 w-8 rounded-full bg-white text-zinc-700 shadow-lg flex items-center justify-center" title="关闭大图" aria-label="关闭大图"><X size={18} /></button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       );
     }
