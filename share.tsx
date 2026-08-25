@@ -3279,6 +3279,11 @@ interface CustomGroup {
 
 type PrivateSessionFilterField = 'customerName' | 'followupNote' | 'id788' | 'phone';
 type ActiveChatFilter = 'all' | 'session_abnormal' | 'lead_all' | 'lead_abnormal' | 'community_need' | 'moments_need' | 'transfer_mining' | `custom:${string}`;
+type GroupMessageSenderRole = 'customer' | 'operator' | 'broker' | 'unknown';
+
+interface GroupUnreadSourceMessage {
+  senderRole: GroupMessageSenderRole;
+}
 
 const privateSessionFilterOptions: Array<{ value: PrivateSessionFilterField; label: string; placeholder: string }> = [
   { value: 'customerName', label: '客户名称', placeholder: '搜索客户名称' },
@@ -3359,6 +3364,32 @@ function buildMomentsLikeTiers(currentLikes, recentLikeCounts, _ignoredNonCurren
   return { priorityLikes, frequentLikes };
 }
 // --- end moments like tier helper ---
+
+// 群聊未读仅由消息角色顺序决定：C 端发言置未读，运营或经纪人回复清除未读，身份未知不改变状态。
+function deriveGroupUnreadStatus(messages: GroupUnreadSourceMessage[]) {
+  let unread = false;
+  messages.forEach(message => {
+    if (message.senderRole === 'customer') {
+      unread = true;
+    } else if (unread && (message.senderRole === 'operator' || message.senderRole === 'broker')) {
+      unread = false;
+    }
+  });
+  return unread;
+}
+
+const GROUP_MESSAGE_TRAILS: Record<number, GroupUnreadSourceMessage[]> = {
+  1: [{ senderRole: 'customer' }, { senderRole: 'broker' }],
+  2: [{ senderRole: 'customer' }],
+  3: [{ senderRole: 'customer' }, { senderRole: 'broker' }],
+  4: [{ senderRole: 'customer' }],
+  5: [{ senderRole: 'customer' }, { senderRole: 'operator' }],
+  6: [{ senderRole: 'customer' }, { senderRole: 'unknown' }],
+  7: [{ senderRole: 'customer' }],
+  8: [{ senderRole: 'customer' }, { senderRole: 'operator' }],
+  9: [{ senderRole: 'customer' }, { senderRole: 'broker' }, { senderRole: 'customer' }],
+  10: [{ senderRole: 'customer' }]
+};
 
 // --- moments date range filter helper ---
 const MOMENT_DATE_FILTER_MIN = '2026-05-01';
@@ -3915,6 +3946,8 @@ function Workspace() {
   const [activeTabId, setActiveTabId] = useState('chat-7881301319959329');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [activeRightPanelTab, setActiveRightPanelTab] = useState('客户档案');
+  // V4.7：交付群右侧增加流转记录，本轮仅展示记录，不提供经纪人更换操作。
+  const [activeGroupRightPanelTab, setActiveGroupRightPanelTab] = useState<'群档案' | '流转记录'>('群档案');
   const [selectedPrivateMatchProperty, setSelectedPrivateMatchProperty] = useState<PrivateMatchProperty | null>(null);
   const [isPrivateMatchImagePreviewOpen, setIsPrivateMatchImagePreviewOpen] = useState(false);
   const [privateMatchRecordLoadStateOverrides, setPrivateMatchRecordLoadStateOverrides] = useState<Record<string, PrivateMatchRecordLoadState>>({});
@@ -3984,6 +4017,7 @@ function Workspace() {
     y: number;
     groupName: string | null;
   }>({ visible: false, x: 0, y: 0, groupName: null });
+  const [groupUnreadOverrides, setGroupUnreadOverrides] = useState<Record<number, boolean>>({});
 
   const [pendingSidebarAction, setPendingSidebarAction] = useState<{ type: 'append', text: string, id: number } | null>(null);
 
@@ -4553,6 +4587,14 @@ function Workspace() {
     activeChatFilter === 'transfer_mining' ? '转派后挖掘' :
     '全部会话';
   const groupAgentOptions = Array.from(new Set(groupList.filter(group => group.category !== 'operation').map(group => group.agent)));
+  const isGroupUnread = (group: typeof groupList[number]) =>
+    Object.prototype.hasOwnProperty.call(groupUnreadOverrides, group.id)
+      ? groupUnreadOverrides[group.id]
+      : deriveGroupUnreadStatus(GROUP_MESSAGE_TRAILS[group.id] || []);
+  const setGroupUnreadManually = (groupId: number, unread: boolean) => {
+    setGroupUnreadOverrides(previous => ({ ...previous, [groupId]: unread }));
+  };
+  const contextMenuGroup = contextMenu.groupName ? groupList.find(group => group.name === contextMenu.groupName) : undefined;
   const visibleGroupList = groupList.filter(group => {
     const matchesCategory =
       activeGroupCategory === 'all' ||
@@ -4561,7 +4603,7 @@ function Workspace() {
     const matchesCity = selectedGroupCity === '全国' || group.city === selectedGroupCity;
     const matchesAgent = !selectedAgent || group.agent === selectedAgent;
     const matchesKeyword = !groupSearchKeyword.trim() || group.name.includes(groupSearchKeyword.trim()) || group.lastMsg.includes(groupSearchKeyword.trim());
-    const matchesMode = groupListMode === 'latest' || group.unread > 0;
+    const matchesMode = groupListMode === 'latest' || isGroupUnread(group);
     return matchesCategory && matchesCity && matchesAgent && matchesKeyword && matchesMode;
   });
 
@@ -4799,6 +4841,12 @@ function Workspace() {
                 name={chatDisplayName}
                 content="想"
               />
+
+              <div className="text-center text-xs text-zinc-400 my-2">2026-05-06 10:42:15 AI-生成群线索</div>
+
+              <div className="text-center text-xs text-zinc-400 my-2">2026-05-06 10:42:20 运营-生成群线索</div>
+
+              <div className="text-center text-xs text-zinc-400 my-2">2026-05-06 10:42:30 运营-分配群线索</div>
 
               <div className="text-center text-xs text-zinc-400 my-2">2026-05-06 10:42:40</div>
 
@@ -5896,6 +5944,8 @@ function Workspace() {
 
             <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-5 bg-[#eaf4ff]">
               <div className="text-center text-xs text-[#9db4ca]">2026-05-09 15:47:16</div>
+              {/* V4.7：沿用历史灰色系统消息样式展示 AI/运营生成线索节点。 */}
+              <div className="text-center text-xs text-[#9db4ca] my-1">2026-05-09 15:47:20 AI-生成群线索</div>
               <div className="flex items-start gap-3 max-w-[70%]">
                 <img src={group.avatar} className="w-9 h-9 rounded-full border border-white object-cover" alt="" />
                 <div>
@@ -5940,52 +5990,137 @@ function Workspace() {
           </div>
 
           <div className="w-[330px] border-l border-[#dbe8f7] bg-[#f6fbff] flex flex-col shrink-0">
+            {/* V4.7：群聊右侧新增“流转记录”入口。 */}
             <div className="grid grid-cols-3 gap-2 p-3 bg-white border-b border-[#dbe8f7] text-sm">
-              {['群档案', '群详情', '客户档案'].map((tab, index) => (
-                <button key={tab} className={`h-9 rounded-sm transition-colors ${index === 0 ? 'bg-[#e7f3ff] text-[#1683ff] border border-[#9acbff]' : 'bg-[#f4f8fc] text-[#31506f] hover:bg-[#e7f3ff]'}`}>
-                  {tab}
-                </button>
-              ))}
-              {['快捷话术', '聊天记录'].map(tab => (
-                <button key={tab} className="h-9 rounded-sm bg-[#f4f8fc] text-[#31506f] hover:bg-[#e7f3ff]">
-                  {tab}
-                </button>
-              ))}
+              {['群档案', '群详情', '客户档案', '快捷话术', '聊天记录', '流转记录'].map(tab => {
+                const canSwitch = tab === '群档案' || tab === '流转记录';
+                const isActive = activeGroupRightPanelTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => canSwitch && setActiveGroupRightPanelTab(tab as '群档案' | '流转记录')}
+                    className={`h-9 rounded-sm transition-colors ${
+                      isActive
+                        ? 'bg-[#e7f3ff] text-[#1683ff] border border-[#9acbff]'
+                        : 'bg-[#f4f8fc] text-[#31506f] hover:bg-[#e7f3ff]'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                );
+              })}
             </div>
-            <div className="px-3 py-2 text-xs text-[#7d96b2] flex justify-between">
-              <span>更新时间：2026-05-10 09:53:56</span>
-              <button className="text-[#1683ff] flex items-center gap-1"><RefreshCw size={12} />刷新档案</button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-3">
-              {[
-                { title: '群聊总结', icon: null, text: '用户明确寻找一梯一户、室内120平以上的房源，预算200万左右，坚决拒收回迁房。对已推的金隅大成都133平房源反馈户型不佳。目前经纪人已推送中骏世界城与皖投云启华章户型图，并正发起周末看房邀约。' },
-                { title: '运营跟进建议', icon: <MessageSquare size={15} className="text-orange-500" />, text: '需及时核实用户对新房源户型的满意度，防止沟通断档；督促经纪人于24小时内落实带看时标，并针对客户对户型规划的特点，筛选边套或高赠送等优惠排口径备选。' },
-                { title: '分销中介跟进建议', icon: <User size={15} className="text-[#1683ff]" />, text: '严选室内120平以上且具备私密入户感的房源，避免高公摊户型；带看时重点演示中骏及皖投的电梯入户优势，利用200万预算下一梯一户的稀缺性引导客户通过横厅尺度对比消除不满。' }
-              ].map(item => (
-                <div key={item.title} className="bg-white rounded-md border border-[#e5eef8] p-4">
-                  <div className="flex items-center gap-2 mb-2 font-semibold text-[#102a4c]">
-                    {item.icon}
-                    <span>{item.title}</span>
-                  </div>
-                  <div className="text-sm leading-6 text-[#31506f]">{item.text}</div>
-                </div>
-              ))}
 
-              <div className="bg-white rounded-md border border-[#e5eef8] p-4">
-                <div className="font-semibold text-[#102a4c] mb-3">客户意向</div>
-                {[
-                  ['决策人', '本人'],
-                  ['学区意向', '未提及'],
-                  ['当前阶段', '带看邀约中'],
-                  ['意向价格', '200万左右']
-                ].map(([label, value]) => (
-                  <div key={label} className="bg-[#f7fbff] rounded-md px-3 py-2 mb-2 last:mb-0">
-                    <div className="text-xs text-[#9db4ca] mb-1">{label}</div>
-                    <div className="text-sm text-[#31506f]">{value}</div>
+            {activeGroupRightPanelTab === '群档案' && (
+              <>
+                <div className="px-3 py-2 text-xs text-[#7d96b2] flex justify-between">
+                  <span>更新时间：2026-05-10 09:53:56</span>
+                  <button className="text-[#1683ff] flex items-center gap-1"><RefreshCw size={12} />刷新档案</button>
+                </div>
+                <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-3">
+                  {[
+                    { title: '群聊总结', icon: null, text: '用户明确寻找一梯一户、室内120平以上的房源，预算200万左右，坚决拒收回迁房。对已推的金隅大成都133平房源反馈户型不佳。目前经纪人已推送中骏世界城与皖投云启华章户型图，并正发起周末看房邀约。' },
+                    { title: '运营跟进建议', icon: <MessageSquare size={15} className="text-orange-500" />, text: '需及时核实用户对新房源户型的满意度，防止沟通断档；督促经纪人于24小时内落实带看时标，并针对客户对户型规划的特点，筛选边套或高赠送等优惠排口径备选。' },
+                    { title: '分销中介跟进建议', icon: <User size={15} className="text-[#1683ff]" />, text: '严选室内120平以上且具备私密入户感的房源，避免高公摊户型；带看时重点演示中骏及皖投的电梯入户优势，利用200万预算下一梯一户的稀缺性引导客户通过横厅尺度对比消除不满。' }
+                  ].map(item => (
+                    <div key={item.title} className="bg-white rounded-md border border-[#e5eef8] p-4">
+                      <div className="flex items-center gap-2 mb-2 font-semibold text-[#102a4c]">
+                        {item.icon}
+                        <span>{item.title}</span>
+                      </div>
+                      <div className="text-sm leading-6 text-[#31506f]">{item.text}</div>
+                    </div>
+                  ))}
+
+                  <div className="bg-white rounded-md border border-[#e5eef8] p-4">
+                    <div className="font-semibold text-[#102a4c] mb-3">客户意向</div>
+                    {[
+                      ['决策人', '本人'],
+                      ['学区意向', '未提及'],
+                      ['当前阶段', '带看邀约中'],
+                      ['意向价格', '200万左右']
+                    ].map(([label, value]) => (
+                      <div key={label} className="bg-[#f7fbff] rounded-md px-3 py-2 mb-2 last:mb-0">
+                        <div className="text-xs text-[#9db4ca] mb-1">{label}</div>
+                        <div className="text-sm text-[#31506f]">{value}</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+              </>
+            )}
+
+            {activeGroupRightPanelTab === '流转记录' && (
+              <div className="flex-1 overflow-y-auto bg-[#f8fbff] px-4 py-4">
+                <div className="mb-4">
+                  <div className="text-sm font-semibold text-[#102a4c]">群线索流转记录</div>
+                  <div className="mt-1 text-xs leading-5 text-[#7d96b2]">记录线索生成、接入、承接、到期及服务经纪人变更过程</div>
+                </div>
+                <div className="relative pl-6 before:absolute before:left-[7px] before:top-2 before:bottom-3 before:w-px before:bg-[#cfe0f2]">
+                  {[
+                    {
+                      title: '更换服务经纪人',
+                      time: '2026-05-10 10:05:18',
+                      operator: '合肥运营-王芳',
+                      summary: '服务经纪人由郭华峰变更为杨玉银',
+                      details: [['原服务经纪人', '郭华峰'], ['新服务经纪人', group.agent], ['变更原因', '原经纪人承接到期']]
+                    },
+                    {
+                      title: '线索承接到期',
+                      time: '2026-05-10 09:50:00',
+                      operator: '系统',
+                      summary: '原小B承接周期已到期，进入待重新承接状态',
+                      details: [['到期小B', '郭华峰'], ['到期原因', '承接有效期结束']]
+                    },
+                    {
+                      title: '小B开始承接',
+                      time: '2026-05-09 15:50:12',
+                      operator: '郭华峰',
+                      summary: '小B已确认接入并开始服务该群客户',
+                      details: [['承接状态', '承接中'], ['服务群', group.name]]
+                    },
+                    {
+                      title: '线索接入小B',
+                      time: '2026-05-09 15:48:06',
+                      operator: '合肥运营-陈晨',
+                      summary: '线索已分配至小B郭华峰',
+                      details: [['小B姓名', '郭华峰'], ['小B ID', '7881301734908127'], ['所属公司/门店', '乐屋 / 创新产业园店'], ['承接有效期', '2026-05-09 15:48 至 2026-05-10 09:50']]
+                    },
+                    {
+                      title: 'AI/运营生成线索',
+                      time: '2026-05-09 15:47:20',
+                      operator: 'AI找房',
+                      summary: '根据客户购房意向自动生成群线索',
+                      details: [['生成方式', 'AI自动识别'], ['线索来源', group.source], ['服务客户', '再回首']]
+                    }
+                  ].map((item, index) => (
+                    <div key={item.title} className="relative pb-5 last:pb-0">
+                      <span className={`absolute -left-6 top-1 w-4 h-4 rounded-full border-[3px] border-[#f8fbff] ${index === 0 ? 'bg-[#1683ff]' : 'bg-[#8fbce8]'}`} />
+                      <div className="rounded-md border border-[#e0ebf6] bg-white p-3 shadow-sm">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="text-sm font-semibold text-[#102a4c]">{item.title}</div>
+                          {index === 0 && <span className="shrink-0 rounded bg-[#e7f3ff] px-1.5 py-0.5 text-[10px] text-[#1683ff]">最新</span>}
+                        </div>
+                        <div className="mt-1 text-[11px] text-[#9db4ca]">{item.time}</div>
+                        <div className="mt-2 text-xs leading-5 text-[#31506f]">{item.summary}</div>
+                        <div className="mt-2 rounded bg-[#f7fbff] px-2.5 py-2 space-y-1.5">
+                          {item.details.map(([label, value]) => (
+                            <div key={label} className="grid grid-cols-[72px_minmax(0,1fr)] gap-2 text-xs leading-4">
+                              <span className="text-[#7d96b2]">{label}</span>
+                              <span className="break-words text-[#31506f]">{value}</span>
+                            </div>
+                          ))}
+                          <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-2 text-xs leading-4">
+                            <span className="text-[#7d96b2]">节点操作人</span>
+                            <span className="break-words text-[#31506f]">{item.operator}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       );
@@ -6690,21 +6825,14 @@ function Workspace() {
                 >
                   <div className="relative w-10 h-10 rounded-full bg-[#e7f3ff] shrink-0 overflow-hidden border border-[#d8e5f4]">
                     <img src={group.avatar} alt="" className="w-full h-full object-cover" />
-                    {group.unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#ff5b5b] border border-white"></span>}
+                    {isGroupUnread(group) && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#ff5b5b] border border-white"></span>}
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-[#31506f] truncate">{group.name}</span>
                       <span className="text-xs text-[#9db4ca] shrink-0">{group.time}</span>
                     </div>
-                    <div className="flex justify-between items-center gap-2">
-                      <div className="text-xs text-[#7d96b2] truncate flex-1">{group.lastMsg}</div>
-                      {group.unread > 0 && (
-                        <span className="min-w-[16px] h-4 flex items-center justify-center bg-red-500 text-white text-[10px] rounded-full px-1">
-                          {group.unread}
-                        </span>
-                      )}
-                    </div>
+                    <div className="text-xs text-[#7d96b2] truncate">{group.lastMsg}</div>
                     <div className="flex items-center gap-1.5 text-[10px] text-[#9db4ca]">
                       <span className="px-1.5 py-0.5 rounded bg-[#f4f8fc]">{group.city}</span>
                       <span className="truncate">{group.agent}</span>
@@ -6862,11 +6990,14 @@ function Workspace() {
             <button
               className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-2"
               onClick={() => {
+                if (contextMenuGroup) {
+                  setGroupUnreadManually(contextMenuGroup.id, !isGroupUnread(contextMenuGroup));
+                }
                 setContextMenu(prev => ({ ...prev, visible: false }));
               }}
             >
               <span className="w-4 h-4 flex items-center justify-center"><Mail size={14}/></span>
-              标为未读
+              {contextMenuGroup && isGroupUnread(contextMenuGroup) ? '标为已读' : '标为未读'}
             </button>
             <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1"></div>
             <button
