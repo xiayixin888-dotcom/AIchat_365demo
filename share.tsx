@@ -3388,7 +3388,8 @@ const GROUP_MESSAGE_TRAILS: Record<number, GroupUnreadSourceMessage[]> = {
   7: [{ senderRole: 'customer' }],
   8: [{ senderRole: 'customer' }, { senderRole: 'operator' }],
   9: [{ senderRole: 'customer' }, { senderRole: 'broker' }, { senderRole: 'customer' }],
-  10: [{ senderRole: 'customer' }]
+  10: [{ senderRole: 'customer' }],
+  11: [{ senderRole: 'customer' }]
 };
 
 // --- moments date range filter helper ---
@@ -3946,8 +3947,10 @@ function Workspace() {
   const [activeTabId, setActiveTabId] = useState('chat-7881301319959329');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [activeRightPanelTab, setActiveRightPanelTab] = useState('客户档案');
-  // V4.7：交付群右侧增加流转记录，本轮仅展示记录，不提供经纪人更换操作。
+  // V4.7：流转记录仅用于「交付群 > 3.0服务群」，不提供经纪人更换操作。
   const [activeGroupRightPanelTab, setActiveGroupRightPanelTab] = useState<'群档案' | '流转记录'>('群档案');
+  const [groupSenderType, setGroupSenderType] = useState<'c' | 'b'>('c');
+  const [isGroupSenderSelectorOpen, setIsGroupSenderSelectorOpen] = useState(false);
   const [selectedPrivateMatchProperty, setSelectedPrivateMatchProperty] = useState<PrivateMatchProperty | null>(null);
   const [isPrivateMatchImagePreviewOpen, setIsPrivateMatchImagePreviewOpen] = useState(false);
   const [privateMatchRecordLoadStateOverrides, setPrivateMatchRecordLoadStateOverrides] = useState<Record<string, PrivateMatchRecordLoadState>>({});
@@ -4038,6 +4041,7 @@ function Workspace() {
     { id: 8, name: '03.24红运如意选房沟通群', category: 'delivery_private', city: '合肥', agent: '天道酬勤', lastMsg: '天道酬勤：[运营消息]', time: '5-10', unread: 1, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=96&h=96&q=80', service: '交付群', source: '私聊撮合建群' },
     { id: 9, name: '05.09万事如意选房沟通群', category: 'delivery_private', city: '南京', agent: '翟姐', lastMsg: '翟姐：好的前面给您分享的就是二环...', time: '5-10', unread: 0, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=96&h=96&q=80', service: '交付群', source: '私聊撮合建群' },
     { id: 10, name: '365南京二手房线索运营群', category: 'operation', city: '南京', agent: '运营', lastMsg: '运营消息：今日重点跟进高意向客户', time: '5-09', unread: 0, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=96&h=96&q=80', service: '运营群', source: '运营群' },
+    { id: 11, name: '09.11再回首安家服务群', category: 'delivery_v30', city: '合肥', agent: '杨玉银', lastMsg: '再回首：我想了解中骏世界城的户型', time: '10:05', unread: 1, avatar: 'https://images.weserv.nl/?url=https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=96&h=96&q=80', service: '3.0服务群', source: 'AI/运营生成线索' },
   ];
 
   const [customGroups, setCustomGroups] = useState<CustomGroup[]>([
@@ -4070,7 +4074,7 @@ function Workspace() {
   const [groupSearchKeyword, setGroupSearchKeyword] = useState('');
   const [selectedGroupCity, setSelectedGroupCity] = useState('合肥');
   const [groupListMode, setGroupListMode] = useState<'unread' | 'latest'>('unread');
-  const [activeGroupCategory, setActiveGroupCategory] = useState<'all' | 'delivery' | 'delivery_private' | 'delivery_targeted' | 'operation'>('delivery');
+  const [activeGroupCategory, setActiveGroupCategory] = useState<'all' | 'delivery' | 'delivery_private' | 'delivery_targeted' | 'delivery_v30' | 'operation'>('delivery');
   const [chatCustomerProfiles, setChatCustomerProfiles] = useState<Record<string, ChatCustomerProfile>>({
     '杜小明精品大平层17...': {
       name: '杜小明精品大平层17...',
@@ -5927,6 +5931,10 @@ function Workspace() {
 
     const group = groupList.find(g => g.name === activeTab.title);
     if (group) {
+      const isV30ServiceGroup = group.category === 'delivery_v30';
+      const selectedGroupSender = groupSenderType === 'c'
+        ? { name: '选房分析师霏霏@365淘房', label: 'C端企微账号' }
+        : { name: '正在服务经纪人@365淘房', label: 'B端企微代理账号' };
       return (
         <div className="flex h-full w-full bg-[#eaf4ff]">
           <div className="flex-1 flex flex-col min-w-0">
@@ -5937,15 +5945,19 @@ function Workspace() {
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#e7f3ff] text-[#1683ff] border border-[#c9e3ff]">{group.service}</span>
                 </div>
                 <div className="mt-1 text-xs text-[#5f7892] truncate">
-                  {group.city} | 群主：选房分析师霏霏 | {group.source} | 服务客户：再回首 | 经纪人：{group.agent}
+                  {group.city} | 群主：选房分析师霏霏 | {group.source} | 服务客户：再回首 | {isV30ServiceGroup ? '安家顾问' : '经纪人'}：{group.agent}
                 </div>
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-5 bg-[#eaf4ff]">
               <div className="text-center text-xs text-[#9db4ca]">2026-05-09 15:47:16</div>
-              {/* V4.7：沿用历史灰色系统消息样式展示 AI/运营生成线索节点。 */}
-              <div className="text-center text-xs text-[#9db4ca] my-1">2026-05-09 15:47:20 AI-生成群线索</div>
+              {isV30ServiceGroup && (
+                <>
+                  <div className="text-center text-xs text-[#9db4ca] my-1">2026-05-09 15:47:20 AI/运营-线索生成</div>
+                  <div className="text-center text-xs text-[#9db4ca] my-1">2026-05-09 15:48:06 线索接入安家顾问</div>
+                </>
+              )}
               <div className="flex items-start gap-3 max-w-[70%]">
                 <img src={group.avatar} className="w-9 h-9 rounded-full border border-white object-cover" alt="" />
                 <div>
@@ -5965,13 +5977,24 @@ function Workspace() {
                   </div>
                 </div>
               </div>
-              <ChatMessage role="ai" time="2026-05-09 15:57:58" name="再回首" isHumanOp content="哪个小区？" />
+              {isV30ServiceGroup ? (
+                <ChatMessage role="ai" time="2026-05-09 15:57:58" name={`${selectedGroupSender.name} [运营-夏艺心]`} isHumanOp content="哪个小区？" />
+              ) : (
+                <ChatMessage role="ai" time="2026-05-09 15:57:58" name="再回首" isHumanOp content="哪个小区？" />
+              )}
               <ChatMessage role="user" time="2026-05-09 15:58:42" name="杨玉银13696510313" content="中骏世界城和皖投云启华章" />
               <ChatMessage role="user" time="2026-05-10 09:53:13" name="杨玉银13696510313" content="@再回首 您好！昨天给您推荐的新房今天周末可考虑出来看房呢" />
+              {isV30ServiceGroup && (
+                <>
+                  <div className="text-center text-xs text-[#9db4ca] my-1">2026-05-10 09:50:00 线索承接到期</div>
+                  <div className="text-center text-xs text-[#9db4ca] my-1">2026-05-10 10:03:40 AI/运营-线索生成</div>
+                  <div className="text-center text-xs text-[#9db4ca] my-1">2026-05-10 10:05:18 线索接入安家顾问</div>
+                </>
+              )}
             </div>
 
             <div className="p-4 bg-[#eaf4ff] shrink-0">
-              <div className="rounded-lg bg-white border border-[#e5eef8] h-40 flex flex-col justify-end px-4 py-3">
+              <div className={`rounded-lg border h-40 flex flex-col justify-end px-4 py-3 ${isV30ServiceGroup && groupSenderType === 'b' ? 'bg-orange-50 border-orange-300' : 'bg-white border-[#e5eef8]'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-[#8ba7c3]">
                     <button className="p-1 hover:text-[#1683ff]"><ImageIcon size={17} /></button>
@@ -5979,7 +6002,35 @@ function Workspace() {
                     <button className="p-1 hover:text-[#1683ff]"><Smile size={17} /></button>
                   </div>
                   <div className="flex items-center gap-3">
-                    <button className="h-8 px-3 rounded-full border border-[#d8e5f4] text-xs text-[#7d96b2] hover:border-[#9acbff] hover:text-[#1683ff]">选择发送消息的客服账号</button>
+                    {isV30ServiceGroup ? (
+                      <div className="relative">
+                        <button
+                          onClick={() => setIsGroupSenderSelectorOpen(open => !open)}
+                          className={`h-8 max-w-[210px] truncate px-3 rounded-full border text-xs ${groupSenderType === 'b' ? 'border-orange-300 bg-orange-100 text-orange-700' : 'border-[#d8e5f4] text-[#31506f] hover:border-[#9acbff]'}`}
+                        >
+                          {selectedGroupSender.name}
+                        </button>
+                        {isGroupSenderSelectorOpen && (
+                          <div className="absolute right-0 bottom-10 z-30 w-60 rounded-md border border-[#d8e5f4] bg-white p-1 shadow-[0_8px_24px_rgba(16,42,76,0.12)]">
+                            {[
+                              { type: 'c' as const, name: '选房分析师霏霏@365淘房', label: 'C端企微账号（默认）' },
+                              { type: 'b' as const, name: '正在服务经纪人@365淘房', label: 'B端企微代理账号' }
+                            ].map(sender => (
+                              <button
+                                key={sender.type}
+                                onClick={() => { setGroupSenderType(sender.type); setIsGroupSenderSelectorOpen(false); }}
+                                className={`w-full rounded px-3 py-2 text-left text-xs hover:bg-[#f4f9ff] ${groupSenderType === sender.type ? 'bg-[#e7f3ff] text-[#1683ff]' : 'text-[#31506f]'}`}
+                              >
+                                <div>{sender.name}</div>
+                                <div className="mt-0.5 text-[10px] text-[#9db4ca]">{sender.label}</div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <button className="h-8 px-3 rounded-full border border-[#d8e5f4] text-xs text-[#7d96b2] hover:border-[#9acbff] hover:text-[#1683ff]">选择发送消息的客服账号</button>
+                    )}
                     <button className="w-9 h-9 rounded-full bg-[#1683ff] text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
                       <Send size={18} />
                     </button>
@@ -5990,9 +6041,9 @@ function Workspace() {
           </div>
 
           <div className="w-[330px] border-l border-[#dbe8f7] bg-[#f6fbff] flex flex-col shrink-0">
-            {/* V4.7：群聊右侧新增“流转记录”入口。 */}
+            {/* V4.7：流转记录仅在 3.0服务群展示。 */}
             <div className="grid grid-cols-3 gap-2 p-3 bg-white border-b border-[#dbe8f7] text-sm">
-              {['群档案', '群详情', '客户档案', '快捷话术', '聊天记录', '流转记录'].map(tab => {
+              {[...['群档案', '群详情', '客户档案', '快捷话术', '聊天记录'], ...(isV30ServiceGroup ? ['流转记录'] : [])].map(tab => {
                 const canSwitch = tab === '群档案' || tab === '流转记录';
                 const isActive = activeGroupRightPanelTab === tab;
                 return (
@@ -6050,59 +6101,58 @@ function Workspace() {
               </>
             )}
 
-            {activeGroupRightPanelTab === '流转记录' && (
+            {isV30ServiceGroup && activeGroupRightPanelTab === '流转记录' && (
               <div className="flex-1 overflow-y-auto bg-[#f8fbff] px-4 py-4">
                 <div className="mb-4">
                   <div className="text-sm font-semibold text-[#102a4c]">群线索流转记录</div>
-                  <div className="mt-1 text-xs leading-5 text-[#7d96b2]">记录线索生成、接入、承接、到期及服务经纪人变更过程</div>
+                  <div className="mt-1 text-xs leading-5 text-[#7d96b2]">记录线索生成、接入安家顾问及承接到期节点</div>
                 </div>
                 <div className="relative pl-6 before:absolute before:left-[7px] before:top-2 before:bottom-3 before:w-px before:bg-[#cfe0f2]">
                   {[
                     {
-                      title: '更换服务经纪人',
+                      title: '线索接入安家顾问',
                       time: '2026-05-10 10:05:18',
                       operator: '合肥运营-王芳',
-                      summary: '服务经纪人由郭华峰变更为杨玉银',
-                      details: [['原服务经纪人', '郭华峰'], ['新服务经纪人', group.agent], ['变更原因', '原经纪人承接到期']]
+                      summary: '',
+                      details: [['安家顾问', '杨玉银'], ['对应销售', '王芳']]
+                    },
+                    {
+                      title: 'AI/运营-线索生成',
+                      time: '2026-05-10 10:03:40',
+                      operator: 'AI找房',
+                      summary: '根据客户新的购房需求生成群线索',
+                      details: []
                     },
                     {
                       title: '线索承接到期',
                       time: '2026-05-10 09:50:00',
                       operator: '系统',
-                      summary: '原小B承接周期已到期，进入待重新承接状态',
-                      details: [['到期小B', '郭华峰'], ['到期原因', '承接有效期结束']]
+                      summary: '安家顾问郭华峰的线索承接已到期',
+                      details: []
                     },
                     {
-                      title: '小B开始承接',
-                      time: '2026-05-09 15:50:12',
-                      operator: '郭华峰',
-                      summary: '小B已确认接入并开始服务该群客户',
-                      details: [['承接状态', '承接中'], ['服务群', group.name]]
-                    },
-                    {
-                      title: '线索接入小B',
+                      title: '线索接入安家顾问',
                       time: '2026-05-09 15:48:06',
                       operator: '合肥运营-陈晨',
-                      summary: '线索已分配至小B郭华峰',
-                      details: [['小B姓名', '郭华峰'], ['小B ID', '7881301734908127'], ['所属公司/门店', '乐屋 / 创新产业园店'], ['承接有效期', '2026-05-09 15:48 至 2026-05-10 09:50']]
+                      summary: '',
+                      details: [['安家顾问', '郭华峰'], ['对应销售', '陈晨']]
                     },
                     {
-                      title: 'AI/运营生成线索',
+                      title: 'AI/运营-线索生成',
                       time: '2026-05-09 15:47:20',
                       operator: 'AI找房',
-                      summary: '根据客户购房意向自动生成群线索',
-                      details: [['生成方式', 'AI自动识别'], ['线索来源', group.source], ['服务客户', '再回首']]
+                      summary: '根据客户购房意向生成群线索',
+                      details: []
                     }
                   ].map((item, index) => (
-                    <div key={item.title} className="relative pb-5 last:pb-0">
+                    <div key={`${item.title}-${item.time}`} className="relative pb-5 last:pb-0">
                       <span className={`absolute -left-6 top-1 w-4 h-4 rounded-full border-[3px] border-[#f8fbff] ${index === 0 ? 'bg-[#1683ff]' : 'bg-[#8fbce8]'}`} />
                       <div className="rounded-md border border-[#e0ebf6] bg-white p-3 shadow-sm">
                         <div className="flex items-start justify-between gap-2">
                           <div className="text-sm font-semibold text-[#102a4c]">{item.title}</div>
-                          {index === 0 && <span className="shrink-0 rounded bg-[#e7f3ff] px-1.5 py-0.5 text-[10px] text-[#1683ff]">最新</span>}
                         </div>
                         <div className="mt-1 text-[11px] text-[#9db4ca]">{item.time}</div>
-                        <div className="mt-2 text-xs leading-5 text-[#31506f]">{item.summary}</div>
+                        {item.summary && <div className="mt-2 text-xs leading-5 text-[#31506f]">{item.summary}</div>}
                         <div className="mt-2 rounded bg-[#f7fbff] px-2.5 py-2 space-y-1.5">
                           {item.details.map(([label, value]) => (
                             <div key={label} className="grid grid-cols-[72px_minmax(0,1fr)] gap-2 text-xs leading-4">
@@ -6370,7 +6420,8 @@ function Workspace() {
                   <div className="flex flex-col py-1">
                     {[
                       { label: '私聊撮合建群', value: 'delivery_private' as const },
-                      { label: '定向房源建群', value: 'delivery_targeted' as const }
+                      { label: '定向房源建群', value: 'delivery_targeted' as const },
+                      { label: '3.0服务群', value: 'delivery_v30' as const }
                     ].map(item => (
                       <div key={item.value} onClick={() => setActiveGroupCategory(item.value)} className={`mx-3 pl-9 pr-3 py-1.5 rounded-md cursor-pointer text-sm transition-colors ${activeGroupCategory === item.value ? 'text-[#1683ff] bg-[#e7f3ff]' : 'text-[#5f7892] hover:bg-[#eaf4ff] hover:text-[#1683ff]'}`}>
                         {item.label}
@@ -6819,7 +6870,7 @@ function Workspace() {
               {visibleGroupList.map((group, i) => (
                 <div
                   key={i}
-                  onClick={() => openTab(group.name)}
+                  onClick={() => { setActiveGroupRightPanelTab('群档案'); openTab(group.name); }}
                   onContextMenu={(e) => handleContextMenu(e, group.name)}
                   className={`flex gap-3 p-3 rounded-md cursor-pointer hover:bg-[#f4f9ff] transition-colors ${group.name === activeTab.title ? 'bg-[#e7f3ff]' : ''}`}
                 >
@@ -7671,11 +7722,18 @@ function ChatMessage({ role, time, name, content, images, isHumanOp }: { role: '
     <div className={`flex flex-col gap-1 ${isAI ? 'items-end' : 'items-start'}`}>
       <div className="flex items-center gap-2 text-xs text-zinc-400">
         {isAI ? (
-          <>
-            <span>{time}</span>
-            <span>{name}</span>
-            {isHumanOp && <span className="bg-orange-500 text-white px-1 rounded text-[10px]">运营</span>}
-          </>
+          isHumanOp ? (
+            <>
+              <span>{name}</span>
+              <span>{time}</span>
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-orange-400 text-[10px] text-white">运营</span>
+            </>
+          ) : (
+            <>
+              <span>{time}</span>
+              <span>{name}</span>
+            </>
+          )
         ) : (
           <>
             <User size={12} />
@@ -7705,7 +7763,7 @@ function ChatMessage({ role, time, name, content, images, isHumanOp }: { role: '
                 </div>
             )}
         </div>
-        {isAI && (
+        {isAI && !isHumanOp && (
           <div className="w-8 h-8 rounded-full bg-blue-500 shrink-0 mt-1 flex items-center justify-center text-white">
             <User size={16} />
           </div>
